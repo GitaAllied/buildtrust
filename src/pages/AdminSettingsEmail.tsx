@@ -72,7 +72,7 @@ const AdminSettingsEmail = () => {
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Settings</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">Email Settings</h1>
                 <p className="text-sm text-gray-500">SMTP configuration and email templates</p>
               </div>
@@ -96,20 +96,20 @@ const AdminSettingsEmail = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="smtpHost" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="smtpHost" className="text-xs sm:text-right">
                   SMTP Host
                 </Label>
                 <Input
                   id="smtpHost"
                   value={settings.smtpHost}
                   onChange={(e) => handleSettingChange('smtpHost', e.target.value)}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                   placeholder="smtp.example.com"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="smtpPort" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="smtpPort" className="text-xs sm:text-right">
                   SMTP Port
                 </Label>
                 <Input
@@ -117,34 +117,35 @@ const AdminSettingsEmail = () => {
                   type="number"
                   value={settings.smtpPort}
                   onChange={(e) => handleSettingChange('smtpPort', parseInt(e.target.value))}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                   min="1"
                   max="65535"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="smtpUsername" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="smtpUsername" className="text-xs sm:text-right">
                   Username
                 </Label>
                 <Input
                   id="smtpUsername"
                   value={settings.smtpUsername}
                   onChange={(e) => handleSettingChange('smtpUsername', e.target.value)}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                   placeholder="your-email@example.com"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="smtpPassword" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="smtpPassword" className="text-xs sm:text-right">
                   Password
                 </Label>
-                <div className="col-span-3 relative">
+                <div className="sm:col-span-3 relative">
                   <Input
                     id="smtpPassword"
                     type={showPassword ? "text" : "password"}
                     value={settings.smtpPassword}
                     onChange={(e) => handleSettingChange('smtpPassword', e.target.value)}
                     placeholder="Enter SMTP password"
+                    className="text-xs md:text-sm"
                   />
                   <Button
                     type="button"
@@ -157,12 +158,12 @@ const AdminSettingsEmail = () => {
                   </Button>
                 </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="smtpEncryption" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="smtpEncryption" className="text-xs sm:text-right">
                   Encryption
                 </Label>
                 <Select value={settings.smtpEncryption} onValueChange={(value) => handleSettingChange('smtpEncryption', value)}>
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger className="sm:col-span-3 text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -184,8 +185,8 @@ const AdminSettingsEmail = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="fromEmail" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="fromEmail" className="text-xs sm:text-right">
                   From Email
                 </Label>
                 <Input
@@ -193,7 +194,7 @@ const AdminSettingsEmail = () => {
                   type="email"
                   value={settings.fromEmail}
                   onChange={(e) => handleSettingChange('fromEmail', e.target.value)}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -219,8 +220,8 @@ const AdminSettingsEmail = () => {
                   className="col-span-3"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="maxEmailsPerHour" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="maxEmailsPerHour" className="text-xs sm:text-right">
                   Max Emails/Hour
                 </Label>
                 <Input
@@ -228,7 +229,7 @@ const AdminSettingsEmail = () => {
                   type="number"
                   value={settings.maxEmailsPerHour}
                   onChange={(e) => handleSettingChange('maxEmailsPerHour', parseInt(e.target.value))}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                   min="10"
                   max="10000"
                 />

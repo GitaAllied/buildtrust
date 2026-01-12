@@ -87,7 +87,7 @@ const AdminSettingsAPI = () => {
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Settings</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">API Settings</h1>
                 <p className="text-sm text-gray-500">API keys, webhooks, and access control</p>
               </div>
@@ -120,19 +120,19 @@ const AdminSettingsAPI = () => {
                 <Switch id="rateLimitingEnabled" checked={settings.rateLimitingEnabled} onCheckedChange={(checked) => handleSettingChange('rateLimitingEnabled', checked)} />
               </div>
               {settings.rateLimitingEnabled && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="apiRateLimit" className="text-right">Rate Limit (req/hour)</Label>
-                  <Input id="apiRateLimit" type="number" value={settings.apiRateLimit} onChange={(e) => handleSettingChange('apiRateLimit', parseInt(e.target.value))} className="col-span-3" />
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                  <Label htmlFor="apiRateLimit" className="text-xs sm:text-right">Rate Limit (req/hour)</Label>
+                  <Input id="apiRateLimit" type="number" value={settings.apiRateLimit} onChange={(e) => handleSettingChange('apiRateLimit', parseInt(e.target.value))} className="sm:col-span-3 text-xs md:text-sm" />
                 </div>
               )}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="apiKeyExpiration" className="text-right">Key Expiration (days)</Label>
-                <Input id="apiKeyExpiration" type="number" value={settings.apiKeyExpiration} onChange={(e) => handleSettingChange('apiKeyExpiration', parseInt(e.target.value))} className="col-span-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="apiKeyExpiration" className="text-xs sm:text-right">Key Expiration (days)</Label>
+                <Input id="apiKeyExpiration" type="number" value={settings.apiKeyExpiration} onChange={(e) => handleSettingChange('apiKeyExpiration', parseInt(e.target.value))} className="sm:col-span-3 text-xs md:text-sm" />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="apiVersion" className="text-right">API Version</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="apiVersion" className="text-xs sm:text-right">API Version</Label>
                 <Select value={settings.apiVersion} onValueChange={(value) => handleSettingChange('apiVersion', value)}>
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger className="sm:col-span-3 text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -249,9 +249,9 @@ const AdminSettingsAPI = () => {
                 <Switch id="webhookEnabled" checked={settings.webhookEnabled} onCheckedChange={(checked) => handleSettingChange('webhookEnabled', checked)} />
               </div>
               {settings.webhookEnabled && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="webhookSecret" className="text-right">Webhook Secret</Label>
-                  <Input id="webhookSecret" type="password" value={settings.webhookSecret} onChange={(e) => handleSettingChange('webhookSecret', e.target.value)} className="col-span-3" />
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                  <Label htmlFor="webhookSecret" className="text-xs sm:text-right">Webhook Secret</Label>
+                  <Input id="webhookSecret" type="password" value={settings.webhookSecret} onChange={(e) => handleSettingChange('webhookSecret', e.target.value)} className="sm:col-span-3 text-xs md:text-sm" />
                 </div>
               )}
               <div className="space-y-4">

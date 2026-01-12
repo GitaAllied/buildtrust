@@ -89,7 +89,7 @@ const AdminSettingsMaintenance = () => {
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Settings</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">Maintenance Mode</h1>
                 <p className="text-sm text-gray-500">Configure maintenance mode and scheduled maintenance</p>
               </div>
@@ -139,10 +139,10 @@ const AdminSettingsMaintenance = () => {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="maintenanceType" className="text-right">Type</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="maintenanceType" className="text-xs sm:text-right">Type</Label>
                 <Select value={settings.maintenanceType} onValueChange={(value) => handleSettingChange('maintenanceType', value)}>
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger className="sm:col-span-3 text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -191,9 +191,9 @@ const AdminSettingsMaintenance = () => {
                 <Switch id="autoResume" checked={settings.autoResume} onCheckedChange={(checked) => handleSettingChange('autoResume', checked)} />
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="redirectUrl" className="text-right">Redirect URL</Label>
-                <Input id="redirectUrl" value={settings.redirectUrl} onChange={(e) => handleSettingChange('redirectUrl', e.target.value)} className="col-span-3" placeholder="https://status.buildtrust.africa" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="redirectUrl" className="text-xs sm:text-right">Redirect URL</Label>
+                <Input id="redirectUrl" value={settings.redirectUrl} onChange={(e) => handleSettingChange('redirectUrl', e.target.value)} className="sm:col-span-3 text-xs md:text-sm" placeholder="https://status.buildtrust.africa" />
               </div>
 
               <div className="space-y-2">
@@ -220,16 +220,16 @@ const AdminSettingsMaintenance = () => {
             <CardContent>
               <div className="space-y-4">
                 {scheduledMaintenance.map((maintenance) => (
-                  <div key={maintenance.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={maintenance.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
                     <div className="flex-1">
                       <h4 className="font-medium">{maintenance.title}</h4>
                       <p className="text-sm text-gray-600">{maintenance.description}</p>
-                      <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                      <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500">
                         <span>Start: {maintenance.startTime}</span>
                         <span>End: {maintenance.endTime}</span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-0 sm:space-x-2 gap-2 sm:gap-0">
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         maintenance.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
                         maintenance.status === 'active' ? 'bg-orange-100 text-orange-800' :
@@ -237,10 +237,10 @@ const AdminSettingsMaintenance = () => {
                       }`}>
                         {maintenance.status}
                       </span>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
                         Edit
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
                         Cancel
                       </Button>
                     </div>

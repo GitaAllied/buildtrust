@@ -70,7 +70,7 @@ const AdminSettingsDatabase = () => {
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Settings</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">Database Settings</h1>
                 <p className="text-sm text-gray-500">Database configuration and maintenance</p>
               </div>
@@ -94,21 +94,21 @@ const AdminSettingsDatabase = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="databaseHost" className="text-right">Host</Label>
-                <Input id="databaseHost" value={settings.databaseHost} onChange={(e) => handleSettingChange('databaseHost', e.target.value)} className="col-span-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="databaseHost" className="text-xs sm:text-right">Host</Label>
+                <Input id="databaseHost" value={settings.databaseHost} onChange={(e) => handleSettingChange('databaseHost', e.target.value)} className="sm:col-span-3 text-xs md:text-sm" />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="databasePort" className="text-right">Port</Label>
-                <Input id="databasePort" type="number" value={settings.databasePort} onChange={(e) => handleSettingChange('databasePort', parseInt(e.target.value))} className="col-span-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="databasePort" className="text-xs sm:text-right">Port</Label>
+                <Input id="databasePort" type="number" value={settings.databasePort} onChange={(e) => handleSettingChange('databasePort', parseInt(e.target.value))} className="sm:col-span-3 text-xs md:text-sm" />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="databaseName" className="text-right">Database Name</Label>
-                <Input id="databaseName" value={settings.databaseName} onChange={(e) => handleSettingChange('databaseName', e.target.value)} className="col-span-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="databaseName" className="text-xs sm:text-right">Database Name</Label>
+                <Input id="databaseName" value={settings.databaseName} onChange={(e) => handleSettingChange('databaseName', e.target.value)} className="sm:col-span-3 text-xs md:text-sm" />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="databaseUser" className="text-right">Username</Label>
-                <Input id="databaseUser" value={settings.databaseUser} onChange={(e) => handleSettingChange('databaseUser', e.target.value)} className="col-span-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="databaseUser" className="text-xs sm:text-right">Username</Label>
+                <Input id="databaseUser" value={settings.databaseUser} onChange={(e) => handleSettingChange('databaseUser', e.target.value)} className="sm:col-span-3 text-xs md:text-sm" />
               </div>
             </CardContent>
           </Card>
@@ -122,22 +122,22 @@ const AdminSettingsDatabase = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="maxConnections" className="text-right">Max Connections</Label>
-                <Input id="maxConnections" type="number" value={settings.maxConnections} onChange={(e) => handleSettingChange('maxConnections', parseInt(e.target.value))} className="col-span-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="maxConnections" className="text-xs sm:text-right">Max Connections</Label>
+                <Input id="maxConnections" type="number" value={settings.maxConnections} onChange={(e) => handleSettingChange('maxConnections', parseInt(e.target.value))} className="sm:col-span-3 text-xs md:text-sm" />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="connectionTimeout" className="text-right">Timeout (sec)</Label>
-                <Input id="connectionTimeout" type="number" value={settings.connectionTimeout} onChange={(e) => handleSettingChange('connectionTimeout', parseInt(e.target.value))} className="col-span-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="connectionTimeout" className="text-xs sm:text-right">Timeout (sec)</Label>
+                <Input id="connectionTimeout" type="number" value={settings.connectionTimeout} onChange={(e) => handleSettingChange('connectionTimeout', parseInt(e.target.value))} className="sm:col-span-3 text-xs md:text-sm" />
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="queryLogging" className="text-sm font-medium">Query Logging</Label>
                 <Switch id="queryLogging" checked={settings.queryLogging} onCheckedChange={(checked) => handleSettingChange('queryLogging', checked)} />
               </div>
               {settings.queryLogging && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="slowQueryThreshold" className="text-right">Slow Query (sec)</Label>
-                  <Input id="slowQueryThreshold" type="number" value={settings.slowQueryThreshold} onChange={(e) => handleSettingChange('slowQueryThreshold', parseFloat(e.target.value))} className="col-span-3" step="0.1" />
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                  <Label htmlFor="slowQueryThreshold" className="text-xs sm:text-right">Slow Query (sec)</Label>
+                  <Input id="slowQueryThreshold" type="number" value={settings.slowQueryThreshold} onChange={(e) => handleSettingChange('slowQueryThreshold', parseFloat(e.target.value))} className="sm:col-span-3 text-xs md:text-sm" step="0.1" />
                 </div>
               )}
             </CardContent>
@@ -158,10 +158,10 @@ const AdminSettingsDatabase = () => {
               </div>
               {settings.backupEnabled && (
                 <>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="backupFrequency" className="text-right">Frequency</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                    <Label htmlFor="backupFrequency" className="text-xs sm:text-right">Frequency</Label>
                     <Select value={settings.backupFrequency} onValueChange={(value) => handleSettingChange('backupFrequency', value)}>
-                      <SelectTrigger className="col-span-3">
+                      <SelectTrigger className="sm:col-span-3 text-xs md:text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -172,9 +172,9 @@ const AdminSettingsDatabase = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="backupRetention" className="text-right">Retention (days)</Label>
-                    <Input id="backupRetention" type="number" value={settings.backupRetention} onChange={(e) => handleSettingChange('backupRetention', parseInt(e.target.value))} className="col-span-3" />
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                    <Label htmlFor="backupRetention" className="text-xs sm:text-right">Retention (days)</Label>
+                    <Input id="backupRetention" type="number" value={settings.backupRetention} onChange={(e) => handleSettingChange('backupRetention', parseInt(e.target.value))} className="sm:col-span-3 text-xs md:text-sm" />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="backupLocation" className="text-right">Backup Location</Label>
@@ -241,8 +241,8 @@ const AdminSettingsDatabase = () => {
             <CardContent>
               <div className="space-y-4">
                 {backupHistory.map((backup) => (
-                  <div key={backup.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
+                  <div key={backup.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
+                    <div className="flex items-start sm:items-center space-x-4">
                       <Archive className="h-5 w-5 text-gray-400" />
                       <div>
                         <p className="font-medium">{backup.date}</p>
@@ -255,7 +255,7 @@ const AdminSettingsDatabase = () => {
                       }`}>
                         {backup.status}
                       </span>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
                         Download
                       </Button>
                     </div>

@@ -58,7 +58,7 @@ const AdminSettingsGeneral = () => {
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Settings</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">General Settings</h1>
                 <p className="text-sm text-gray-500">Basic system configuration</p>
               </div>
@@ -82,31 +82,31 @@ const AdminSettingsGeneral = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="siteName" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="siteName" className="text-xs sm:text-right">
                   Site Name
                 </Label>
                 <Input
                   id="siteName"
                   value={settings.siteName}
                   onChange={(e) => handleSettingChange('siteName', e.target.value)}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="siteDescription" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="siteDescription" className="text-xs sm:text-right">
                   Description
                 </Label>
                 <Textarea
                   id="siteDescription"
                   value={settings.siteDescription}
                   onChange={(e) => handleSettingChange('siteDescription', e.target.value)}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                   rows={3}
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="contactEmail" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="contactEmail" className="text-xs sm:text-right">
                   Contact Email
                 </Label>
                 <Input
@@ -114,7 +114,7 @@ const AdminSettingsGeneral = () => {
                   type="email"
                   value={settings.contactEmail}
                   onChange={(e) => handleSettingChange('contactEmail', e.target.value)}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -129,15 +129,15 @@ const AdminSettingsGeneral = () => {
                   className="col-span-3"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="phoneNumber" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="phoneNumber" className="text-xs sm:text-right">
                   Phone Number
                 </Label>
                 <Input
                   id="phoneNumber"
                   value={settings.phoneNumber}
                   onChange={(e) => handleSettingChange('phoneNumber', e.target.value)}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -163,12 +163,12 @@ const AdminSettingsGeneral = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="timezone" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="timezone" className="text-xs sm:text-right">
                   Timezone
                 </Label>
                 <Select value={settings.timezone} onValueChange={(value) => handleSettingChange('timezone', value)}>
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger className="sm:col-span-3 text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -237,8 +237,8 @@ const AdminSettingsGeneral = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="maxProjectsPerUser" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="maxProjectsPerUser" className="text-xs sm:text-right">
                   Max Projects/User
                 </Label>
                 <Input
@@ -246,7 +246,7 @@ const AdminSettingsGeneral = () => {
                   type="number"
                   value={settings.maxProjectsPerUser}
                   onChange={(e) => handleSettingChange('maxProjectsPerUser', parseInt(e.target.value))}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -261,8 +261,8 @@ const AdminSettingsGeneral = () => {
                   className="col-span-3"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="sessionTimeout" className="text-right">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="sessionTimeout" className="text-xs sm:text-right">
                   Session Timeout (min)
                 </Label>
                 <Input
@@ -270,7 +270,7 @@ const AdminSettingsGeneral = () => {
                   type="number"
                   value={settings.sessionTimeout}
                   onChange={(e) => handleSettingChange('sessionTimeout', parseInt(e.target.value))}
-                  className="col-span-3"
+                  className="sm:col-span-3 text-xs md:text-sm"
                 />
               </div>
             </CardContent>

@@ -132,7 +132,7 @@ const AdminSettings = () => {
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Dashboard</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
                 <p className="text-sm text-gray-500">Configure and manage all platform settings</p>
               </div>
@@ -158,23 +158,23 @@ const AdminSettings = () => {
             return (
               <Card
                 key={category.id}
-                className="hover:shadow-lg transition-shadow cursor-pointer"
+                className="hover:shadow-lg transition-shadow cursor-pointer p-3 md:p-4"
                 onClick={() => handleNavigateToSetting(category.path)}
               >
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className={`p-2 rounded-lg ${category.bgColor}`}>
                       <IconComponent className={`h-6 w-6 ${category.color}`} />
                     </div>
                     <ChevronRight className="h-5 w-5 text-gray-400" />
                   </div>
-                  <CardTitle className="text-lg">{category.title}</CardTitle>
+                  <CardTitle className="text-base md:text-lg">{category.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-gray-600">{category.description}</p>
                   <Button
                     variant="ghost"
-                    className="mt-4 p-0 h-auto text-sm text-blue-600 hover:text-blue-800"
+                    className="mt-4 p-0 h-auto text-sm text-blue-600 hover:text-blue-800 w-full sm:w-auto text-left"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleNavigateToSetting(category.path);
@@ -198,7 +198,7 @@ const AdminSettings = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Button
                   variant="outline"
-                  className="justify-start"
+                  className="justify-start w-full md:w-auto"
                   onClick={() => navigate('/admin/settings/maintenance')}
                 >
                   <AlertTriangle className="h-4 w-4 mr-2" />
@@ -206,7 +206,7 @@ const AdminSettings = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  className="justify-start"
+                  className="justify-start w-full md:w-auto"
                   onClick={() => navigate('/admin/settings/logs')}
                 >
                   <FileText className="h-4 w-4 mr-2" />
@@ -214,7 +214,7 @@ const AdminSettings = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  className="justify-start"
+                  className="justify-start w-full md:w-auto"
                   onClick={() => navigate('/admin/settings/database')}
                 >
                   <Database className="h-4 w-4 mr-2" />
@@ -234,8 +234,8 @@ const AdminSettings = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">99.9%</div>
-                  <div className="text-sm text-gray-500">Uptime</div>
+                  <div className="text-xl md:text-2xl font-bold text-green-600">99.9%</div>
+                  <div className="text-xs md:text-sm text-gray-500">Uptime</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">1,247</div>

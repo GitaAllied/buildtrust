@@ -97,14 +97,14 @@ const AdminReports = () => {
                 <Shield className="h-5 w-5" />
                 <span>Back to Dashboard</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
                 <p className="text-sm text-gray-500">Generate and download detailed reports</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -115,7 +115,7 @@ const AdminReports = () => {
                 </SelectContent>
               </Select>
               <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full sm:w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -134,11 +134,11 @@ const AdminReports = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Report Types */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {reportTypes.map((report) => (
             <Card key={report.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-start sm:items-center justify-between mb-4 gap-3">
                   <report.icon className="h-8 w-8 text-gray-400" />
                   <span className={`text-xs px-2 py-1 rounded-full ${
                     report.status === 'Ready' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
@@ -175,12 +175,12 @@ const AdminReports = () => {
           <CardContent>
             <div className="space-y-4">
               {recentReports.map((report) => (
-                <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-4">
+                <div key={report.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
+                  <div className="flex items-start sm:items-center space-x-4">
                     <FileText className="h-8 w-8 text-gray-400" />
                     <div>
                       <h4 className="font-medium text-gray-900">{report.name}</h4>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
                         <span>Type: {report.type}</span>
                         <span>Generated: {report.generated}</span>
                         <span>Size: {report.size}</span>
@@ -191,6 +191,7 @@ const AdminReports = () => {
                   <Button
                     variant="outline"
                     onClick={() => handleDownloadReport(report.id)}
+                    className="w-full sm:w-auto"
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Download
@@ -211,40 +212,40 @@ const AdminReports = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
                 <div>
                   <h4 className="font-medium text-gray-900">Monthly Financial Summary</h4>
                   <p className="text-sm text-gray-600">Generated on the 1st of each month</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-0 sm:space-x-2 gap-2 sm:gap-0">
                   <span className="text-sm text-green-600">Active</span>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     Edit Schedule
                   </Button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
                 <div>
                   <h4 className="font-medium text-gray-900">Weekly User Activity Report</h4>
                   <p className="text-sm text-gray-600">Generated every Monday</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-0 sm:space-x-2 gap-2 sm:gap-0">
                   <span className="text-sm text-green-600">Active</span>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     Edit Schedule
                   </Button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
                 <div>
                   <h4 className="font-medium text-gray-900">Quarterly Performance Review</h4>
                   <p className="text-sm text-gray-600">Generated at quarter end</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-0 sm:space-x-2 gap-2 sm:gap-0">
                   <span className="text-sm text-gray-500">Inactive</span>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     Activate
                   </Button>
                 </div>

@@ -58,7 +58,7 @@ const AdminSettingsNotifications = () => {
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Settings</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">Notification Settings</h1>
                 <p className="text-sm text-gray-500">Configure system notifications and alerts</p>
               </div>
@@ -135,13 +135,13 @@ const AdminSettingsNotifications = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="smtpHost" className="text-right">SMTP Host</Label>
-                <Input id="smtpHost" value={settings.smtpHost} onChange={(e) => handleSettingChange('smtpHost', e.target.value)} className="col-span-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="smtpHost" className="text-xs sm:text-right">SMTP Host</Label>
+                <Input id="smtpHost" value={settings.smtpHost} onChange={(e) => handleSettingChange('smtpHost', e.target.value)} className="sm:col-span-3 text-xs md:text-sm" />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="smtpPort" className="text-right">SMTP Port</Label>
-                <Input id="smtpPort" type="number" value={settings.smtpPort} onChange={(e) => handleSettingChange('smtpPort', parseInt(e.target.value))} className="col-span-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="smtpPort" className="text-xs sm:text-right">SMTP Port</Label>
+                <Input id="smtpPort" type="number" value={settings.smtpPort} onChange={(e) => handleSettingChange('smtpPort', parseInt(e.target.value))} className="sm:col-span-3 text-xs md:text-sm" />
               </div>
             </CardContent>
           </Card>
@@ -154,9 +154,9 @@ const AdminSettingsNotifications = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="twilioSid" className="text-right">Twilio SID</Label>
-                <Input id="twilioSid" value={settings.twilioSid} onChange={(e) => handleSettingChange('twilioSid', e.target.value)} className="col-span-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="twilioSid" className="text-xs sm:text-right">Twilio SID</Label>
+                <Input id="twilioSid" value={settings.twilioSid} onChange={(e) => handleSettingChange('twilioSid', e.target.value)} className="sm:col-span-3 text-xs md:text-sm" />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="twilioToken" className="text-right">Twilio Token</Label>

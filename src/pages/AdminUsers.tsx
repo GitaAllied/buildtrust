@@ -194,7 +194,7 @@ const AdminUsers = () => {
                 <Shield className="h-5 w-5" />
                 <span>Back to Dashboard</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
                 <p className="text-sm text-gray-500">Manage all platform users</p>
               </div>
@@ -206,28 +206,28 @@ const AdminUsers = () => {
                   Add New User
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-[425px] max-w-[90vw]">
                 <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-base md:text-lg">Add New User</DialogTitle>
+                  <DialogDescription className="text-xs md:text-sm">
                     Create a new user account. They will receive an email with login instructions.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
+                <div className="grid gap-3 py-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                    <Label htmlFor="name" className="text-xs sm:text-right">
                       Name *
                     </Label>
                     <Input
                       id="name"
                       value={newUser.name}
                       onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
-                      className="col-span-3"
+                      className="sm:col-span-3 text-xs md:text-sm"
                       placeholder="Full name"
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                    <Label htmlFor="email" className="text-xs sm:text-right">
                       Email *
                     </Label>
                     <Input
@@ -235,16 +235,16 @@ const AdminUsers = () => {
                       type="email"
                       value={newUser.email}
                       onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-                      className="col-span-3"
+                      className="sm:col-span-3 text-xs md:text-sm"
                       placeholder="user@example.com"
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="role" className="text-right">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                    <Label htmlFor="role" className="text-xs sm:text-right">
                       Role
                     </Label>
                     <Select value={newUser.role} onValueChange={(value) => setNewUser(prev => ({ ...prev, role: value }))}>
-                      <SelectTrigger className="col-span-3">
+                      <SelectTrigger className="sm:col-span-3 text-xs md:text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -254,36 +254,36 @@ const AdminUsers = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="phone" className="text-right">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                    <Label htmlFor="phone" className="text-xs sm:text-right">
                       Phone
                     </Label>
                     <Input
                       id="phone"
                       value={newUser.phone}
                       onChange={(e) => setNewUser(prev => ({ ...prev, phone: e.target.value }))}
-                      className="col-span-3"
+                      className="sm:col-span-3 text-xs md:text-sm"
                       placeholder="+234 xxx xxx xxxx"
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="location" className="text-right">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                    <Label htmlFor="location" className="text-xs sm:text-right">
                       Location
                     </Label>
                     <Input
                       id="location"
                       value={newUser.location}
                       onChange={(e) => setNewUser(prev => ({ ...prev, location: e.target.value }))}
-                      className="col-span-3"
+                      className="sm:col-span-3 text-xs md:text-sm"
                       placeholder="City, Country"
                     />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddUserModalOpen(false)}>
+                  <Button variant="outline" onClick={() => setIsAddUserModalOpen(false)} size="sm" className="text-xs md:text-sm">
                     Cancel
                   </Button>
-                  <Button onClick={handleAddUser} className="bg-red-600 hover:bg-red-700">
+                  <Button onClick={handleAddUser} className="bg-red-600 hover:bg-red-700 text-xs md:text-sm" size="sm">
                     Create User
                   </Button>
                 </DialogFooter>
@@ -295,7 +295,7 @@ const AdminUsers = () => {
 
       {/* Filters */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -337,19 +337,19 @@ const AdminUsers = () => {
         <div className="space-y-4">
           {filteredUsers.map((user) => (
             <Card key={user.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              <CardContent className="p-3 md:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-start sm:items-center space-x-3">
+                    <Avatar className="h-8 w-8 sm:h-12 sm:w-12 flex-shrink-0">
+                      <AvatarFallback className="text-xs md:text-base">{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h3 className="font-semibold text-gray-900">{user.name}</h3>
+                        <h3 className="font-semibold text-xs sm:text-base text-gray-900">{user.name}</h3>
                         {getStatusIcon(user.status)}
                       </div>
-                      <p className="text-sm text-gray-600">{user.email}</p>
-                      <div className="flex items-center space-x-4 mt-1">
+                      <p className="text-xs md:text-sm text-gray-600">{user.email}</p>
+                      <div className="flex items-center space-x-2 mt-1 text-xs md:text-sm flex-wrap">
                         <span className="text-xs text-gray-500">Role: {user.role}</span>
                         <span className="text-xs text-gray-500">Joined: {user.joined}</span>
                         {user.projects > 0 && (

@@ -127,7 +127,7 @@ const AdminSettingsLogs = () => {
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Settings</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">System Logs</h1>
                 <p className="text-sm text-gray-500">View and manage system activity logs</p>
               </div>
@@ -144,7 +144,7 @@ const AdminSettingsLogs = () => {
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -155,7 +155,7 @@ const AdminSettingsLogs = () => {
                 />
               </div>
               <Select value={filterLevel} onValueChange={setFilterLevel}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Filter by level" />
                 </SelectTrigger>
                 <SelectContent>
@@ -167,7 +167,7 @@ const AdminSettingsLogs = () => {
                 </SelectContent>
               </Select>
               <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -180,7 +180,7 @@ const AdminSettingsLogs = () => {
                 </SelectContent>
               </Select>
               <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Date range" />
                 </SelectTrigger>
                 <SelectContent>
@@ -191,12 +191,12 @@ const AdminSettingsLogs = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button onClick={handleExportLogs} variant="outline">
+            <div className="flex flex-col sm:flex-row justify-end space-x-0 sm:space-x-2 mt-4">
+              <Button onClick={handleExportLogs} variant="outline" className="w-full sm:w-auto mb-2 sm:mb-0">
                 <Download className="h-4 w-4 mr-2" />
                 Export Logs
               </Button>
-              <Button onClick={handleClearLogs} variant="destructive">
+              <Button onClick={handleClearLogs} variant="destructive" className="w-full sm:w-auto">
                 Clear Logs
               </Button>
             </div>
