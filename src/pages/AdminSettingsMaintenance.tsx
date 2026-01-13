@@ -1,29 +1,49 @@
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate } from "react-router-dom";
-import { Settings, AlertTriangle, Clock, Users, ArrowLeft, Play, Pause } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const AdminSettingsMaintenance = () => {
   const navigate = useNavigate();
-  const [settings, setSettings] = useState({
-    maintenanceMode: false,
-    maintenanceMessage: "We are currently performing scheduled maintenance. Please check back in a few minutes.",
-    maintenanceStartTime: "",
-    maintenanceEndTime: "",
-    allowAdminAccess: true,
-    showCountdown: true,
-    redirectUrl: "",
-    allowedIPs: "",
-    notifyUsers: true,
-    autoResume: false,
-    maintenanceType: "scheduled"
-  });
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/admin/settings')}
+                className="flex items-center space-x-2"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span>Back to Settings</span>
+              </Button>
+              <div className="hidden sm:block">
+                <h1 className="text-2xl font-bold text-gray-900">Maintenance Mode (Removed)</h1>
+                <p className="text-sm text-gray-500">This settings page has been removed.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Page Removed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600">Maintenance controls have been removed from this interface. Use the 'Maintenance Mode' toggle under General Settings to control global maintenance behavior.</p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default AdminSettingsMaintenance;
 
   const [scheduledMaintenance, setScheduledMaintenance] = useState([
     {
