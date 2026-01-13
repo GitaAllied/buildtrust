@@ -29,7 +29,6 @@ import AdminMessages from "./pages/AdminMessages";
 import AdminSupportTicketDetail from "./pages/AdminSupportTicketDetail";
 import AdminSupportCreate from "./pages/AdminSupportCreate";
 import AdminSupportCategories from "./pages/AdminSupportCategories";
-import AdminSupportAnalytics from "./pages/AdminSupportAnalytics";
 import AdminSupportSettings from "./pages/AdminSupportSettings";
 import AdminUserView from "./pages/AdminUserView";
 import AdminUserEdit from "./pages/AdminUserEdit";
@@ -78,7 +77,6 @@ const App = () => (
             <Route path="/admin/support/ticket/:ticketId" element={<AdminSupportTicketDetail />} />
             <Route path="/admin/support/create" element={<AdminSupportCreate />} />
             <Route path="/admin/support/categories" element={<AdminSupportCategories />} />
-            <Route path="/admin/support/analytics" element={<AdminSupportAnalytics />} />
             <Route path="/admin/support/settings" element={<AdminSupportSettings />} />
             <Route path="/admin/messages" element={<AdminMessages />} />
             <Route path="/messages" element={<Messages />} />
