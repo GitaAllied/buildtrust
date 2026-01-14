@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import z from "zod";
 
 interface IdentityVerificationProps {
   data: any;
@@ -11,9 +12,39 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
     id: null as File | null,
     cac: null as File | null,
     selfie: null as File | null,
-  });
+});
+const [error, setError] = useState<string | null>(null);
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+  const ALLOWED_DOC_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png'];
 
   const handleFileUpload = (type: string, file: File | null) => {
+    setError(null);
+    if (!file) {
+      setFiles(prev => ({ ...prev, [type]: null }));
+      onChange({ ...data, [type]: null });
+      return;
+    }
+
+    // Validate file type depending on the field
+    if (type === 'selfie') {
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        setError('Selfie must be a JPG or PNG image.');
+        return;
+      }
+    } else {
+      if (!ALLOWED_DOC_TYPES.includes(file.type)) {
+        setError('Invalid file type. Allowed: PDF, JPG, PNG');
+        return;
+      }
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setError('File too large. Max size is 10 MB');
+      return;
+    }
+
     setFiles(prev => ({ ...prev, [type]: file }));
     onChange({ ...data, [type]: file });
   };
@@ -69,6 +100,12 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
         type="selfie" 
         accept="image/*"
       />
+
+      {error && (
+        <div className="rounded-md bg-red-50 border border-red-200 p-3 mt-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
         <div className="flex items-start space-x-3">

@@ -36,7 +36,6 @@ const SuperAdminDashboard = () => {
     { id: "dashboard", label: "Dashboard", active: true },
     { id: "users", label: "User Management" },
     { id: "messages", label: "Messages" },
-    { id: "analytics", label: "Analytics" },
     { id: "reports", label: "Reports" },
     { id: "settings", label: "System Settings" },
     { id: "support", label: "Support" }
@@ -125,9 +124,6 @@ const SuperAdminDashboard = () => {
       case "messages":
         navigate('/admin/messages');
         break;
-      case "analytics":
-        navigate('/admin/analytics');
-        break;
       case "reports":
         navigate('/admin/reports');
         break;
@@ -209,18 +205,11 @@ const SuperAdminDashboard = () => {
                 </Avatar>
                 <div className="flex-1 md:flex-none">
                   <h1 className="text-lg md:text-2xl font-bold text-gray-900">Welcome back, Super Admin</h1>
-                  <div className="flex items-center space-x-2 flex-wrap">
-                    <span className="text-xs md:text-sm text-gray-500">System Status:</span>
-                    <Badge className="bg-green-600 text-xs">All Systems Operational</Badge>
-                  </div>
+                  
                 </div>
               </div>
               <div className="flex items-center space-x-2 gap-2 flex-wrap">
-                <Badge className="bg-red-600 text-xs">Super Admin</Badge>
-                <Badge variant="outline" className="text-xs">
-                  <Shield className="w-2 h-2 mr-1" />
-                  Full Access
-                </Badge>
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -296,37 +285,6 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
 
-              {/* System Alerts */}
-              <Card className="border-orange-200 bg-orange-50">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center text-sm md:text-base text-orange-800">
-                    <AlertTriangle className="mr-2 h-4 md:h-5 w-4 md:w-5" />
-                    System Alerts
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {systemAlerts.map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between p-2 md:p-3 bg-white rounded-lg text-xs md:text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          alert.type === 'error' ? 'bg-red-500' :
-                          alert.type === 'warning' ? 'bg-orange-500' : 'bg-blue-500'
-                        }`} />
-                        <span>{alert.message}</span>
-                      </div>
-                      <span className="text-xs text-gray-500 flex-shrink-0">{alert.time}</span>
-                    </div>
-                  ))}
-                  <Button
-                    variant="outline"
-                    className="w-full text-xs"
-                    size="sm"
-                    onClick={() => navigate('/admin/support')}
-                  >
-                    View All Alerts
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Right Column */}

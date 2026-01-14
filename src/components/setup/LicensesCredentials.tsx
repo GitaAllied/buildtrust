@@ -13,13 +13,32 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
     testimonials: [] as File[],
     ...data
   });
+  const [error, setError] = useState<string | null>(null);
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+  const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 
   const handleFileUpload = (type: string, fileList: FileList | null) => {
+    setError(null);
     if (fileList) {
-      const filesArray = Array.from(fileList);
-      const updatedFiles = { ...files, [type]: [...files[type as keyof typeof files], ...filesArray] };
-      setFiles(updatedFiles);
-      onChange(updatedFiles);
+      const incoming = Array.from(fileList);
+      const valid: File[] = [];
+      for (const f of incoming) {
+        if (!ALLOWED_TYPES.includes(f.type)) {
+          setError('Invalid file type. Allowed: PDF, JPG, PNG');
+          continue;
+        }
+        if (f.size > MAX_FILE_SIZE) {
+          setError('File too large. Max size is 10 MB');
+          continue;
+        }
+        valid.push(f);
+      }
+      if (valid.length > 0) {
+        const updatedFiles = { ...files, [type]: [...files[type as keyof typeof files], ...valid] };
+        setFiles(updatedFiles);
+        onChange(updatedFiles);
+      }
     }
   };
 
@@ -111,6 +130,12 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Licenses & Credentials</h2>
         <p className="text-gray-600">Upload your professional certifications and credentials to build trust with potential clients.</p>
       </div>
+
+      {error && (
+        <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <UploadSection
         title="Professional Licenses"
