@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { FileText, Download, Calendar, Shield, TrendingUp, Users, DollarSign } from "lucide-react";
@@ -10,7 +11,7 @@ const AdminReports = () => {
   const [selectedType, setSelectedType] = useState("all");
   const navigate = useNavigate();
 
-  const reportTypes = [
+  const [reportTypes, setReportTypes] = useState([
     {
       id: "financial",
       title: "Financial Report",
@@ -34,18 +35,10 @@ const AdminReports = () => {
       icon: TrendingUp,
       lastGenerated: "2024-01-07",
       status: "Ready"
-    },
-    {
-      id: "system",
-      title: "System Health Report",
-      description: "Server performance, uptime, and technical metrics",
-      icon: Shield,
-      lastGenerated: "2024-01-08",
-      status: "Processing"
     }
-  ];
+  ]);
 
-  const recentReports = [
+  const [recentReports, setRecentReports] = useState([
     {
       id: 1,
       name: "Monthly Financial Report - December 2024",
@@ -70,20 +63,64 @@ const AdminReports = () => {
       size: "3.1 MB",
       downloads: 15
     }
-  ];
+  ]);
 
-  const handleGenerateReport = (reportType: string) => {
-    // In a real app, this would trigger report generation
-    console.log(`Generating ${reportType} report for ${selectedPeriod} period`);
+  const { toast } = useToast();
+
+  const handleGenerateReport = (reportTypeId: string) => {
+    // Update status to Processing
+    setReportTypes((prev) => prev.map((r) => r.id === reportTypeId ? { ...r, status: 'Processing' } : r));
+
+    toast({ title: 'Report generation started', description: 'The report will be ready shortly.' });
+
+    // Simulate async generation
+    setTimeout(() => {
+      const generatedAt = new Date().toLocaleString();
+      setReportTypes((prev) => prev.map((r) => r.id === reportTypeId ? { ...r, status: 'Ready', lastGenerated: generatedAt } : r));
+
+      // Add to recentReports
+      setRecentReports((prev) => [
+        {
+          id: prev.length ? Math.max(...prev.map((p) => p.id)) + 1 : 1,
+          name: `${reportTypes.find(r => r.id === reportTypeId)?.title ?? 'Report'} - ${generatedAt.split(',')[0]}`,
+          type: reportTypes.find(r => r.id === reportTypeId)?.title?.split(' ')[0] ?? 'Report',
+          generated: generatedAt,
+          size: `${(1 + Math.random() * 3).toFixed(1)} MB`,
+          downloads: 0
+        },
+        ...prev
+      ]);
+
+      toast({ title: 'Report ready', description: 'The report is ready for download.' });
+    }, 2000);
   };
 
   const handleDownloadReport = (reportId: number) => {
-    // In a real app, this would download the report
-    console.log(`Downloading report ${reportId}`);
+    const report = recentReports.find((r) => r.id === reportId);
+    if (!report) return;
+
+    // Create a small CSV/summary for demo purposes
+    const csv = `Report Name,Type,Generated,Size\n"${report.name}","${report.type}","${report.generated}","${report.size}"`;
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${report.name.replace(/\s+/g, '_')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    // Increment download counter
+    setRecentReports((prev) => prev.map((r) => r.id === reportId ? { ...r, downloads: r.downloads + 1 } : r));
+
+    toast({ title: 'Download started', description: `${report.name} is being downloaded.` });
   };
 
+  const visibleReportTypes = reportTypes.filter(r => selectedType === 'all' || r.id === selectedType);
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -97,14 +134,14 @@ const AdminReports = () => {
                 <Shield className="h-5 w-5" />
                 <span>Back to Dashboard</span>
               </Button>
-              <div className="hidden sm:block">
-                <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-                <p className="text-sm text-gray-500">Generate and download detailed reports</p>
+              <div>
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Reports & Analytics</h1>
+                <p className="text-xs sm:text-sm text-gray-500">Generate and download detailed reports</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="w-full sm:w-32">
+                <SelectTrigger className="w-full sm:w-32 md:w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -115,7 +152,7 @@ const AdminReports = () => {
                 </SelectContent>
               </Select>
               <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full sm:w-40 md:w-56">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -123,7 +160,6 @@ const AdminReports = () => {
                   <SelectItem value="financial">Financial</SelectItem>
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="project">Project</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -132,12 +168,12 @@ const AdminReports = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col">
         {/* Report Types */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {reportTypes.map((report) => (
-            <Card key={report.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4 md:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8 auto-rows-fr flex-1 min-h-[220px]">
+          {visibleReportTypes.length ? visibleReportTypes.map((report) => (
+            <Card key={report.id} className="hover:shadow-md transition-shadow h-full">
+              <CardContent className="p-4 md:p-6 h-full flex flex-col">
                 <div className="flex items-start sm:items-center justify-between mb-4 gap-3">
                   <report.icon className="h-8 w-8 text-gray-400" />
                   <span className={`text-xs px-2 py-1 rounded-full ${
@@ -152,7 +188,7 @@ const AdminReports = () => {
                   Last generated: {report.lastGenerated}
                 </div>
                 <Button
-                  className="w-full"
+                  className="mt-auto w-full"
                   variant="outline"
                   onClick={() => handleGenerateReport(report.id)}
                   disabled={report.status === 'Processing'}
@@ -161,11 +197,21 @@ const AdminReports = () => {
                 </Button>
               </CardContent>
             </Card>
-          ))}
+          )) : (
+            <Card className="border-dashed border-2 border-gray-200 h-full">
+              <CardContent className="p-6 text-center h-full flex flex-col justify-center">
+                <h3 className="text-lg font-medium">No reports found</h3>
+                <p className="text-sm text-gray-500 mt-2">Try selecting a different type or show all reports.</p>
+                <div className="mt-4">
+                  <Button onClick={() => setSelectedType('all')} variant="outline">Show All Reports</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Recent Reports */}
-        <Card>
+        <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center">
               <FileText className="mr-2 h-5 w-5" />
@@ -174,7 +220,7 @@ const AdminReports = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentReports.map((report) => (
+              {recentReports.length ? recentReports.map((report) => (
                 <div key={report.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
                   <div className="flex items-start sm:items-center space-x-4">
                     <FileText className="h-8 w-8 text-gray-400" />
@@ -197,62 +243,13 @@ const AdminReports = () => {
                     Download
                   </Button>
                 </div>
-              ))}
+              )) : (
+                <div className="p-4 text-center text-sm text-gray-500">No recent reports yet. Generate a report to get started.</div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Scheduled Reports */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="mr-2 h-5 w-5" />
-              Scheduled Reports
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
-                <div>
-                  <h4 className="font-medium text-gray-900">Monthly Financial Summary</h4>
-                  <p className="text-sm text-gray-600">Generated on the 1st of each month</p>
-                </div>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-0 sm:space-x-2 gap-2 sm:gap-0">
-                  <span className="text-sm text-green-600">Active</span>
-                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                    Edit Schedule
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
-                <div>
-                  <h4 className="font-medium text-gray-900">Weekly User Activity Report</h4>
-                  <p className="text-sm text-gray-600">Generated every Monday</p>
-                </div>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-0 sm:space-x-2 gap-2 sm:gap-0">
-                  <span className="text-sm text-green-600">Active</span>
-                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                    Edit Schedule
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
-                <div>
-                  <h4 className="font-medium text-gray-900">Quarterly Performance Review</h4>
-                  <p className="text-sm text-gray-600">Generated at quarter end</p>
-                </div>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-0 sm:space-x-2 gap-2 sm:gap-0">
-                  <span className="text-sm text-gray-500">Inactive</span>
-                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                    Activate
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

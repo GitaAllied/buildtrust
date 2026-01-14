@@ -16,7 +16,6 @@ import ClientDashboard from "./pages/ClientDashboard";
 import DeveloperDashboard from "./pages/DeveloperDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
-import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
 import AdminSettingsGeneral from "./pages/AdminSettingsGeneral";
@@ -25,16 +24,11 @@ import AdminSettingsPassword from "./pages/AdminSettingsPassword";
 import AdminSettingsEmail from "./pages/AdminSettingsEmail";
 import AdminSettingsPayment from "./pages/AdminSettingsPayment";
 import AdminSettingsNotifications from "./pages/AdminSettingsNotifications";
-import AdminSettingsAPI from "./pages/AdminSettingsAPI";
-import AdminSettingsDatabase from "./pages/AdminSettingsDatabase";
-import AdminSettingsLogs from "./pages/AdminSettingsLogs";
-import AdminSettingsMaintenance from "./pages/AdminSettingsMaintenance";
 import AdminSupport from "./pages/AdminSupport";
 import AdminMessages from "./pages/AdminMessages";
 import AdminSupportTicketDetail from "./pages/AdminSupportTicketDetail";
 import AdminSupportCreate from "./pages/AdminSupportCreate";
 import AdminSupportCategories from "./pages/AdminSupportCategories";
-import AdminSupportAnalytics from "./pages/AdminSupportAnalytics";
 import AdminSupportSettings from "./pages/AdminSupportSettings";
 import AdminUserView from "./pages/AdminUserView";
 import AdminUserEdit from "./pages/AdminUserEdit";
@@ -71,7 +65,6 @@ const App = () => (
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/users/:userId" element={<AdminUserView />} />
             <Route path="/admin/users/:userId/edit" element={<AdminUserEdit />} />
-            <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/admin/reports" element={<AdminReports />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="/admin/settings/general" element={<AdminSettingsGeneral />} />
@@ -80,15 +73,10 @@ const App = () => (
             <Route path="/admin/settings/email" element={<AdminSettingsEmail />} />
             <Route path="/admin/settings/payment" element={<AdminSettingsPayment />} />
             <Route path="/admin/settings/notifications" element={<AdminSettingsNotifications />} />
-            <Route path="/admin/settings/api" element={<AdminSettingsAPI />} />
-            <Route path="/admin/settings/database" element={<AdminSettingsDatabase />} />
-            <Route path="/admin/settings/logs" element={<AdminSettingsLogs />} />
-            <Route path="/admin/settings/maintenance" element={<AdminSettingsMaintenance />} />
             <Route path="/admin/support" element={<AdminSupport />} />
             <Route path="/admin/support/ticket/:ticketId" element={<AdminSupportTicketDetail />} />
             <Route path="/admin/support/create" element={<AdminSupportCreate />} />
             <Route path="/admin/support/categories" element={<AdminSupportCategories />} />
-            <Route path="/admin/support/analytics" element={<AdminSupportAnalytics />} />
             <Route path="/admin/support/settings" element={<AdminSupportSettings />} />
             <Route path="/admin/messages" element={<AdminMessages />} />
             <Route path="/messages" element={<Messages />} />

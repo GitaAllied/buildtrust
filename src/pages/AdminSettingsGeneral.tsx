@@ -22,7 +22,6 @@ const AdminSettingsGeneral = () => {
     language: "en",
     dateFormat: "DD/MM/YYYY",
     currency: "NGN",
-    maintenanceMode: false,
     registrationEnabled: true,
     emailVerificationRequired: true,
     maxProjectsPerUser: 10,
@@ -285,16 +284,6 @@ const AdminSettingsGeneral = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="maintenanceMode" className="text-sm font-medium">
-                  Maintenance Mode
-                </Label>
-                <Switch
-                  id="maintenanceMode"
-                  checked={settings.maintenanceMode}
-                  onCheckedChange={(checked) => handleSettingChange('maintenanceMode', checked)}
-                />
-              </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="registrationEnabled" className="text-sm font-medium">
                   User Registration
