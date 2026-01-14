@@ -1,6 +1,5 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL
-  ?? 'https://buildtrust-backend.onrender.com/api';
+  (import.meta.env.VITE_API_URL ?? 'https://buildtrust-backend.onrender.com/api').replace(/\/+$/, ''); // remove trailing slash(es)
 
 
 export interface User {
@@ -40,7 +39,8 @@ class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
+    // Normalize baseUrl: no trailing slash
+    this.baseUrl = baseUrl.replace(/\/+$/, '');
   }
 
   private async request<T = any>(
@@ -49,8 +49,11 @@ class ApiClient {
   ): Promise<T> {
     const token = localStorage.getItem('auth_token');
 
+    // Avoid forcing Content-Type when sending FormData (browser will set boundary)
+    const isFormData = options.body instanceof FormData;
+
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     };
 
@@ -58,8 +61,11 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    // Ensure endpoint is joined to baseUrl with exactly one slash
+    const url = endpoint.startsWith('/') ? `${this.baseUrl}${endpoint}` : `${this.baseUrl}/${endpoint}`;
+
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(url, {
         ...options,
         headers,
       });
