@@ -36,12 +36,37 @@ interface FormData {
     bio?: string;
     companyType?: string;
     yearsExperience?: string;
+    citiesCovered?: string[];
+    languages?: string[];
+    phoneNumber?: string;
+    currentLocation?: string;
+    occupation?: string;
+    preferredContact?: string;
     [key: string]: unknown;
   };
-  identity: Record<string, unknown>;
-  credentials: Record<string, unknown>;
+  identity: {
+    idDocumentType?: string;
+    idNumber?: string;
+    idCountry?: string;
+    documents?: any[];
+    [key: string]: unknown;
+  };
+  credentials: {
+    licenses?: any[];
+    certifications?: any[];
+    testimonials?: any[];
+    [key: string]: unknown;
+  };
   projects: Project[];
-  preferences: Record<string, unknown>;
+  preferences: {
+    projectTypes?: string[];
+    preferredCities?: string[];
+    budgetRange?: string;
+    workingStyle?: string;
+    availability?: string;
+    specializations?: string[];
+    [key: string]: unknown;
+  };
 }
 
 function ProtectedRoute({ children, isAuthenticated }: { children: JSX.Element; isAuthenticated: boolean; }) {
@@ -56,21 +81,49 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isComplete, setIsComplete] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    personal: {},
+    personal: {
+      fullName: '',
+      bio: '',
+      companyType: '',
+      yearsExperience: '',
+      citiesCovered: [],
+      languages: [],
+      phoneNumber: '',
+      currentLocation: '',
+      occupation: '',
+      preferredContact: ''
+    },
     identity: {},
     credentials: {},
     projects: [],
-    preferences: {}
+    preferences: {
+      projectTypes: [],
+      preferredCities: [],
+      budgetRange: '',
+      workingStyle: '',
+      availability: '',
+      specializations: []
+    }
   });
   const navigate = useNavigate();
   const location = useLocation();
   const { user, refreshUser } = useAuth();
   const from = (location.state as any)?.from?.pathname || '/developer-dashboard';
 
-  // Check email verification on component mount
+  // Redirect away if setup already completed or if email is not verified
   useEffect(() => {
-    if (user && !user.email_verified && user.setup_completed === true) {  // Redirect only after setup is completed
-      navigate('/verify-email');
+    if (!user) return;
+
+    // If setup already completed, go to developer dashboard
+    if (user.setup_completed === true) {
+      navigate('/developer-dashboard', { replace: true });
+      return;
+    }
+
+    // If email is not yet verified, send to verify page
+    if (!user.email_verified) {
+      navigate('/verify-email', { replace: true });
+      return;
     }
   }, [user, navigate]);
 
@@ -79,40 +132,132 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
       setCurrentStep(currentStep + 1);
     } else {
       try {
-        // Save profile data (including build preferences)
-        const profileData = {
+        // Build and clean profile data (omit empty/blank fields; send arrays as arrays)
+        const rawProfileData: Record<string, any> = {
           name: formData.personal.fullName,
           bio: formData.personal.bio,
           company_type: formData.personal.companyType,
-          years_experience: formData.personal.yearsExperience,
-          project_types: JSON.stringify(formData.preferences.projectTypes || []),
-          preferred_cities: JSON.stringify(formData.preferences.preferredCities || []),
-          budget_range: formData.preferences.budgetRange,
-          working_style: formData.preferences.workingStyle,
-          availability: formData.preferences.availability,
-          specializations: JSON.stringify(formData.preferences.specializations || []),
+          years_experience: formData.personal.yearsExperience ? (Number(formData.personal.yearsExperience) || undefined) : undefined,
+          project_types: (formData.preferences.projectTypes && formData.preferences.projectTypes.length > 0) ? formData.preferences.projectTypes : undefined,
+          preferred_cities: (formData.personal.citiesCovered && formData.personal.citiesCovered.length > 0) ? formData.personal.citiesCovered : (formData.preferences.preferredCities && formData.preferences.preferredCities.length > 0) ? formData.preferences.preferredCities : undefined,
+          languages: (formData.personal.languages && formData.personal.languages.length > 0) ? formData.personal.languages : undefined,
+          budget_range: formData.preferences.budgetRange || undefined,
+          working_style: formData.preferences.workingStyle || undefined,
+          availability: formData.preferences.availability || undefined,
+          specializations: (formData.preferences.specializations && formData.preferences.specializations.length > 0) ? formData.preferences.specializations : undefined,
+          setup_completed: true, // mark setup complete on final submit
         };
-        await apiClient.updateProfile(profileData);
 
-        // Save projects (if any)
-        if (formData.projects && formData.projects.length > 0) {
-          for (const project of formData.projects) {
-            const projectData = {
-              title: project.title,
-              type: project.type,
-              location: project.location,
-              budget: project.budget,
-              description: project.description,
-            };
-            await (apiClient as any).createProject(projectData);
+        // Remove undefined or empty string values
+        const profileData: Record<string, any> = {};
+        Object.entries(rawProfileData).forEach(([k, v]) => {
+          if (v === undefined || v === null) return;
+          if (typeof v === 'string' && v.trim() === '') return;
+          profileData[k] = v;
+        });
+
+        // Upload any credentials / license files first
+        const userId = user?.id;
+        console.log('Submitting developer setup. UserId:', userId);
+        console.log('Profile payload:', profileData);
+        try {
+          let uploadedCount = 0;
+          if (userId && formData.credentials) {
+            const creds = formData.credentials as any;
+            // Licenses
+            if (Array.isArray(creds.licenses)) {
+              for (const f of creds.licenses) {
+                if (f instanceof File) {
+                  await apiClient.uploadDocument(userId, 'license', f);
+                  uploadedCount++;
+                }
+              }
+            }
+            // Certifications
+            if (Array.isArray(creds.certifications)) {
+              for (const f of creds.certifications) {
+                if (f instanceof File) {
+                  await apiClient.uploadDocument(userId, 'certification', f);
+                  uploadedCount++;
+                }
+              }
+            }
+            // Testimonials
+            if (Array.isArray(creds.testimonials)) {
+              for (const f of creds.testimonials) {
+                if (f instanceof File) {
+                  await apiClient.uploadDocument(userId, 'testimonial', f);
+                  uploadedCount++;
+                }
+              }
+            }
           }
+
+          // Upload identity docs
+          if (userId && formData.identity && Array.isArray((formData.identity as any).documents)) {
+            for (const f of (formData.identity as any).documents) {
+              if (f instanceof File) {
+                await apiClient.uploadDocument(userId, 'identity', f);
+                uploadedCount++;
+              }
+            }
+          }
+
+          console.log('Uploaded documents count:', uploadedCount);
+        } catch (uploadErr) {
+          console.error('Document upload failed:', uploadErr);
+          // Continue saving profile even if upload fails; optionally notify user
         }
 
-        await refreshUser();
-        setIsComplete(true);
-      } catch (error) {
-        console.error('Failed to save:', error);
-        // Handle error
+        try {
+          const updated = await apiClient.updateProfile(profileData);
+          console.log('Profile update response:', updated);
+
+          // If server confirms setup_completed, navigate to developer dashboard and avoid showing setup again
+          if (updated && updated.user && updated.user.setup_completed === 1) {
+            // Refresh auth context (so Index and others pick up new status)
+            await refreshUser();
+            navigate('/developer-dashboard', { replace: true });
+            return;
+          }
+
+          // Save projects (if any)
+          if (formData.projects && formData.projects.length > 0) {
+            for (const project of formData.projects) {
+              const projectData = {
+                title: project.title,
+                type: project.type,
+                location: project.location,
+                budget: project.budget,
+                description: project.description,
+              };
+              await (apiClient as any).createProject(projectData);
+            }
+          }
+
+          await refreshUser();
+          setIsComplete(true);
+        } catch (error: any) {
+          console.error('Failed to save:', error);
+
+          // Try to parse backend validation details and show a user-friendly message
+          let message = 'An error occurred while saving your profile.';
+          if (error && typeof error === 'object') {
+            if ((error as any).body && (error as any).body.error === 'Validation error' && Array.isArray((error as any).body.details)) {
+              message = (error as any).body.details.map((d: any) => d.message).join('. ');
+            } else if (error.message) {
+              message = error.message;
+            }
+          }
+
+          // Show an in-component alert
+          setIsComplete(false);
+          // We reuse refreshUser so the top-level state is updated later
+          alert(message);
+        }
+      } catch (err) {
+        console.error('Error completing setup:', err);
+        alert('An unexpected error occurred while saving your profile. Please try again later.');
       }
     }
   };

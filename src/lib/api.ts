@@ -133,6 +133,29 @@ class ApiClient {
     });
   }
 
+  async uploadDocument(userId: number, type: string, file: File | Blob) {
+    const token = localStorage.getItem('auth_token');
+    const form = new FormData();
+    form.append('file', file as any);
+    form.append('type', type);
+
+    const headers: HeadersInit = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.baseUrl}/users/${userId}/documents`, {
+      method: 'POST',
+      headers,
+      body: form,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Upload failed (${response.status})`);
+    }
+
+    return response.json();
+  }
+
   async logout(): Promise<{ message: string }> {
     return this.request<{ message: string }>('/auth/logout', {
       method: 'POST',

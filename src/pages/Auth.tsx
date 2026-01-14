@@ -116,11 +116,21 @@ export default function Auth() {
         description: 'You have successfully signed in.',
       });
 
-      // Redirect based on intent
+      // Redirect based on intent and whether setup is already completed
+      const userFromResponse = response.user;
       if (setupIntent === 'developer-setup') {
-        navigate('/?setup=developer');
+        if (userFromResponse && userFromResponse.setup_completed === true) {
+          // Already completed, send to main page
+          navigate('/');
+        } else {
+          navigate('/?setup=developer');
+        }
       } else if (setupIntent === 'client-setup') {
-        navigate('/?setup=client');
+        if (userFromResponse && userFromResponse.setup_completed === true) {
+          navigate('/');
+        } else {
+          navigate('/?setup=client');
+        }
       } else {
         navigate('/');
       }
@@ -141,10 +151,9 @@ export default function Auth() {
     setSignUpError(null);
 
     try {
-      const response = await (apiClient as any).signup({
-        email: data.email,
-        password: data.password,
-      });
+      const payload: any = { email: data.email, password: data.password };
+      if (setupIntent) payload.intent = setupIntent;
+      const response = await (apiClient as any).signup(payload);
 
       // Store token for email verification page
       localStorage.setItem('auth_token', response.token);
@@ -505,7 +514,7 @@ export default function Auth() {
         {/* Additional Info */}
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Trusted by diaspora Nigerians worldwide
+            Trusted by diaspora Africas worldwide
           </p>
         </div>
       </div>
