@@ -136,10 +136,12 @@ class ApiClient {
   async uploadDocument(userId: number, type: string, file: File | Blob) {
     const token = localStorage.getItem('auth_token');
     const form = new FormData();
+    form.append('type', type); // append type first (helps some servers parse fields before files)
     form.append('file', file as any);
-    form.append('type', type);
 
     const headers: HeadersInit = {};
+    // Add a header so the server can verify the document type before streaming the file
+    headers['X-Document-Type'] = type;
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const response = await fetch(`${this.baseUrl}/users/${userId}/documents`, {
