@@ -151,14 +151,41 @@ export default function Auth() {
     setSignUpError(null);
 
     try {
+      console.log('📝 SIGNUP FORM SUBMITTED:', {
+        timestamp: new Date().toISOString(),
+        email: data.email,
+        passwordLength: data.password.length,
+        setupIntent
+      });
+
       const payload: any = { email: data.email, password: data.password };
-      if (setupIntent) payload.intent = setupIntent;
+      if (setupIntent) {
+        payload.intent = setupIntent;
+        console.log('🎯 SETUP INTENT DETECTED:', setupIntent);
+      }
+
+      console.log('📤 SENDING SIGNUP REQUEST TO API:', {
+        payloadKeys: Object.keys(payload),
+        email: payload.email
+      });
+
       const response = await (apiClient as any).signup(payload);
+
+      console.log('✅ SIGNUP RESPONSE RECEIVED:', {
+        userId: response.user?.id,
+        email: response.user?.email,
+        role: response.user?.role,
+        tokenLength: response.token?.length,
+        setupCompleted: response.user?.setup_completed,
+        emailVerified: response.user?.email_verified
+      });
 
       // Store token for email verification page
       localStorage.setItem('auth_token', response.token);
       localStorage.setItem('pending_verification_email', data.email);
       await refreshUser();
+
+      console.log('💾 TOKENS STORED & USER REFRESHED');
 
       toast({
         title: 'Account created!',
@@ -189,6 +216,13 @@ export default function Auth() {
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
+
+      console.error('❌ SIGNUP ERROR:', {
+        timestamp: new Date().toISOString(),
+        error: errorMessage,
+        email: data.email,
+        fullError: error
+      });
 
       if (errorMessage.includes('already exists')) {
         setSignUpError('An account with this email already exists. Please sign in instead.');
