@@ -57,9 +57,11 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
   const handleNext = () => {
     if (!isComplete) {
       setError('Please upload at least one document to each section to continue.');
-      return;
+      return false;
     }
+    setError(null);
     onChange({ ...files, licensesComplete: true });
+    return true;
   };
 
   const UploadSection = ({ 
