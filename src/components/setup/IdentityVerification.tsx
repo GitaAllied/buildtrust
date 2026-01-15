@@ -147,20 +147,6 @@ const [error, setError] = useState<string | null>(null);
           </div>
         </div>
       </div>
-
-      <div className="flex gap-3">
-        <button
-          onClick={handleNext}
-          disabled={!isComplete}
-          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-            isComplete
-              ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          Continue to Next Step
-        </button>
-      </div>
     </div>
   );
 };
