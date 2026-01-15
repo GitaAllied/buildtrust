@@ -353,18 +353,6 @@ const Index = () => {
                         Developer Dashboard
                       </Button>
                     )}
-                    {user.role === 'admin' && (
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          navigate("/super-admin-dashboard");
-                          setMobileMenuOpen(false);
-                        }}
-                        className="w-full border-purple-200 hover:border-purple-300 hover:bg-purple-50"
-                      >
-                        Admin Dashboard
-                      </Button>
-                    )}
                     <Button
                       variant="ghost"
                       onClick={() => {
@@ -450,7 +438,7 @@ const Index = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center mb-16 px-4">
-            {(!user || user.role !== 'admin') && (
+            {(!user || (user.role !== 'admin' && user.role !== undefined)) && (
               <>
                 <Button
                   size="lg"
