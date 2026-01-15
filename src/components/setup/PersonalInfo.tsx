@@ -32,6 +32,35 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
     onChange(newData);
   };
 
+  const isFormValid = () => {
+    const { fullName, bio } = formData;
+    
+    // Common required fields
+    if (!fullName || !(fullName as string).trim()) return false;
+    if (!bio || !(bio as string).trim()) return false;
+
+    if (userType === 'developer') {
+      const { companyType, yearsExperience } = formData;
+      if (!companyType || !(companyType as string).trim()) return false;
+      if (!yearsExperience || !(yearsExperience as string).trim()) return false;
+    } else {
+      const { phoneNumber, currentLocation, occupation, preferredContact } = formData;
+      if (!phoneNumber || !(phoneNumber as string).trim()) return false;
+      if (!currentLocation || !(currentLocation as string).trim()) return false;
+      if (!occupation || !(occupation as string).trim()) return false;
+      if (!preferredContact || !(preferredContact as string).trim()) return false;
+    }
+
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!isFormValid()) {
+      return;
+    }
+    onChange({ ...formData, personalInfoComplete: true });
+  };
+
   const toggleArrayItem = (field: string, item: string) => {
     const currentArray = (formData[field as keyof typeof formData] as string[]) || [];
     const newArray = currentArray.includes(item)
@@ -356,6 +385,22 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
             {(formData.bio as string).length}/500
           </span>
         </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          onClick={handleNext}
+          disabled={!isFormValid()}
+          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+            isFormValid()
+              ? userType === 'developer'
+                ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
+        >
+          Continue to Next Step
+        </button>
       </div>
     </div>
   );

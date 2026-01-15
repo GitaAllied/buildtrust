@@ -84,10 +84,11 @@ const [error, setError] = useState<string | null>(null);
   const handleNext = () => {
     if (!isComplete) {
       setError('Please upload all required documents to continue.');
-      return;
+      return false;
     }
-    // Emit completion to parent component
+    setError(null);
     onChange({ ...data, verificationComplete: true });
+    return true;
   };
 
   return (
