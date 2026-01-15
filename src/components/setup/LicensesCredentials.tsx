@@ -51,6 +51,19 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
     onChange(updatedFiles);
   };
 
+  const isComplete = files.licenses.length > 0 && files.certifications.length > 0 && files.testimonials.length > 0;
+  const totalFiles = files.licenses.length + files.certifications.length + files.testimonials.length;
+
+  const handleNext = () => {
+    if (!isComplete) {
+      setError('Please upload at least one document to each section to continue.');
+      return false;
+    }
+    setError(null);
+    onChange({ ...files, licensesComplete: true });
+    return true;
+  };
+
   const UploadSection = ({ 
     title, 
     description, 
@@ -66,7 +79,10 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
   }) => (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+        <div className="flex items-center mb-2">
+          <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+          <span className="text-red-500 ml-1">*</span>
+        </div>
         <p className="text-gray-600 text-sm mb-3">{description}</p>
         <div className="text-xs text-gray-500">
           Examples: {examples.join(", ")}
@@ -81,6 +97,7 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
           onChange={(e) => handleFileUpload(type, e.target.files)}
           className="hidden"
           id={`upload-${type}`}
+          required
         />
         <label htmlFor={`upload-${type}`} className="cursor-pointer">
           <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">

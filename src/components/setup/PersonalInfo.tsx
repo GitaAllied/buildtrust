@@ -32,6 +32,35 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
     onChange(newData);
   };
 
+  const isFormValid = () => {
+    const { fullName, bio } = formData;
+    
+    // Common required fields
+    if (!fullName || !(fullName as string).trim()) return false;
+    if (!bio || !(bio as string).trim()) return false;
+
+    if (userType === 'developer') {
+      const { companyType, yearsExperience } = formData;
+      if (!companyType || !(companyType as string).trim()) return false;
+      if (!yearsExperience || !(yearsExperience as string).trim()) return false;
+    } else {
+      const { phoneNumber, currentLocation, occupation, preferredContact } = formData;
+      if (!phoneNumber || !(phoneNumber as string).trim()) return false;
+      if (!currentLocation || !(currentLocation as string).trim()) return false;
+      if (!occupation || !(occupation as string).trim()) return false;
+      if (!preferredContact || !(preferredContact as string).trim()) return false;
+    }
+
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!isFormValid()) {
+      return;
+    }
+    onChange({ ...formData, personalInfoComplete: true });
+  };
+
   const toggleArrayItem = (field: string, item: string) => {
     const currentArray = (formData[field as keyof typeof formData] as string[]) || [];
     const newArray = currentArray.includes(item)
@@ -62,12 +91,13 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
                 <User className="w-4 h-4 mr-2 text-green-600" />
-                Full Name
+                Full Name <span className="text-red-500 ml-1">*</span>
               </label>
               <input
                 type="text"
                 value={formData.fullName as string}
                 onChange={(e) => updateData('fullName', e.target.value)}
+                required
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 placeholder-gray-500"
                 placeholder="Enter your full name"
               />
@@ -76,11 +106,12 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
                 <Building2 className="w-4 h-4 mr-2 text-green-600" />
-                Company Type
+                Company Type <span className="text-red-500 ml-1">*</span>
               </label>
               <select
                 value={formData.companyType as string}
                 onChange={(e) => updateData('companyType', e.target.value)}
+                required
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900"
               >
                 <option value="">Select company type</option>
@@ -94,11 +125,12 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
           <div className="group">
             <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
               <Award className="w-4 h-4 mr-2 text-green-600" />
-              Years of Experience
+              Years of Experience <span className="text-red-500 ml-1">*</span>
             </label>
             <select
               value={formData.yearsExperience as string}
               onChange={(e) => updateData('yearsExperience', e.target.value)}
+              required
               className="w-full md:w-1/2 px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900"
             >
               <option value="">Select experience level</option>
@@ -115,12 +147,13 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
                 <User className="w-4 h-4 mr-2 text-blue-600" />
-                Full Name
+                Full Name <span className="text-red-500 ml-1">*</span>
               </label>
               <input
                 type="text"
                 value={formData.fullName as string}
                 onChange={(e) => updateData('fullName', e.target.value)}
+                required
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 placeholder-gray-500"
                 placeholder="Enter your full name"
               />
@@ -129,12 +162,13 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
                 <Phone className="w-4 h-4 mr-2 text-blue-600" />
-                Phone Number
+                Phone Number <span className="text-red-500 ml-1">*</span>
               </label>
               <input
                 type="tel"
                 value={formData.phoneNumber as string}
                 onChange={(e) => updateData('phoneNumber', e.target.value)}
+                required
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 placeholder-gray-500"
                 placeholder="+234 xxx xxx xxxx"
               />
@@ -145,11 +179,12 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
                 <MapPin className="w-4 h-4 mr-2 text-blue-600" />
-                Current Location
+                Current Location <span className="text-red-500 ml-1">*</span>
               </label>
               <select
                 value={formData.currentLocation as string}
                 onChange={(e) => updateData('currentLocation', e.target.value)}
+                required
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900"
               >
                 <option value="">Select your location</option>
@@ -171,11 +206,12 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
                 <Briefcase className="w-4 h-4 mr-2 text-blue-600" />
-                Occupation
+                Occupation <span className="text-red-500 ml-1">*</span>
               </label>
               <select
                 value={formData.occupation as string}
                 onChange={(e) => updateData('occupation', e.target.value)}
+                required
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900"
               >
                 <option value="">Select your occupation</option>
@@ -197,7 +233,7 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
           <div className="group">
             <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
               <MessageCircle className="w-4 h-4 mr-2 text-blue-600" />
-              Preferred Contact Method
+              Preferred Contact Method <span className="text-red-500 ml-1">*</span>
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
@@ -219,6 +255,7 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
                       value={method.value}
                       checked={formData.preferredContact === method.value}
                       onChange={(e) => updateData('preferredContact', e.target.value)}
+                      required
                       className="sr-only"
                     />
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
@@ -327,13 +364,14 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
       <div className="group">
         <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
           <FileText className={`w-4 h-4 mr-2 ${userType === 'developer' ? 'text-green-600' : 'text-blue-600'}`} />
-          About / Bio
+          About / Bio <span className="text-red-500 ml-1">*</span>
         </label>
         <textarea
           value={formData.bio as string}
           onChange={(e) => updateData('bio', e.target.value)}
           rows={5}
           maxLength={500}
+          required
           className={`w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 placeholder-gray-500 resize-none ${
             userType === 'developer'
               ? 'focus:ring-green-500 focus:border-green-500'

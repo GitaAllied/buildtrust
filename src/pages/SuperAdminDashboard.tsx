@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Star,
   Upload,
@@ -24,13 +25,24 @@ import {
   BarChart3,
   Shield,
   AlertTriangle,
-  Menu
+  Menu,
+  LogOut
 } from "lucide-react";
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", active: true },
@@ -38,7 +50,8 @@ const SuperAdminDashboard = () => {
     { id: "messages", label: "Messages" },
     { id: "reports", label: "Reports" },
     { id: "settings", label: "System Settings" },
-    { id: "support", label: "Support" }
+    { id: "support", label: "Support" },
+    { id: "logout", label: "Sign Out", action: "logout" }
   ];
 
   const systemAlerts = [
@@ -133,6 +146,9 @@ const SuperAdminDashboard = () => {
       case "support":
         navigate('/admin/support');
         break;
+      case "logout":
+        handleLogout();
+        break;
       default:
         navigate('/super-admin-dashboard');
     }
@@ -181,7 +197,9 @@ const SuperAdminDashboard = () => {
                 setSidebarOpen(false);
               }}
               className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-colors text-sm md:text-base ${
-                activeTab === item.id
+                item.id === "logout"
+                  ? "text-gray-600 hover:bg-gray-50 mt-4 pt-4 border-t"
+                  : activeTab === item.id
                   ? "bg-red-50 text-red-700 font-medium"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
@@ -208,15 +226,16 @@ const SuperAdminDashboard = () => {
                   
                 </div>
               </div>
-              <div className="flex items-center space-x-2 gap-2 flex-wrap">
-
+              <div className="hidden md:flex items-center space-x-2 gap-2 flex-wrap">
                 <Button
-                  variant="outline"
+                  variant="destructive"
                   size="sm"
-                  onClick={() => navigate('/admin/settings')}
-                  className="text-xs"
+                  onClick={handleLogout}
+                  className="text-xs flex items-center gap-1"
                 >
-                  System Settings
+                  <LogOut className="h-3 w-3" />
+                  <span className="hidden sm:inline">Sign Out</span>
+                  <span className="sm:hidden">Out</span>
                 </Button>
               </div>
             </div>

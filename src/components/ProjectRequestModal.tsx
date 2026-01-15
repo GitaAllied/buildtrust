@@ -27,7 +27,6 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName }: ProjectRequestM
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Project request submitted:", formData);
     setIsSubmitted(true);
   };
 

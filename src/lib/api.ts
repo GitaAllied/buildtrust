@@ -1,13 +1,12 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL
-  ?? 'https://buildtrust-backend.onrender.com/api';
+  (import.meta.env.VITE_API_URL ?? 'https://buildtrust-backend.onrender.com/api').replace(/\/+$/, ''); // remove trailing slash(es)
 
 
 export interface User {
   id: number;
   email: string;
   name: string | null;
-  role: 'client' | 'developer';
+  role: 'client' | 'developer' | 'admin';
   bio?: string | null;
   phone?: string | null;
   location?: string | null;
@@ -40,7 +39,8 @@ class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
+    // Normalize baseUrl: no trailing slash
+    this.baseUrl = baseUrl.replace(/\/+$/, '');
   }
 
   private async request<T = any>(
@@ -49,8 +49,11 @@ class ApiClient {
   ): Promise<T> {
     const token = localStorage.getItem('auth_token');
 
+    // Avoid forcing Content-Type when sending FormData (browser will set boundary)
+    const isFormData = options.body instanceof FormData;
+
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     };
 
@@ -58,8 +61,19 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    // Ensure endpoint is joined to baseUrl with exactly one slash
+    const url = endpoint.startsWith('/') ? `${this.baseUrl}${endpoint}` : `${this.baseUrl}/${endpoint}`;
+
+    console.log(`🌐 API REQUEST:`, {
+      method: options.method || 'GET',
+      url,
+      headers,
+      body: options.body,
+      timestamp: new Date().toISOString()
+    });
+
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(url, {
         ...options,
         headers,
       });
@@ -71,6 +85,13 @@ class ApiClient {
       } catch {
         body = text;
       }
+
+      console.log(`🌐 API RESPONSE:`, {
+        status: response.status,
+        statusText: response.statusText,
+        body,
+        timestamp: new Date().toISOString()
+      });
 
       if (!response.ok) {
         const serverMsg = body?.error || body?.message || text || `HTTP ${response.status}`;
@@ -136,10 +157,12 @@ class ApiClient {
   async uploadDocument(userId: number, type: string, file: File | Blob) {
     const token = localStorage.getItem('auth_token');
     const form = new FormData();
+    form.append('type', type); // append type first (helps some servers parse fields before files)
     form.append('file', file as any);
-    form.append('type', type);
 
     const headers: HeadersInit = {};
+    // Add a header so the server can verify the document type before streaming the file
+    headers['X-Document-Type'] = type;
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const response = await fetch(`${this.baseUrl}/users/${userId}/documents`, {
@@ -192,6 +215,46 @@ class ApiClient {
 
   async getCurrentUser() {
     return this.request('/auth/me', { method: 'GET' });
+  }
+
+  async createProject(data: Record<string, unknown>) {
+    console.log('📦 CREATING PROJECT:', {
+      timestamp: new Date().toISOString(),
+      projectData: data
+    });
+    return this.request('/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async uploadProjectMedia(projectId: number, file: File | Blob) {
+    const token = localStorage.getItem('auth_token');
+    const form = new FormData();
+    form.append('file', file as any);
+
+    const headers: HeadersInit = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    console.log('🎬 UPLOADING PROJECT MEDIA:', {
+      timestamp: new Date().toISOString(),
+      projectId,
+      fileName: (file as any).name
+    });
+
+    const response = await fetch(`${this.baseUrl}/projects/${projectId}/media`, {
+      method: 'POST',
+      headers,
+      body: form,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Media upload failed (${response.status})`);
+    }
+
+    return response.json();
   }
 }
 
