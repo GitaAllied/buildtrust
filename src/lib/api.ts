@@ -64,6 +64,14 @@ class ApiClient {
     // Ensure endpoint is joined to baseUrl with exactly one slash
     const url = endpoint.startsWith('/') ? `${this.baseUrl}${endpoint}` : `${this.baseUrl}/${endpoint}`;
 
+    console.log(`🌐 API REQUEST:`, {
+      method: options.method || 'GET',
+      url,
+      headers,
+      body: options.body,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       const response = await fetch(url, {
         ...options,
@@ -77,6 +85,13 @@ class ApiClient {
       } catch {
         body = text;
       }
+
+      console.log(`🌐 API RESPONSE:`, {
+        status: response.status,
+        statusText: response.statusText,
+        body,
+        timestamp: new Date().toISOString()
+      });
 
       if (!response.ok) {
         const serverMsg = body?.error || body?.message || text || `HTTP ${response.status}`;
