@@ -56,17 +56,30 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         preferred_contact: formData.personal.preferredContact,
       };
 
+      console.log('📤 SUBMITTING CLIENT PROFILE DATA:', {
+        timestamp: new Date().toISOString(),
+        profileData,
+        formData,
+        userId: user?.id,
+        userEmail: user?.email
+      });
+
       try {
-        await apiClient.updateProfile(profileData);
+        const response = await apiClient.updateProfile(profileData);
+        console.log('✅ PROFILE UPDATE RESPONSE:', response);
+        
         await refreshUser();
+        console.log('✅ USER REFRESHED AFTER PROFILE UPDATE');
+        
         setIsComplete(true);
       } catch (error: any) {
-        console.error('Failed to save profile:', {
+        console.error('❌ FAILED TO SAVE PROFILE:', {
           message: error.message,
           status: error.status,
           body: error.body,
           url: error.url,
-          payload: profileData,  // Now accessible
+          payload: profileData,
+          timestamp: new Date().toISOString()
         });
         // show user-friendly UI message
         alert('An error occurred while updating your profile. Check console for details.');

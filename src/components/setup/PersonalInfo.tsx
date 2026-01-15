@@ -29,6 +29,7 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
   const updateData = (field: string, value: unknown) => {
     const newData = { ...formData, [field]: value };
     setFormData(newData);
+    console.log(`📝 CLIENT FORM FIELD UPDATED:`, { field, value, updatedFormData: newData });
     onChange(newData);
   };
 
