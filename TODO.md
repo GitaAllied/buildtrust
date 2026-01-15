@@ -1,0 +1,6 @@
+- [x] Update fadeInUp variant to include transition with duration 1.5s
+- [x] Change all useInView hooks from once: true to once: false
+- [x] Add motion.section to How It Works section with scroll animation
+- [x] Add motion.section to Testimonials section with scroll animation
+- [x] Add motion.section to CTA section with scroll animation
+- [x] Implement stagger animation for features cards
