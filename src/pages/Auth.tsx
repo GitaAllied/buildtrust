@@ -116,22 +116,33 @@ export default function Auth() {
         description: 'You have successfully signed in.',
       });
 
-      // Redirect based on intent and whether setup is already completed
+      // Redirect based on user role and setup intent
       const userFromResponse = response.user;
+      
+      // Admin users go to admin dashboard
+      if (userFromResponse && userFromResponse.role === 'admin') {
+        navigate('/super-admin-dashboard');
+        return;
+      }
+      
+      // Developer setup flow
       if (setupIntent === 'developer-setup') {
         if (userFromResponse && userFromResponse.setup_completed === true) {
-          // Already completed, send to main page
           navigate('/');
         } else {
           navigate('/?setup=developer');
         }
-      } else if (setupIntent === 'client-setup') {
+      } 
+      // Client setup flow
+      else if (setupIntent === 'client-setup') {
         if (userFromResponse && userFromResponse.setup_completed === true) {
           navigate('/');
         } else {
           navigate('/?setup=client');
         }
-      } else {
+      } 
+      // Default redirect
+      else {
         navigate('/');
       }
     } catch (error) {
