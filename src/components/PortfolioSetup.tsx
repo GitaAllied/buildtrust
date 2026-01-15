@@ -158,9 +158,6 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
 
         // Upload any credentials / license files first
         const userId = user?.id;
-        console.log('Submitting developer setup. UserId:', userId);
-        console.log('Profile payload:', profileData);
-        console.log('Projects to save:', formData.projects?.length || 0);
         
         try {
           let uploadedCount = 0;
@@ -205,7 +202,6 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             }
           }
 
-          console.log('Uploaded documents count:', uploadedCount);
         } catch (uploadErr) {
           console.error('Document upload failed:', uploadErr);
           // Continue saving profile even if upload fails; optionally notify user
@@ -214,10 +210,6 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
         // Save projects BEFORE updating profile (so they're ready before setup completion)
         let savedProjectsCount = 0;
         if (formData.projects && formData.projects.length > 0) {
-          console.log('📁 SAVING PROJECTS:', {
-            count: formData.projects.length,
-            timestamp: new Date().toISOString()
-          });
           
           for (const project of formData.projects) {
             try {
@@ -232,33 +224,15 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
                   client_id: userId,
                 };
                 
-                console.log('💾 Creating project:', projectData);
                 const projectResponse = await (apiClient as any).createProject(projectData);
                 const projectId = projectResponse?.id || projectResponse?.project?.id;
-                
-                console.log('✅ PROJECT CREATED:', {
-                  projectId,
-                  title: project.title,
-                  timestamp: new Date().toISOString()
-                });
 
                 // Upload project media if any
                 if (projectId && project.media && project.media.length > 0) {
-                  console.log('🎬 UPLOADING PROJECT MEDIA:', {
-                    projectId,
-                    fileCount: project.media.length,
-                    timestamp: new Date().toISOString()
-                  });
-                  
                   for (const mediaFile of project.media) {
                     if (mediaFile instanceof File) {
                       try {
                         await (apiClient as any).uploadProjectMedia(projectId, mediaFile);
-                        console.log('✅ MEDIA UPLOADED:', {
-                          projectId,
-                          fileName: mediaFile.name,
-                          timestamp: new Date().toISOString()
-                        });
                       } catch (mediaErr) {
                         console.error('Failed to upload media:', mediaErr);
                         // Continue even if media upload fails
@@ -282,22 +256,10 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
         }
 
         try {
-          console.log('📤 UPDATING PROFILE WITH COMPLETION:', {
-            timestamp: new Date().toISOString(),
-            profileData
-          });
-          
           const updated = await apiClient.updateProfile(profileData);
-          console.log('✅ PROFILE UPDATE RESPONSE:', {
-            setupCompleted: updated?.user?.setup_completed,
-            timestamp: new Date().toISOString()
-          });
 
           // If server confirms setup_completed, navigate to developer dashboard
           if (updated && updated.user && updated.user.setup_completed === 1) {
-            console.log('🎉 SETUP COMPLETE - NAVIGATING TO DASHBOARD:', {
-              timestamp: new Date().toISOString()
-            });
             // Refresh auth context (so Index and others pick up new status)
             await refreshUser();
             navigate('/developer-dashboard', { replace: true });

@@ -87,20 +87,10 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         cleanedProfileData[k] = v;
       });
 
-      console.log('📤 SUBMITTING CLIENT PROFILE DATA:', {
-        timestamp: new Date().toISOString(),
-        profileData: cleanedProfileData,
-        formData,
-        userId: user?.id,
-        userEmail: user?.email
-      });
-
       try {
         const response = await apiClient.updateProfile(cleanedProfileData);
-        console.log('✅ PROFILE UPDATE RESPONSE:', response);
         
         await refreshUser();
-        console.log('✅ USER REFRESHED AFTER PROFILE UPDATE');
         
         setIsComplete(true);
       } catch (error: any) {
