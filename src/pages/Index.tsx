@@ -47,13 +47,18 @@ const Index = () => {
         return;
       }
       
+      // Only force setup redirect if email is verified AND setup is NOT completed
       if (user.email_verified && !user.setup_completed) {
-        // Force redirect to setup if not completed
         if (user.role === "developer") {
           setShowSetup(true);
         } else if (user.role === "client") {
           setShowClientSetup(true);
         }
+        return;
+      }
+      
+      // If setup is completed, allow user to stay on homepage
+      if (user.setup_completed) {
         return;
       }
     }
