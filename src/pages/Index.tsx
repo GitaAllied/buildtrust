@@ -42,6 +42,11 @@ const Index = () => {
   // Check if user came from setup flow
   useEffect(() => {
     if (user && !loading) {
+      // Admin users don't need setup - they go straight to dashboard
+      if (user.role === 'admin') {
+        return;
+      }
+      
       if (user.email_verified && !user.setup_completed) {
         // Force redirect to setup if not completed
         if (user.role === "developer") {
@@ -75,6 +80,12 @@ const Index = () => {
 
   // Handle developer setup authentication check
   const handleDeveloperSetup = () => {
+    // Admin users shouldn't access setup
+    if (user && user.role === 'admin') {
+      navigate("/super-admin-dashboard");
+      return;
+    }
+    
     if (user) {
       // Check if email is verified
       if (user.email_verified) {
@@ -92,6 +103,12 @@ const Index = () => {
 
   // Handle client setup authentication check
   const handleClientSetup = () => {
+    // Admin users shouldn't access setup
+    if (user && user.role === 'admin') {
+      navigate("/super-admin-dashboard");
+      return;
+    }
+    
     if (user) {
       // Check if email is verified
       if (user.email_verified) {
@@ -433,15 +450,28 @@ const Index = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center mb-16 px-4">
-            <Button
-              size="lg"
-              onClick={handleClientSetup}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
-            >
-              <User className="w-5 h-5 mr-2" />
-              Join as Client
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+            {(!user || user.role !== 'admin') && (
+              <>
+                <Button
+                  size="lg"
+                  onClick={handleClientSetup}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
+                >
+                  <User className="w-5 h-5 mr-2" />
+                  Join as Client
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={handleDeveloperSetup}
+                  className="bg-white/10 backdrop-blur-sm border-2 border-white/30 hover:bg-white/20 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold text-white shadow-xl hover:shadow-2xl transition-all duration-300 w-full sm:w-auto"
+                >
+                  <Heart className="w-5 h-5 mr-2" />
+                  Join as Developer
+                </Button>
+              </>
+            )}
             <Button
               size="lg"
               onClick={() => navigate("/browse")}
@@ -449,15 +479,6 @@ const Index = () => {
             >
               <Globe className="w-5 h-5 mr-2" />
               Find Your Developer
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={handleDeveloperSetup}
-              className="bg-white/10 backdrop-blur-sm border-2 border-white/30 hover:bg-white/20 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold text-white shadow-xl hover:shadow-2xl transition-all duration-300 w-full sm:w-auto"
-            >
-              <Heart className="w-5 h-5 mr-2" />
-              Join as Developer
             </Button>
           </div>
 
