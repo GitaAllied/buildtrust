@@ -48,7 +48,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
       setCurrentStep(currentStep + 1);
     } else {
       // Define profileData outside try to avoid ReferenceError in catch
-      const profileData = {
+      const profileData: Record<string, any> = {
         name: formData.personal.fullName,
         phone: formData.personal.phoneNumber,
         location: formData.personal.currentLocation,
@@ -56,17 +56,51 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         preferred_contact: formData.personal.preferredContact,
       };
 
+      // Add preferences data from BuildPreferences
+      if (formData.preferences) {
+        const prefs = formData.preferences as any;
+        if (prefs.projectTypes && prefs.projectTypes.length > 0) {
+          profileData.project_types = prefs.projectTypes;
+        }
+        if (prefs.preferredCities && prefs.preferredCities.length > 0) {
+          profileData.preferred_cities = prefs.preferredCities;
+        }
+        if (prefs.budgetRange) {
+          profileData.budget_range = prefs.budgetRange;
+        }
+        if (prefs.workingStyle) {
+          profileData.working_style = prefs.workingStyle;
+        }
+        if (prefs.availability) {
+          profileData.availability = prefs.availability;
+        }
+        if (prefs.specializations && prefs.specializations.length > 0) {
+          profileData.specializations = prefs.specializations;
+        }
+      }
+
+      // Remove undefined or empty string values
+      const cleanedProfileData: Record<string, any> = {};
+      Object.entries(profileData).forEach(([k, v]) => {
+        if (v === undefined || v === null) return;
+        if (typeof v === 'string' && v.trim() === '') return;
+        cleanedProfileData[k] = v;
+      });
+
       try {
-        await apiClient.updateProfile(profileData);
+        const response = await apiClient.updateProfile(cleanedProfileData);
+        
         await refreshUser();
+        
         setIsComplete(true);
       } catch (error: any) {
-        console.error('Failed to save profile:', {
+        console.error('❌ FAILED TO SAVE PROFILE:', {
           message: error.message,
           status: error.status,
           body: error.body,
           url: error.url,
-          payload: profileData,  // Now accessible
+          payload: cleanedProfileData,
+          timestamp: new Date().toISOString()
         });
         // show user-friendly UI message
         alert('An error occurred while updating your profile. Check console for details.');

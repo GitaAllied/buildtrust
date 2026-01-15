@@ -158,8 +158,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
 
         // Upload any credentials / license files first
         const userId = user?.id;
-        console.log('Submitting developer setup. UserId:', userId);
-        console.log('Profile payload:', profileData);
+        
         try {
           let uploadedCount = 0;
           if (userId && formData.credentials) {
@@ -203,17 +202,63 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             }
           }
 
-          console.log('Uploaded documents count:', uploadedCount);
         } catch (uploadErr) {
           console.error('Document upload failed:', uploadErr);
           // Continue saving profile even if upload fails; optionally notify user
         }
 
+        // Save projects BEFORE updating profile (so they're ready before setup completion)
+        let savedProjectsCount = 0;
+        if (formData.projects && formData.projects.length > 0) {
+          
+          for (const project of formData.projects) {
+            try {
+              // Only save if project has title and description
+              if (project.title && project.description) {
+                const projectData = {
+                  title: project.title,
+                  type: project.type || '',
+                  location: project.location || '',
+                  budget: project.budget || '',
+                  description: project.description,
+                  client_id: userId,
+                };
+                
+                const projectResponse = await (apiClient as any).createProject(projectData);
+                const projectId = projectResponse?.id || projectResponse?.project?.id;
+
+                // Upload project media if any
+                if (projectId && project.media && project.media.length > 0) {
+                  for (const mediaFile of project.media) {
+                    if (mediaFile instanceof File) {
+                      try {
+                        await (apiClient as any).uploadProjectMedia(projectId, mediaFile);
+                      } catch (mediaErr) {
+                        console.error('Failed to upload media:', mediaErr);
+                        // Continue even if media upload fails
+                      }
+                    }
+                  }
+                }
+                
+                savedProjectsCount++;
+              }
+            } catch (projectErr) {
+              console.error('Failed to save project:', projectErr);
+              // Continue to next project even if one fails
+            }
+          }
+          
+          console.log('📦 PROJECTS SAVED:', {
+            count: savedProjectsCount,
+            timestamp: new Date().toISOString()
+          });
+        }
+
         try {
           const updated = await apiClient.updateProfile(profileData);
-          console.log('Profile update response:', updated);
 
-          // If server confirms setup_completed, navigate to developer dashboard and avoid showing setup again
+          // If server confirms setup_completed, navigate to developer dashboard
           if (updated && updated.user && updated.user.setup_completed === 1) {
             // Refresh auth context (so Index and others pick up new status)
             await refreshUser();
@@ -221,24 +266,10 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             return;
           }
 
-          // Save projects (if any)
-          if (formData.projects && formData.projects.length > 0) {
-            for (const project of formData.projects) {
-              const projectData = {
-                title: project.title,
-                type: project.type,
-                location: project.location,
-                budget: project.budget,
-                description: project.description,
-              };
-              await (apiClient as any).createProject(projectData);
-            }
-          }
-
           await refreshUser();
           setIsComplete(true);
         } catch (error: any) {
-          console.error('Failed to save:', error);
+          console.error('Failed to save profile:', error);
 
           // Try to parse backend validation details and show a user-friendly message
           let message = 'An error occurred while saving your profile.';
@@ -252,7 +283,6 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
 
           // Show an in-component alert
           setIsComplete(false);
-          // We reuse refreshUser so the top-level state is updated later
           alert(message);
         }
       } catch (err) {

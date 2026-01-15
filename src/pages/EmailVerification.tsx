@@ -57,6 +57,14 @@ export default function EmailVerification() {
     }
   }, [user]);
 
+  // If the user is already verified, force-redirect them away from this page
+  useEffect(() => {
+    if (user?.email_verified) {
+      const role = user.role === 'developer' ? 'developer' : 'client';
+      navigate(`/?setup=${role}`, { replace: true });
+    }
+  }, [user, navigate]);
+
   const handleVerification = async (verificationToken: string) => {
     setVerifying(true);
     setError(null);

@@ -21,22 +21,12 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
 
   const lastEmittedRef = useRef<string | null>(null);
 
-  const mapToDb = (p: typeof preferences) => ({
-    project_types: p.projectTypes,
-    preferred_cities: p.preferredCities,
-    budget_range: p.budgetRange,
-    working_style: p.workingStyle,
-    availability: p.availability,
-    specializations: p.specializations,
-  });
-
-  // Sync local state with parent (emit DB-shaped payload) but avoid infinite loops by only emitting when payload changes
+  // Sync local state with parent (emit camelCase payload to match parent's formData structure)
   useEffect(() => {
-    const mapped = mapToDb(preferences);
-    const serialized = JSON.stringify(mapped);
+    const serialized = JSON.stringify(preferences);
     if (lastEmittedRef.current !== serialized) {
       lastEmittedRef.current = serialized;
-      onChange(mapped);
+      onChange(preferences);
     }
   }, [preferences, onChange]);
 
