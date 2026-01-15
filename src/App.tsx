@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import EmailVerification from "./pages/EmailVerification";
@@ -59,8 +60,22 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/browse" element={<BrowseDevelopers />} />
             <Route path="/developer/:id" element={<DeveloperProfile />} />
-            <Route path="/client-dashboard" element={<ClientDashboard />} />
-            <Route path="/developer-dashboard" element={<DeveloperDashboard />} />
+            <Route 
+              path="/client-dashboard" 
+              element={
+                <ProtectedRoute requiredRole="client">
+                  <ClientDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/developer-dashboard" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperDashboard />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/users/:userId" element={<AdminUserView />} />
