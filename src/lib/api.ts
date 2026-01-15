@@ -216,6 +216,46 @@ class ApiClient {
   async getCurrentUser() {
     return this.request('/auth/me', { method: 'GET' });
   }
+
+  async createProject(data: Record<string, unknown>) {
+    console.log('📦 CREATING PROJECT:', {
+      timestamp: new Date().toISOString(),
+      projectData: data
+    });
+    return this.request('/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async uploadProjectMedia(projectId: number, file: File | Blob) {
+    const token = localStorage.getItem('auth_token');
+    const form = new FormData();
+    form.append('file', file as any);
+
+    const headers: HeadersInit = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    console.log('🎬 UPLOADING PROJECT MEDIA:', {
+      timestamp: new Date().toISOString(),
+      projectId,
+      fileName: (file as any).name
+    });
+
+    const response = await fetch(`${this.baseUrl}/projects/${projectId}/media`, {
+      method: 'POST',
+      headers,
+      body: form,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Media upload failed (${response.status})`);
+    }
+
+    return response.json();
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
