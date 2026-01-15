@@ -93,7 +93,7 @@ const AdminSupportSettings = () => {
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Support</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">Support Settings</h1>
                 <p className="text-sm text-gray-500">Configure support system settings</p>
               </div>

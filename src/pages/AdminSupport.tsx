@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, AlertTriangle, CheckCircle, Clock, User, Mail, Phone, Shield } from "lucide-react";
+import { MessageSquare, User, Mail, Phone, Shield, AlertTriangle } from "lucide-react";
 
 const AdminSupport = () => {
   const navigate = useNavigate();
@@ -61,36 +61,6 @@ const AdminSupport = () => {
     }
   ];
 
-  const systemAlerts = [
-    {
-      id: 1,
-      type: "error",
-      title: "Payment Gateway Timeout",
-      description: "Flutterwave payment gateway is experiencing timeouts",
-      severity: "Critical",
-      time: "5 minutes ago",
-      status: "Active"
-    },
-    {
-      id: 2,
-      type: "warning",
-      title: "High Server Load",
-      description: "Server CPU usage above 80%",
-      severity: "Warning",
-      time: "15 minutes ago",
-      status: "Active"
-    },
-    {
-      id: 3,
-      type: "info",
-      title: "Database Backup Completed",
-      description: "Daily backup completed successfully",
-      severity: "Info",
-      time: "2 hours ago",
-      status: "Resolved"
-    }
-  ];
-
   const filteredTickets = supportTickets.filter(ticket => {
     const matchesCategory = selectedCategory === "all" || ticket.category.toLowerCase() === selectedCategory;
     const matchesStatus = selectedStatus === "all" || ticket.status.toLowerCase().replace(" ", "") === selectedStatus;
@@ -115,19 +85,6 @@ const AdminSupport = () => {
     return <Badge className={colors[priority as keyof typeof colors] || ""}>{priority}</Badge>;
   };
 
-  const getAlertIcon = (type: string) => {
-    switch (type) {
-      case "error":
-        return <AlertTriangle className="h-5 w-5 text-red-600" />;
-      case "warning":
-        return <Clock className="h-5 w-5 text-orange-600" />;
-      case "info":
-        return <CheckCircle className="h-5 w-5 text-blue-600" />;
-      default:
-        return <AlertTriangle className="h-5 w-5 text-gray-600" />;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -143,37 +100,12 @@ const AdminSupport = () => {
                 <Shield className="h-5 w-5" />
                 <span>Back to Dashboard</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">Support Center</h1>
                 <p className="text-sm text-gray-500">Manage support tickets and system alerts</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/admin/support/create')}
-              >
-                Create Ticket
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/admin/support/categories')}
-              >
-                Manage Categories
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/admin/support/analytics')}
-              >
-                View Analytics
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/admin/support/settings')}
-              >
-                Settings
-              </Button>
-            </div>
+            
           </div>
         </div>
       </div>
@@ -183,37 +115,6 @@ const AdminSupport = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* System Alerts */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <AlertTriangle className="mr-2 h-5 w-5" />
-                  Active System Alerts
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {systemAlerts.filter(alert => alert.status === "Active").map((alert) => (
-                    <div key={alert.id} className="flex items-start space-x-4 p-4 border rounded-lg">
-                      {getAlertIcon(alert.type)}
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-gray-900">{alert.title}</h4>
-                          <Badge variant={alert.severity === "Critical" ? "destructive" : "secondary"}>
-                            {alert.severity}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">{alert.description}</p>
-                        <p className="text-xs text-gray-500 mt-2">{alert.time}</p>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        Resolve
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Support Tickets */}
             <Card>
@@ -225,7 +126,7 @@ const AdminSupport = () => {
                   </CardTitle>
                   <div className="flex items-center space-x-3">
                     <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger className="w-full sm:w-32">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -237,7 +138,7 @@ const AdminSupport = () => {
                       </SelectContent>
                     </Select>
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger className="w-full sm:w-32">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -254,13 +155,13 @@ const AdminSupport = () => {
                 <div className="space-y-4">
                   {filteredTickets.map((ticket) => (
                     <div key={ticket.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
                             <h4 className="font-medium text-gray-900">{ticket.subject}</h4>
                             {getPriorityBadge(ticket.priority)}
                           </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                          <div className="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
                             <span className="flex items-center">
                               <User className="h-4 w-4 mr-1" />
                               {ticket.user}
@@ -276,7 +177,7 @@ const AdminSupport = () => {
                             <span>Last update: {ticket.lastUpdate}</span>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 mt-3 sm:mt-0">
                           {getStatusBadge(ticket.status)}
                           <Button
                             variant="outline"
@@ -327,21 +228,14 @@ const AdminSupport = () => {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full justify-start" variant="outline">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Send Broadcast Message
+                <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/support/create')}>
+                  <MessageSquare className="mr-2 h-4 w-4" /> Create Ticket
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <AlertTriangle className="mr-2 h-4 w-4" />
-                  Create System Alert
+                <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/support/categories')}>
+                  <MessageSquare className="mr-2 h-4 w-4" /> Manage Categories
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <User className="mr-2 h-4 w-4" />
-                  Contact User Support
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <Phone className="mr-2 h-4 w-4" />
-                  Emergency Contact
+                <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/support/settings')}>
+                  <MessageSquare className="mr-2 h-4 w-4" /> Settings
                 </Button>
               </CardContent>
             </Card>

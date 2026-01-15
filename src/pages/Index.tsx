@@ -69,15 +69,23 @@ const Index = () => {
       }
     }
 
-    const setupParam = searchParams.get("setup");
-    if (setupParam === "developer" && user && !loading) {
-      setShowSetup(true);
-      // Clean up the URL
-      navigate("/", { replace: true });
-    } else if (setupParam === "client" && user && !loading) {
-      setShowClientSetup(true);
-      // Clean up the URL
-      navigate("/", { replace: true });
+    const setupParam = searchParams.get('setup');
+    if (setupParam === 'developer' && user && !loading) {
+      if (user.email_verified && !user.setup_completed) {
+        setShowSetup(true);
+        // Clean up the URL
+        navigate('/', { replace: true });
+      } else {
+        // Already completed or not verified — just clean the URL
+        navigate('/', { replace: true });
+      }
+    } else if (setupParam === 'client' && user && !loading) {
+      if (user.email_verified && !user.setup_completed) {
+        setShowClientSetup(true);
+        navigate('/', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     }
   }, [searchParams, user, loading, navigate]);
 

@@ -7,12 +7,9 @@ import {
   Shield,
   Mail,
   CreditCard,
-  Database,
   Bell,
   Lock,
   Globe,
-  FileText,
-  AlertTriangle,
   ArrowLeft,
   ChevronRight
 } from "lucide-react";
@@ -74,42 +71,6 @@ const AdminSettings = () => {
       path: '/admin/settings/notifications',
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50'
-    },
-    {
-      id: 'api',
-      title: 'API Management',
-      description: 'API keys, webhooks, rate limiting, and security',
-      icon: Lock,
-      path: '/admin/settings/api',
-      color: 'text-red-600',
-      bgColor: 'bg-red-50'
-    },
-    {
-      id: 'database',
-      title: 'Database Settings',
-      description: 'Database configuration, backups, and maintenance',
-      icon: Database,
-      path: '/admin/settings/database',
-      color: 'text-teal-600',
-      bgColor: 'bg-teal-50'
-    },
-    {
-      id: 'logs',
-      title: 'System Logs',
-      description: 'Activity monitoring, log management, and analytics',
-      icon: FileText,
-      path: '/admin/settings/logs',
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-50'
-    },
-    {
-      id: 'maintenance',
-      title: 'Maintenance Mode',
-      description: 'Scheduled maintenance, downtime management, and user notifications',
-      icon: AlertTriangle,
-      path: '/admin/settings/maintenance',
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50'
     }
   ];
 
@@ -186,43 +147,6 @@ const AdminSettings = () => {
               </Card>
             );
           })}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button
-                  variant="outline"
-                  className="justify-start w-full md:w-auto"
-                  onClick={() => navigate('/admin/settings/maintenance')}
-                >
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Enable Maintenance Mode
-                </Button>
-                <Button
-                  variant="outline"
-                  className="justify-start w-full md:w-auto"
-                  onClick={() => navigate('/admin/settings/logs')}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  View System Logs
-                </Button>
-                <Button
-                  variant="outline"
-                  className="justify-start w-full md:w-auto"
-                  onClick={() => navigate('/admin/settings/database')}
-                >
-                  <Database className="h-4 w-4 mr-2" />
-                  Database Backup
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* System Status Overview */}

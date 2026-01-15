@@ -138,12 +138,12 @@ const AdminSettingsPassword = () => {
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Settings</span>
               </Button>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">Change Admin Password</h1>
                 <p className="text-sm text-gray-500">Update your administrator password</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 hidden sm:block">
               <Shield className="h-6 w-6 text-red-600" />
               <span className="text-sm font-medium text-gray-700">Super Admin</span>
             </div>
