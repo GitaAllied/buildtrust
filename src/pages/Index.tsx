@@ -442,17 +442,6 @@ const Index = () => {
             </Button>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center mb-16 px-4">
-            <Button
-              size="lg"
-              onClick={() => navigate("/browse")}
-              className="bg-white/10 backdrop-blur-sm border-2 border-white/30 hover:bg-white/20 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold text-white shadow-xl hover:shadow-2xl transition-all duration-300 w-full sm:w-auto"
-            >
-              <Globe className="w-5 h-5 mr-2" />
-              Find Your Developer
-            </Button>
-          </div>
-
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 p-3 border-t border-slate-100 dark:border-neutral-900">
             <div>
