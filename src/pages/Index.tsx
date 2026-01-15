@@ -229,6 +229,15 @@ const Index = () => {
                     Developer Dashboard
                   </Button>
                 )}
+                {user.role === 'admin' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/super-admin-dashboard")}
+                    className="border-purple-200 hover:border-purple-300 hover:bg-purple-50"
+                  >
+                    Admin Dashboard
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   onClick={signOut}
@@ -325,6 +334,18 @@ const Index = () => {
                         className="w-full border-green-200 hover:border-green-300 hover:bg-green-50"
                       >
                         Developer Dashboard
+                      </Button>
+                    )}
+                    {user.role === 'admin' && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          navigate("/super-admin-dashboard");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full border-purple-200 hover:border-purple-300 hover:bg-purple-50"
+                      >
+                        Admin Dashboard
                       </Button>
                     )}
                     <Button
@@ -497,6 +518,15 @@ const Index = () => {
                       className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 sm:px-8 py-3 font-semibold w-full sm:w-auto"
                     >
                       Go to Developer Dashboard →
+                    </Button>
+                  )}
+                  {user.role === 'admin' && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => navigate("/super-admin-dashboard")}
+                      className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 sm:px-8 py-3 font-semibold w-full sm:w-auto"
+                    >
+                      Go to Admin Dashboard →
                     </Button>
                   )}
                 </div>
