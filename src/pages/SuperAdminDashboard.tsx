@@ -50,7 +50,8 @@ const SuperAdminDashboard = () => {
     { id: "messages", label: "Messages" },
     { id: "reports", label: "Reports" },
     { id: "settings", label: "System Settings" },
-    { id: "support", label: "Support" }
+    { id: "support", label: "Support" },
+    { id: "logout", label: "Sign Out", action: "logout" }
   ];
 
   const systemAlerts = [
@@ -145,6 +146,9 @@ const SuperAdminDashboard = () => {
       case "support":
         navigate('/admin/support');
         break;
+      case "logout":
+        handleLogout();
+        break;
       default:
         navigate('/super-admin-dashboard');
     }
@@ -193,7 +197,9 @@ const SuperAdminDashboard = () => {
                 setSidebarOpen(false);
               }}
               className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-colors text-sm md:text-base ${
-                activeTab === item.id
+                item.id === "logout"
+                  ? "bg-red-50 text-red-700 font-medium hover:bg-red-100 border border-red-200 mt-4 pt-4"
+                  : activeTab === item.id
                   ? "bg-red-50 text-red-700 font-medium"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
@@ -220,15 +226,7 @@ const SuperAdminDashboard = () => {
                   
                 </div>
               </div>
-              <div className="flex items-center space-x-2 gap-2 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/admin/settings')}
-                  className="text-xs"
-                >
-                  System Settings
-                </Button>
+              <div className="hidden md:flex items-center space-x-2 gap-2 flex-wrap">
                 <Button
                   variant="destructive"
                   size="sm"
