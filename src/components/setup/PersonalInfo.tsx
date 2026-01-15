@@ -386,22 +386,6 @@ const PersonalInfo = ({ data, onChange, userType = 'developer' }: PersonalInfoPr
           </span>
         </div>
       </div>
-
-      <div className="flex gap-3">
-        <button
-          onClick={handleNext}
-          disabled={!isFormValid()}
-          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-            isFormValid()
-              ? userType === 'developer'
-                ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
-                : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          Continue to Next Step
-        </button>
-      </div>
     </div>
   );
 };
