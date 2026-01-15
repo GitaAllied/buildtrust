@@ -198,7 +198,7 @@ const SuperAdminDashboard = () => {
               }}
               className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-colors text-sm md:text-base ${
                 item.id === "logout"
-                  ? "bg-red-50 text-red-700 font-medium hover:bg-red-100 border border-red-200 mt-4 pt-4"
+                  ? "text-gray-600 hover:bg-gray-50 mt-4 pt-4 border-t"
                   : activeTab === item.id
                   ? "bg-red-50 text-red-700 font-medium"
                   : "text-gray-600 hover:bg-gray-50"
