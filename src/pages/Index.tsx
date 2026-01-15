@@ -238,25 +238,11 @@ const Index = () => {
             </a>
             {user ? (
               <div className="flex items-center space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/client-dashboard")}
-                  className="border-[#226F75] border-opacity-20 hover:border-opacity-30 hover:bg-[#226F75] hover:bg-opacity-30"
-                >
-                  Client Dashboard
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/developer-dashboard")}
-                  className="border-green-200 hover:border-green-300 hover:bg-green-50"
-                >
-                  Developer Dashboard
-                </Button>
                 {user.role === 'client' && (
                   <Button
                     variant="outline"
                     onClick={() => navigate("/client-dashboard")}
-                    className="border-green-200 hover:border-green-300 hover:bg-green-50"
+                    className="border-[#226F75] border-opacity-20 hover:border-opacity-30 hover:bg-[#226F75] hover:bg-opacity-30"
                   >
                     Client Dashboard
                   </Button>
