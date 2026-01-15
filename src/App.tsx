@@ -76,32 +76,214 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/users/:userId" element={<AdminUserView />} />
-            <Route path="/admin/users/:userId/edit" element={<AdminUserEdit />} />
-            <Route path="/admin/reports" element={<AdminReports />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-            <Route path="/admin/settings/general" element={<AdminSettingsGeneral />} />
-            <Route path="/admin/settings/security" element={<AdminSettingsSecurity />} />
-            <Route path="/admin/settings/password" element={<AdminSettingsPassword />} />
-            <Route path="/admin/settings/email" element={<AdminSettingsEmail />} />
-            <Route path="/admin/settings/payment" element={<AdminSettingsPayment />} />
-            <Route path="/admin/settings/notifications" element={<AdminSettingsNotifications />} />
-            <Route path="/admin/support" element={<AdminSupport />} />
-            <Route path="/admin/support/ticket/:ticketId" element={<AdminSupportTicketDetail />} />
-            <Route path="/admin/support/create" element={<AdminSupportCreate />} />
-            <Route path="/admin/support/categories" element={<AdminSupportCategories />} />
-            <Route path="/admin/support/settings" element={<AdminSupportSettings />} />
-            <Route path="/admin/messages" element={<AdminMessages />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/contracts" element={<Contracts />} />
-            <Route path="/saved-developers" element={<SavedDevelopers />} />
-            <Route path="/project-requests" element={<ProjectRequests />} />
-            <Route path="/upload-update" element={<UploadUpdate />} />
+            <Route 
+              path="/super-admin-dashboard" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <SuperAdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/users" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminUsers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/users/:userId" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminUserView />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/users/:userId/edit" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminUserEdit />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/reports" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminReports />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/settings" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSettings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/settings/general" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSettingsGeneral />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/settings/security" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSettingsSecurity />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/settings/password" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSettingsPassword />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/settings/email" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSettingsEmail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/settings/payment" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSettingsPayment />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/settings/notifications" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSettingsNotifications />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/support" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSupport />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/support/ticket/:ticketId" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSupportTicketDetail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/support/create" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSupportCreate />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/support/categories" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSupportCategories />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/support/settings" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSupportSettings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/messages" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminMessages />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/messages" 
+              element={
+                <ProtectedRoute>
+                  <Messages />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/payments" 
+              element={
+                <ProtectedRoute>
+                  <Payments />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/projects" 
+              element={
+                <ProtectedRoute>
+                  <Projects />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/contracts" 
+              element={
+                <ProtectedRoute>
+                  <Contracts />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/saved-developers" 
+              element={
+                <ProtectedRoute requiredRole="client">
+                  <SavedDevelopers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/project-requests" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <ProjectRequests />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/upload-update" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <UploadUpdate />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/support" element={<Support />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
