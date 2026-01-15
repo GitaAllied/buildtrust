@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Star,
   Upload,
@@ -24,13 +25,24 @@ import {
   BarChart3,
   Shield,
   AlertTriangle,
-  Menu
+  Menu,
+  LogOut
 } from "lucide-react";
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", active: true },
@@ -209,7 +221,6 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-2 gap-2 flex-wrap">
-
                 <Button
                   variant="outline"
                   size="sm"
@@ -217,6 +228,16 @@ const SuperAdminDashboard = () => {
                   className="text-xs"
                 >
                   System Settings
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-xs flex items-center gap-1"
+                >
+                  <LogOut className="h-3 w-3" />
+                  <span className="hidden sm:inline">Sign Out</span>
+                  <span className="sm:hidden">Out</span>
                 </Button>
               </div>
             </div>
