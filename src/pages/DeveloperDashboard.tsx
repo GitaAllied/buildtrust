@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Star, 
   Upload, 
@@ -27,6 +28,7 @@ const DeveloperDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", active: true },
@@ -204,7 +206,7 @@ const DeveloperDashboard = () => {
                   <AvatarFallback>EA</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 md:flex-none">
-                  <h1 className="text-lg md:text-2xl font-bold text-gray-900">Welcome back, Engr. Adewale</h1>
+                  <h1 className="text-lg md:text-2xl font-bold text-gray-900">Welcome back, {user?.name || "Developer"}</h1>
                   <div className="flex items-center space-x-2 flex-wrap">
                     <span className="text-xs md:text-sm text-gray-500">Trust Score:</span>
                     <Progress value={92} className="w-12 md:w-20 h-2" />

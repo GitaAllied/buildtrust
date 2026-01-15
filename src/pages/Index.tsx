@@ -453,29 +453,10 @@ const Index = () => {
             >
               <Heart className="w-5 h-5 mr-2" />
               Join as Developer
+            </Button>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center mb-16 px-4">
-            {(!user || (user.role !== 'admin' && user.role !== undefined)) && (
-              <>
-                <Button
-                  size="lg"
-                  onClick={handleClientSetup}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
-                >
-                  <User className="w-5 h-5 mr-2" />
-                  Join as Client
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={handleDeveloperSetup}
-                  className="bg-white/10 backdrop-blur-sm border-2 border-white/30 hover:bg-white/20 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold text-white shadow-xl hover:shadow-2xl transition-all duration-300 w-full sm:w-auto"
-                >
-                  <Heart className="w-5 h-5 mr-2" />
-                  Join as Developer
-                </Button>
-              </>
-            )}
             <Button
               size="lg"
               onClick={() => navigate("/browse")}
@@ -527,52 +508,6 @@ const Index = () => {
               <div>
                 <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold">
                   Project Pulse
-          {/* Quick Access for Existing Users */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 sm:p-10 border border-white/20 shadow-2xl max-w-3xl mx-auto px-4">
-            {user ? (
-              <>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center border border-green-400/30">
-                    <Check className="w-5 h-5 text-green-300" />
-                  </div>
-                  <p className="text-white font-medium text-base sm:text-lg text-center sm:text-left">
-                    Welcome back, {user.email}!
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
-                  {user.role === 'client' && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => navigate("/client-dashboard")}
-                      className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 sm:px-8 py-3 font-semibold w-full sm:w-auto"
-                    >
-                      Go to Client Dashboard →
-                    </Button>
-                  )}
-                  {user.role === 'developer' && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => navigate("/developer-dashboard")}
-                      className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 sm:px-8 py-3 font-semibold w-full sm:w-auto"
-                    >
-                      Go to Developer Dashboard →
-                    </Button>
-                  )}
-                  {user.role === 'admin' && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => navigate("/super-admin-dashboard")}
-                      className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 sm:px-8 py-3 font-semibold w-full sm:w-auto"
-                    >
-                      Go to Admin Dashboard →
-                    </Button>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-gray-200 mb-6 font-medium text-base sm:text-lg text-center">
-                  Already have an account?
                 </p>
                 <p className="font-bold text-sm tracking-tight">
                   Building Phase: Foundation
