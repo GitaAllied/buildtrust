@@ -191,30 +191,36 @@ const AdminSupportCategories = () => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
                 onClick={() => navigate('/admin/support')}
                 className="flex items-center space-x-2"
+                aria-label="Back to Support"
               >
                 <ArrowLeft className="h-5 w-5" />
-                <span>Back to Support</span>
+                <span className="hidden sm:inline">Back to Support</span>
               </Button>
-              <div>
+              <div className="block sm:hidden">
+                <h1 className="text-lg font-bold text-gray-900">Support Categories</h1>
+                <p className="text-xs text-gray-500">Manage support ticket categories</p>
+              </div>
+              <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gray-900">Support Categories</h1>
                 <p className="text-sm text-gray-500">Manage support ticket categories</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 w-full sm:w-auto">
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-red-600 hover:bg-red-700">
+                  <Button className="bg-red-600 hover:bg-red-700 w-full sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Category
+                    <span className="hidden sm:inline">Add Category</span>
+                    <span className="sm:hidden">Add</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="w-full max-w-md">
                   <DialogHeader>
                     <DialogTitle>Create New Category</DialogTitle>
                     <DialogDescription>
@@ -260,17 +266,14 @@ const AdminSupportCategories = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              <div className="flex items-center space-x-2">
-                <Shield className="h-6 w-6 text-red-600" />
-                <span className="text-sm font-medium text-gray-700">Super Admin</span>
-              </div>
+              
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {categories.map((category) => (
             <Card key={category.id} className={`relative ${!category.isActive ? 'opacity-60' : ''}`}>
               <CardHeader className="pb-3">
@@ -313,7 +316,7 @@ const AdminSupportCategories = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <span className="text-xs text-gray-500">
                     Created: {category.createdAt}
                   </span>
@@ -321,6 +324,7 @@ const AdminSupportCategories = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleToggleStatus(category.id)}
+                    className="self-start sm:self-auto w-full sm:w-auto"
                   >
                     {category.isActive ? "Deactivate" : "Activate"}
                   </Button>
@@ -332,7 +336,7 @@ const AdminSupportCategories = () => {
 
         {/* Edit Category Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent>
+          <DialogContent className="w-full max-w-md">
             <DialogHeader>
               <DialogTitle>Edit Category</DialogTitle>
               <DialogDescription>
