@@ -111,14 +111,14 @@ export default function ResetPassword() {
             <CardHeader className="text-center space-y-4 pb-8">
               <div className="flex justify-center">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-500 rounded-full blur opacity-50 animate-pulse" />
-                  <div className="relative bg-gradient-to-r from-green-500 to-blue-600 p-3 rounded-full">
-                    <Sparkles className="h-8 w-8 text-white" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#226F75] to-[#253E44] rounded-full blur opacity-40 animate-pulse" />
+                  <div className="relative bg-gradient-to-r from-[#226F75] to-[#253E44] p-4 rounded-full">
+                    <CheckCircle className="h-10 w-10 text-white" />
                   </div>
                 </div>
               </div>
               <div>
-                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-[#226F75] to-[#253E44] bg-clip-text text-transparent">
                   Password Reset Successful!
                 </CardTitle>
                 <CardDescription className="text-base mt-2">
@@ -134,7 +134,7 @@ export default function ResetPassword() {
                 </p>
                 <Link
                   to="/auth"
-                  className="inline-flex items-center gap-2 text-sm text-green-600 hover:text-green-700 font-medium underline mt-2"
+                  className="inline-flex items-center gap-2 text-sm text-[#226F75] hover:text-[#253E44] font-medium underline mt-2"
                 >
                   Go to sign in now
                 </Link>
@@ -208,11 +208,6 @@ export default function ResetPassword() {
       <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <img src={Logo} alt="Build Trust Logo" className="w-24 sm:w-28" />
-        </div>
-
         {/* Back Button */}
         <Link
           to="/auth"
