@@ -248,11 +248,6 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               // Continue to next project even if one fails
             }
           }
-          
-          console.log('📦 PROJECTS SAVED:', {
-            count: savedProjectsCount,
-            timestamp: new Date().toISOString()
-          });
         }
 
         try {
