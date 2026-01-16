@@ -2,14 +2,9 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
-  CheckCircle,
   Star,
   Shield,
   Users,
@@ -18,8 +13,6 @@ import {
   LogOut,
   User,
   ArrowRight,
-  Play,
-  Award,
   Check,
   Globe,
   Heart,
@@ -37,6 +30,7 @@ import CTABackground from "../assets/CTA.jpg";
 import Steps from "../assets/steps.jpg";
 import Logo from "../assets/Logo.png";
 import Hero from "../assets/Hero.jpg";
+import { FaFacebookF, FaX, FaInstagram, FaLinkedinIn } from "react-icons/fa6";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -44,16 +38,21 @@ const Index = () => {
   const [showSetup, setShowSetup] = useState(false);
   const [showClientSetup, setShowClientSetup] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, signOut, loading } = useAuth();
+const { user, signOut, loading } = useAuth();
 
-  useEffect(() => {
-    AOS.init({
-      duration: 1200,
-      easing: 'ease-out',
-      once: false,
-      mirror: true,
-    });
-  }, []);
+const [line1Typed, setLine1Typed] = useState('');
+const [line2Typed, setLine2Typed] = useState('');
+const [showCursor, setShowCursor] = useState(true);
+const [currentTypingLine, setCurrentTypingLine] = useState(1);
+
+useEffect(() => {
+  AOS.init({
+    duration: 1200,
+    easing: 'ease-out',
+    once: false,
+    mirror: true,
+  });
+}, []);
 
   // Check if user came from setup flow
   useEffect(() => {
@@ -98,6 +97,48 @@ const Index = () => {
       }
     }
   }, [searchParams, user, loading, navigate]);
+
+  useEffect(() => {
+    const line1 = "Build Your Dream";
+    const line2 = "Home in Africa";
+    let i = 0;
+    let currentLine = 1;
+    const type = () => {
+      if (currentLine === 1) {
+        if (i < line1.length) {
+          setLine1Typed(line1.slice(0, i + 1));
+          i++;
+          setTimeout(type, 100);
+        } else {
+          currentLine = 2;
+          i = 0;
+          setTimeout(type, 100);
+        }
+      } else if (currentLine === 2) {
+        if (i < line2.length) {
+          setLine2Typed(line2.slice(0, i + 1));
+          i++;
+          setTimeout(type, 100);
+        } else {
+          setTimeout(() => {
+            setLine1Typed('');
+            setLine2Typed('');
+            i = 0;
+            currentLine = 1;
+            type();
+          }, 3000);
+        }
+      }
+    };
+    type();
+  }, []);
+
+  useEffect(() => {
+    const blinkInterval = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 500);
+    return () => clearInterval(blinkInterval);
+  }, []);
 
   // Handle developer setup authentication check
   const handleDeveloperSetup = () => {
@@ -205,19 +246,26 @@ const Index = () => {
         .animate-float {
           animation: float 6s ease-in-out infinite;
         }
-        .animate-float-delayed {
-          animation: float-delayed 8s ease-in-out infinite;
-        }
-      `}</style>
+      .animate-float-delayed {
+        animation: float-delayed 8s ease-in-out infinite;
+      }
+      @keyframes pulse-scale {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+      }
+      .animate-pulse-scale {
+        animation: pulse-scale 2s ease-in-out infinite;
+      }
+    `}</style>
       {/* Header */}
       <header className="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-white/20 z-50 shadow-sm">
-        <div className="container mx-auto px-[3%] py-4 flex items-center justify-between">
+        <div className="container mx-auto px-10 py-4 flex items-center justify-between">
           <div className=" w-[20%] md:w-[10%]">
             <img src={Logo} alt="Build Trust Logo" />
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden lg:flex items-center space-x-8">
             <a
               href="#features"
               className="text-gray-600 hover:text-[#226F75] transition-colors font-medium"
@@ -299,7 +347,7 @@ const Index = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Toggle mobile menu"
           >
             {mobileMenuOpen ? (
@@ -312,7 +360,7 @@ const Index = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200">
+          <div className="lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200">
             <div className="container mx-auto px-4 py-6 space-y-4">
               <a
                 href="#features"
@@ -405,27 +453,27 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <div data-aos="fade-up" className=" w-full p-5 px-[3%] pt-[25%] md:pt-[10%] flex justify-between items-center flex-col-reverse md:flex-row">
+      <div data-aos="fade-up" className="w-full bg-gray-100 min-h-screen md:h-screen lg:h-screen p-5 px-[3%] pt-[25%] md:pt-[15%] lg:pt-[10%] flex justify-center items-center flex-col-reverse lg:flex-row gap-8 lg:gap-12">
         {/* Left Hero Text */}
-        <div className=" w-full md:w-[55%]">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-extrabold mb-6 leading-tight">
-            <span className="block">Build Your Dream</span>
-            <span className="bg-gradient-to-r from-[#226F75] to-[#253E44] bg-opacity-30 bg-clip-text text-transparent">
-              Home in Africa
+        <div className="w-full lg:w-[55%]">
+          <h1 className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-extrabold mb-3 leading-tight min-h-[5rem] md:min-h-[7rem] lg:min-h-[8rem]">
+            <span className="block">{line1Typed}{showCursor && line1Typed.length < "Build Your Dream".length ? '|' : ''}</span>
+            <span className="bg-gradient-to-r from-[#226F75] to-[#253E44] bg-opacity-30 bg-clip-text text-transparent block">
+              {line2Typed}{showCursor && line2Typed.length < "Home in Africa".length ? '|' : ''}
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl md:text-xl mb-6 max-w-4xl leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-xl lg:text-xl mb-6 max-w-4xl leading-relaxed">
             Connect with verified, licensed developers all over Africa. Track
             progress in real-time , release payments securely, and build with
             complete confidence from anywhere in the world.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-6">
             <Button
               size="lg"
               onClick={handleClientSetup}
-              className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-60 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
+              className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-60 px-6 sm:px-8 md:px-10 lg:px-10 py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-2000 transform hover:scale-105 animate-pulse-scale w-full"
             >
               <User className="w-5 h-5 mr-2" />
               Join as Client
@@ -435,7 +483,7 @@ const Index = () => {
               size="lg"
               variant="outline"
               onClick={handleDeveloperSetup}
-              className="bg-white/10 backdrop-blur-sm border border-black/10 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl hover:bg-[#226F75] hover:bg-opacity-25 transition-all duration-300 w-full sm:w-auto"
+              className="bg-white/10 backdrop-blur-sm border border-black/10 px-6 sm:px-8 md:px-10 lg:px-10 py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl hover:bg-[#226F75] hover:bg-opacity-25 transition-all duration-300 w-full"
             >
               <Heart className="w-5 h-5 mr-2" />
               Join as Developer
@@ -443,21 +491,21 @@ const Index = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 p-3 border-t border-slate-100 dark:border-neutral-900">
+          <div className="grid grid-cols-3 gap-4 md:gap-8 lg:gap-8 p-3 border-t border-slate-100 dark:border-neutral-900">
             <div>
-              <div className="text-2xl font-bold tracking-tight">500+</div>
+              <div className="text-xl md:text-2xl lg:text-2xl font-bold tracking-tight">500+</div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Happy Clients
               </div>
             </div>
             <div>
-              <div className="text-2xl font-bold tracking-tight">50+</div>
+              <div className="text-xl md:text-2xl lg:text-2xl font-bold tracking-tight">50+</div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Developers
               </div>
             </div>
             <div>
-              <div className="text-2xl font-bold tracking-tight">₦2B+</div>
+              <div className="text-xl md:text-2xl lg:text-2xl font-bold tracking-tight">₦2B+</div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Project Value
               </div>
@@ -466,18 +514,18 @@ const Index = () => {
         </div>
 
         {/* Right Image */}
-        <div className=" w-full md:w-[40%] h-[80%] relative">
-          <div className=" rounded-2xl overflow-hidden shadow-2xl">
+        <div className="w-full lg:w-[40%] relative lg:mt-4 mb-0 md:mb-[4rem] lg:mb-0">
+          <div className="rounded-2xl overflow-hidden shadow-2xl">
             <img
               alt="Luxury Villa 3D Render"
               className="w-full aspect-[4/3] object-cover"
               src={Hero}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent rounded-2xl"></div>
           </div>
-          <div className="absolute -bottom-6 -left-6 bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 hidden md:block">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <div className="absolute -bottom-6 -left-4 md:-bottom-8 md:-left-4 lg:-bottom-10 lg:-left-6 bg-white dark:bg-neutral-900 p-4 md:p-6 lg:p-6 rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 hidden md:block">
+            <div className="flex items-center gap-3 md:gap-4 lg:gap-4">
+              <div className="w-10 md:w-12 lg:w-12 h-10 md:h-12 lg:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                 <TrendingUp />
               </div>
               <div>
@@ -510,7 +558,7 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div data-aos="fade-up" data-aos-delay="100" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+            <div data-aos="fade-up" data-aos-delay="100" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl hover:shadow-2xl transition-all duration-300">
               <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Shield className="text-primary dark:text-emerald-400 text-3xl" />
               </div>
@@ -522,7 +570,7 @@ const Index = () => {
                 license verification process.
               </p>
             </div>
-            <div data-aos="fade-up" data-aos-delay="200" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+            <div data-aos="fade-up" data-aos-delay="200" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl hover:shadow-2xl transition-all duration-300">
               <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Globe className="text-amber-600 dark:text-amber-400 text-3xl" />
               </div>
@@ -534,7 +582,7 @@ const Index = () => {
                 issues of remote construction.
               </p>
             </div>
-            <div data-aos="fade-up" data-aos-delay="300" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+            <div data-aos="fade-up" data-aos-delay="300" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl hover:shadow-2xl transition-all duration-300">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <MapPin className="text-blue-600 dark:text-blue-400 text-3xl" />
               </div>
@@ -546,7 +594,7 @@ const Index = () => {
                 Nigerian cities.
               </p>
             </div>
-            <div data-aos="fade-up" data-aos-delay="400" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+            <div data-aos="fade-up" data-aos-delay="400" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl hover:shadow-2xl transition-all duration-300">
               <div className="w-16 h-16 rounded-2xl bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Clock className="text-purple-600 dark:text-purple-400 text-3xl" />
               </div>
@@ -563,9 +611,9 @@ const Index = () => {
       </section>
 
       {/* How It Works */}
-      <section data-aos="fade-up" className="w-[90%] m-auto rounded-3xl overflow-hidden bg-cover bg-bottom" style={{ backgroundImage: `url(${Steps})` }}>
+      <section data-aos="fade-up" className="w-[90%] m-auto my-10 rounded-3xl overflow-hidden bg-cover bg-bottom" style={{ backgroundImage: `url(${Steps})` }}>
         <div className=" w-full h-full p-10 px-[8%] text-white bg-[#253E44] bg-opacity-75 flex flex-col gap-8">
-          <div className=" w-full md:w-[60%] flex flex-col gap-5 text-center md:text-left">
+          <div className=" w-full md:w-full flex flex-col gap-5 text-center md:text-center">
             <h4 className=" uppercase text-sm font-bold">
               Build Smarter, Build Securely - In 3 Simple Steps
             </h4>
@@ -577,7 +625,7 @@ const Index = () => {
               to life - from big dreams to big homes
             </p>
           </div>
-          <div className=" grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className=" flex flex-col md:flex-col lg:flex-row gap-10">
             {/* Step 1 */}
             <div className=" p-8 bg-white shadow-md text-black rounded-md flex flex-col gap-3">
               <div className=" flex justify-between items-center">
@@ -622,7 +670,7 @@ const Index = () => {
       </section>
 
       {/* Testimonials */}
-      <section data-aos="fade-up" className="py-24 bg-gradient-to-b from-gray-50 to-white" id="testimonials">
+      <section data-aos="fade-up" className="py-24 bg-gray-100" id="testimonials">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <span className="text-primary font-bold tracking-[0.25em] uppercase text-[10px]">
@@ -699,20 +747,20 @@ const Index = () => {
 
           {/* Additional Social Proof */}
           <div className="text-center mt-16">
-            <div className="inline-flex items-center space-x-8 bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">4.9/5</div>
-                <div className="text-sm text-gray-600">Average Rating</div>
+            <div className="flex flex-row items-center gap-4 sm:gap-6 md:gap-8 bg-white/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg border border-white/20 max-w-4xl mx-auto">
+              <div className="text-center flex-1">
+                <div className="text-xl sm:text-2xl font-bold text-green-600">4.9/5</div>
+                <div className="text-xs sm:text-sm text-gray-600">Average Rating</div>
               </div>
-              <div className="w-px h-12 bg-gray-300"></div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">98%</div>
-                <div className="text-sm text-gray-600">Satisfaction Rate</div>
+              <div className="w-px h-8 sm:h-12 bg-gray-300"></div>
+              <div className="text-center flex-1">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600">98%</div>
+                <div className="text-xs sm:text-sm text-gray-600">Satisfaction Rate</div>
               </div>
-              <div className="w-px h-12 bg-gray-300"></div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">24/7</div>
-                <div className="text-sm text-gray-600">Support Available</div>
+              <div className="w-px h-8 sm:h-12 bg-gray-300"></div>
+              <div className="text-center flex-1">
+                <div className="text-xl sm:text-2xl font-bold text-purple-600">24/7</div>
+                <div className="text-xs sm:text-sm text-gray-600">Support Available</div>
               </div>
             </div>
           </div>
@@ -720,7 +768,7 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section data-aos="fade-up" className=" text-white overflow-hidden w-[90%] m-auto rounded-3xl bg-cover bg-center mb-10" style={{ backgroundImage: `url(${CTABackground})` }}>
+      <section data-aos="fade-up" className=" text-white overflow-hidden w-[90%] m-auto rounded-3xl bg-cover bg-center my-10" style={{ backgroundImage: `url(${CTABackground})` }}>
         <div className=" w-full h-full bg-[#253E44] bg-opacity-75 text-center p-5 py-[2rem] md:py-[5rem]">
           <h2 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
             Ready to Start Building?
@@ -759,8 +807,8 @@ const Index = () => {
       {/* Footer */}
       <footer className="py-10 bg-gradient-to-b from-[#1a4a4f] via-[#1e5a5f] to-[#226F75] text-white relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-8 md:gap-12 mb-6">
-            <div className="md:col-span-2">
+          <div className=" gap-8 mb-6 grid lg:grid-cols-6">
+            <div className="col-span-1 md:col-span-2">
               <img src={Logo} alt="" className="w-[35%]" />
               <p className="text-[#EBE1D3] text-base md:text-lg leading-relaxed mb-6 max-w-md">
                 Connecting diaspora Africans with verified developers for
@@ -768,22 +816,22 @@ const Index = () => {
                 world.
               </p>
               <div className="flex space-x-3 md:space-x-4">
-                <div className="w-9 md:w-10 h-9 md:h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
-                  <span className="text-xs md:text-sm font-bold">f</span>
+                <div className="w-7 md:w-8 h-7 md:h-8 p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                  <FaFacebookF/>
                 </div>
-                <div className="w-9 md:w-10 h-9 md:h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
-                  <span className="text-xs md:text-sm font-bold">t</span>
+                <div className="w-7 md:w-8 h-7 md:h-8 p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                  <FaX/>
                 </div>
-                <div className="w-9 md:w-10 h-9 md:h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
-                  <span className="text-xs md:text-sm font-bold">ig</span>
+                <div className="w-7 md:w-8 h-7 md:h-8 p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                  <FaInstagram/>
                 </div>
-                <div className="w-9 md:w-10 h-9 md:h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
-                  <span className="text-xs md:text-sm font-bold">in</span>
+                <div className="w-7 md:w-8 h-7 md:h-8 p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                  <FaLinkedinIn/>
                 </div>
               </div>
             </div>
 
-            <div>
+            <div className=" col-span-1">
               <h4 className="font-bold text-base md:text-lg mb-4 md:mb-6 text-white">
                 For Clients
               </h4>
@@ -823,7 +871,7 @@ const Index = () => {
               </ul>
             </div>
 
-            <div>
+            <div className=" col-span-1">
               <h4 className="font-bold text-base md:text-lg mb-4 md:mb-6 text-white">
                 For Developers
               </h4>
@@ -862,7 +910,7 @@ const Index = () => {
                 </li>
               </ul>
             </div>
-            <div>
+            <div className=" col-span-1">
               <h4 className="font-bold text-base md:text-lg mb-4 md:mb-6 text-white">
                 Company
               </h4>
@@ -902,7 +950,7 @@ const Index = () => {
               </ul>
             </div>
 
-            <div>
+            <div className=" col-span-1" >
               <h4 className="font-bold text-base md:text-lg mb-4 md:mb-6 text-white">
                 Legal
               </h4>
