@@ -211,28 +211,28 @@ const Index = () => {
       `}</style>
       {/* Header */}
       <header className="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-white/20 z-50 shadow-sm">
-        <div className="container mx-auto px-[3%] py-4 flex items-center justify-between">
-          <div className=" w-[20%] md:w-[10%]">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="w-[25%] sm:w-[20%] md:w-[10%]">
             <img src={Logo} alt="Build Trust Logo" />
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
             <a
               href="#features"
-              className="text-gray-600 hover:text-[#226F75] transition-colors font-medium"
+              className="text-gray-600 hover:text-[#226F75] transition-colors font-medium text-sm md:text-base"
             >
               Features
             </a>
             <a
               href="#how-it-works"
-              className="text-gray-600 hover:text-[#226F75] transition-colors font-medium"
+              className="text-gray-600 hover:text-[#226F75] transition-colors font-medium text-sm md:text-base"
             >
               How it Works
             </a>
             <a
               href="#testimonials"
-              className="text-gray-600 hover:text-[#226F75] transition-colors font-medium"
+              className="text-gray-600 hover:text-[#226F75] transition-colors font-medium text-sm md:text-base"
             >
               Success Stories
             </a>
@@ -242,7 +242,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     onClick={() => navigate("/client-dashboard")}
-                    className="border-[#226F75] border-opacity-20 hover:border-opacity-30 hover:bg-[#226F75] hover:bg-opacity-30"
+                    className="hidden sm:inline-flex border-[#226F75] border-opacity-20 hover:border-opacity-30 hover:bg-[#226F75] hover:bg-opacity-30 text-xs sm:text-sm"
                   >
                     Client Dashboard
                   </Button>
@@ -251,7 +251,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     onClick={() => navigate("/developer-dashboard")}
-                    className="border-green-200 hover:border-green-300 hover:bg-green-50"
+                    className="hidden sm:inline-flex border-green-200 hover:border-green-300 hover:bg-green-50 text-xs sm:text-sm"
                   >
                     Developer Dashboard
                   </Button>
@@ -260,7 +260,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     onClick={() => navigate("/super-admin-dashboard")}
-                    className="border-purple-200 hover:border-purple-300 hover:bg-purple-50"
+                    className="hidden sm:inline-flex border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-xs sm:text-sm"
                   >
                     Admin Dashboard
                   </Button>
@@ -279,18 +279,18 @@ const Index = () => {
                 <Link to="/auth">
                   <Button
                     variant="outline"
-                    className="border-[#226F75] border-opacity-20 hover:border-opacity-30 hover:bg-[#226F75] hover:bg-opacity-30"
+                    className="hidden sm:inline-flex border-[#226F75] border-opacity-20 hover:border-opacity-30 hover:bg-[#226F75] hover:bg-opacity-30 text-xs sm:text-sm"
                   >
-                    <User className="w-4 h-4 mr-2" />
+                    <User className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2" />
                     Sign In
                   </Button>
                 </Link>
                 <Button
                   onClick={() => navigate("/browse")}
-                  className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-70 shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="hidden sm:inline-flex bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-70 shadow-lg hover:shadow-xl transition-all duration-200 text-xs sm:text-sm"
                 >
                   Browse Developers
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="w-3 sm:w-4 h-3 sm:h-4 ml-1 sm:ml-2" />
                 </Button>
               </div>
             )}
@@ -405,37 +405,37 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <div data-aos="fade-up" className=" w-full p-5 px-[3%] pt-[25%] md:pt-[10%] flex justify-between items-center flex-col-reverse md:flex-row">
+      <div data-aos="fade-up" className="w-full px-4 sm:px-6 md:px-8 pt-20 sm:pt-24 md:pt-20 flex justify-between items-center flex-col-reverse md:flex-row gap-6 md:gap-8">
         {/* Left Hero Text */}
-        <div className=" w-full md:w-[55%]">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-extrabold mb-6 leading-tight">
+        <div className="w-full md:w-[55%]">
+          <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 sm:mb-6 leading-tight">
             <span className="block">Build Your Dream</span>
             <span className="bg-gradient-to-r from-[#226F75] to-[#253E44] bg-opacity-30 bg-clip-text text-transparent">
               Home in Africa
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl md:text-xl mb-6 max-w-4xl leading-relaxed">
+          <p className="text-sm sm:text-base md:text-lg mb-4 sm:mb-6 max-w-4xl leading-relaxed">
             Connect with verified, licensed developers all over Africa. Track
             progress in real-time , release payments securely, and build with
             complete confidence from anywhere in the world.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
             <Button
               size="lg"
               onClick={handleClientSetup}
-              className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-60 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
+              className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-60 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 w-full sm:w-auto"
             >
-              <User className="w-5 h-5 mr-2" />
+              <User className="w-4 sm:w-5 h-4 sm:h-5 mr-1 sm:mr-2" />
               Join as Client
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <ArrowRight className="w-4 sm:w-5 h-4 sm:h-5 ml-1 sm:ml-2" />
             </Button>
             <Button
               size="lg"
               variant="outline"
               onClick={handleDeveloperSetup}
-              className="bg-white/10 backdrop-blur-sm border border-black/10 px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl hover:bg-[#226F75] hover:bg-opacity-25 transition-all duration-300 w-full sm:w-auto"
+              className="bg-white/10 backdrop-blur-sm border border-black/10 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl hover:bg-[#226F75] hover:bg-opacity-25 transition-all duration-300 w-full sm:w-auto"
             >
               <Heart className="w-5 h-5 mr-2" />
               Join as Developer
@@ -443,22 +443,22 @@ const Index = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 p-3 border-t border-slate-100 dark:border-neutral-900">
+          <div className="grid grid-cols-3 gap-4 sm:gap-6 md:gap-8 p-3 sm:p-4 border-t border-slate-100 dark:border-neutral-900 mt-6 sm:mt-8">
             <div>
-              <div className="text-2xl font-bold tracking-tight">500+</div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              <div className="text-xl sm:text-2xl font-bold tracking-tight">500+</div>
+              <div className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Happy Clients
               </div>
             </div>
             <div>
-              <div className="text-2xl font-bold tracking-tight">50+</div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              <div className="text-xl sm:text-2xl font-bold tracking-tight">50+</div>
+              <div className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Developers
               </div>
             </div>
             <div>
-              <div className="text-2xl font-bold tracking-tight">₦2B+</div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              <div className="text-xl sm:text-2xl font-bold tracking-tight">₦2B+</div>
+              <div className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Project Value
               </div>
             </div>
@@ -496,64 +496,64 @@ const Index = () => {
       {/* Features */}
       <section data-aos="fade-up" className="py-24 bg-gradient-to-b from-white to-gray-50" id="features">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-10 space-y-4">
-            <span className="text-primary font-bold tracking-[0.25em] uppercase text-[10px]">
+          <div className="text-center mb-6 sm:mb-8 md:mb-10 space-y-3 sm:space-y-4">
+            <span className="text-primary font-bold tracking-[0.25em] uppercase text-[8px] sm:text-[10px]">
               Why BuildTrust
             </span>
-            <h2 className="text-4xl lg:text-5xl">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
               Clean, Transparent, Reliable
             </h2>
-            <p className="text-charcoal/70 dark:text-slate-400 max-w-2xl mx-auto text-lg">
+            <p className="text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
               We're more than just a platform — we're your trusted partner in
               building your Nigerian dream home.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div data-aos="fade-up" data-aos-delay="100" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Shield className="text-primary dark:text-emerald-400 text-3xl" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+            <div data-aos="fade-up" data-aos-delay="100" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+              <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
+                <Shield className="text-primary dark:text-emerald-400 text-2xl sm:text-3xl" />
               </div>
-              <h3 className="text-xl font-bold mb-3 dark:text-white">
+              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 dark:text-white">
                 Verified Developers
               </h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
                 Every developer undergoes a rigorous 5-step background and
                 license verification process.
               </p>
             </div>
-            <div data-aos="fade-up" data-aos-delay="200" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
-              <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Globe className="text-amber-600 dark:text-amber-400 text-3xl" />
+            <div data-aos="fade-up" data-aos-delay="200" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+              <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
+                <Globe className="text-amber-600 dark:text-amber-400 text-2xl sm:text-3xl" />
               </div>
-              <h3 className="text-xl font-bold mb-3 dark:text-white">
+              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 dark:text-white">
                 Diaspora-Focused
               </h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
                 Purpose-built for Nigerians abroad, solving the unique trust
                 issues of remote construction.
               </p>
             </div>
-            <div data-aos="fade-up" data-aos-delay="300" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
-              <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <MapPin className="text-blue-600 dark:text-blue-400 text-3xl" />
+            <div data-aos="fade-up" data-aos-delay="300" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+              <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
+                <MapPin className="text-blue-600 dark:text-blue-400 text-2xl sm:text-3xl" />
               </div>
-              <h3 className="text-xl font-bold mb-3 dark:text-white">
+              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 dark:text-white">
                 Nigeria Coverage
               </h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
                 From Lagos to Abuja, Port Harcourt to Enugu - we cover all major
                 Nigerian cities.
               </p>
             </div>
-            <div data-aos="fade-up" data-aos-delay="400" className="group bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
-              <div className="w-16 h-16 rounded-2xl bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Clock className="text-purple-600 dark:text-purple-400 text-3xl" />
+            <div data-aos="fade-up" data-aos-delay="400" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+              <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
+                <Clock className="text-purple-600 dark:text-purple-400 text-2xl sm:text-3xl" />
               </div>
-              <h3 className="text-xl font-bold mb-3 dark:text-white">
+              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 dark:text-white">
                 Real-time Updates
               </h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
                 Track every brick laid with weekly photo/video reports and live
                 drone feed options.
               </p>
@@ -563,56 +563,56 @@ const Index = () => {
       </section>
 
       {/* How It Works */}
-      <section data-aos="fade-up" className="w-[90%] m-auto rounded-3xl overflow-hidden bg-cover bg-bottom" style={{ backgroundImage: `url(${Steps})` }}>
-        <div className=" w-full h-full p-10 px-[8%] text-white bg-[#253E44] bg-opacity-75 flex flex-col gap-8">
-          <div className=" w-full md:w-[60%] flex flex-col gap-5 text-center md:text-left">
-            <h4 className=" uppercase text-sm font-bold">
+      <section data-aos="fade-up" className="w-[95%] sm:w-[90%] m-auto rounded-2xl sm:rounded-3xl overflow-hidden bg-cover bg-bottom" style={{ backgroundImage: `url(${Steps})` }}>
+        <div className="w-full h-full p-4 sm:p-6 md:p-10 text-white bg-[#253E44] bg-opacity-75 flex flex-col gap-6 md:gap-8">
+          <div className="w-full md:w-[60%] flex flex-col gap-3 sm:gap-4 md:gap-5 text-center md:text-left">
+            <h4 className="uppercase text-xs sm:text-sm font-bold">
               Build Smarter, Build Securely - In 3 Simple Steps
             </h4>
-            <h1 className=" text-3xl md:text-5xl font-bold">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
               Building your dream home has never been this simple
             </h1>
-            <p className=" text-xs">
+            <p className="text-xs sm:text-sm">
               work with the largest network of developers and bring your dream
               to life - from big dreams to big homes
             </p>
           </div>
-          <div className=" grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {/* Step 1 */}
-            <div className=" p-8 bg-white shadow-md text-black rounded-md flex flex-col gap-3">
-              <div className=" flex justify-between items-center">
-                <h1 className=" text-lg font-extrabold text-[#253E44]">
+            <div className="p-4 sm:p-6 md:p-8 bg-white shadow-md text-black rounded-lg md:rounded-md flex flex-col gap-2 sm:gap-3">
+              <div className="flex justify-between items-center">
+                <h1 className="text-base sm:text-lg font-extrabold text-[#253E44]">
                   1. Browse & Select
                 </h1>
                 <ArrowRight width={14} />
               </div>
-              <p className=" text-sm leading-tight text-[#4B5563]">
+              <p className="text-xs sm:text-sm leading-tight text-[#4B5563]">
                 Browse verified developers, view portfolios, and select the
                 perfect match for your project.
               </p>
             </div>
             {/* Step 2 */}
-            <div className=" p-8 bg-white shadow-md text-black rounded-md flex flex-col gap-3">
-              <div className=" flex justify-between items-center">
-                <h1 className=" text-lg font-extrabold text-[#253E44]">
+            <div className="p-4 sm:p-6 md:p-8 bg-white shadow-md text-black rounded-lg md:rounded-md flex flex-col gap-2 sm:gap-3">
+              <div className="flex justify-between items-center">
+                <h1 className="text-base sm:text-lg font-extrabold text-[#253E44]">
                   2. Secure Agreement
                 </h1>
                 <ArrowRight width={14} />
               </div>
-              <p className=" text-sm leading-tight text-[#4B5563]">
+              <p className="text-xs sm:text-sm leading-tight text-[#4B5563]">
                 Set milestones, agree on terms, and secure your payments in
                 escrow for complete protection.
               </p>
             </div>
             {/* Step 3 */}
-            <div className=" p-8 bg-white shadow-md text-black rounded-md flex flex-col gap-3">
-              <div className=" flex justify-between items-center">
-                <h1 className=" text-lg font-extrabold text-[#253E44]">
+            <div className="p-4 sm:p-6 md:p-8 bg-white shadow-md text-black rounded-lg md:rounded-md flex flex-col gap-2 sm:gap-3">
+              <div className="flex justify-between items-center">
+                <h1 className="text-base sm:text-lg font-extrabold text-[#253E44]">
                   3. Track & Build
                 </h1>
                 <ArrowRight width={14} />
               </div>
-              <p className=" text-sm leading-tight text-[#4B5563]">
+              <p className="text-xs sm:text-sm leading-tight text-[#4B5563]">
                 Monitor progress with real-time photo updates, and communicate
                 directly with your developer.
               </p>
@@ -622,16 +622,16 @@ const Index = () => {
       </section>
 
       {/* Testimonials */}
-      <section data-aos="fade-up" className="py-24 bg-gradient-to-b from-gray-50 to-white" id="testimonials">
+      <section data-aos="fade-up" className="py-12 sm:py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white" id="testimonials">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <span className="text-primary font-bold tracking-[0.25em] uppercase text-[10px]">
+          <div className="text-center mb-8 sm:mb-12 md:mb-16">
+            <span className="text-primary font-bold tracking-[0.25em] uppercase text-[8px] sm:text-[10px]">
               Success Stories
             </span>
-            <h2 className="text-4xl mt-2">What Our Clients Say</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl mt-2">What Our Clients Say</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto">
             {testimonials.map((testimonial, index) => (
               <Card
                 key={index}
@@ -639,7 +639,7 @@ const Index = () => {
                 data-aos-delay={index * 200}
                 className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-0 shadow-lg bg-white/90 backdrop-blur-sm overflow-hidden"
               >
-                <CardContent className="p-6 md:p-8">
+                <CardContent className="p-4 sm:p-6 md:p-8">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center space-x-1">
                       {[...Array(testimonial.rating)].map((_, i) => (
@@ -720,36 +720,36 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section data-aos="fade-up" className=" text-white overflow-hidden w-[90%] m-auto rounded-3xl bg-cover bg-center mb-10" style={{ backgroundImage: `url(${CTABackground})` }}>
-        <div className=" w-full h-full bg-[#253E44] bg-opacity-75 text-center p-5 py-[2rem] md:py-[5rem]">
-          <h2 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+      <section data-aos="fade-up" className="text-white overflow-hidden w-[95%] sm:w-[90%] m-auto rounded-2xl sm:rounded-3xl bg-cover bg-center mb-8 sm:mb-10" style={{ backgroundImage: `url(${CTABackground})` }}>
+        <div className="w-full h-full bg-[#253E44] bg-opacity-75 text-center p-4 sm:p-6 md:p-8 py-8 sm:py-12 md:py-20">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
             Ready to Start Building?
           </h2>
 
-          <p className="text-xl md:text-2xl mb-6 opacity-90 leading-relaxed max-w-3xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg lg:text-2xl mb-6 sm:mb-8 opacity-90 leading-relaxed max-w-3xl mx-auto">
             Join thousands of Africans who have successfully built their dream
             homes through BuildTrust Africa. Your journey to homeownership
             starts here.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center mb-8 sm:mb-10 md:mb-12">
             <Button
               size="lg"
               variant="secondary"
               onClick={() => navigate("/browse")}
-              className="px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold bg-white text-[#226F75] hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
+              className="px-4 sm:px-8 md:px-10 py-3 sm:py-4 text-sm sm:text-base md:text-lg font-semibold bg-white text-[#226F75] hover:bg-gray-100 shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl transition-all duration-300 hover:scale-105 w-full sm:w-auto"
             >
-              <Globe className="w-5 h-5 mr-2" />
+              <Globe className="w-4 sm:w-5 h-4 sm:h-5 mr-1 sm:mr-2" />
               Browse Developers
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <ArrowRight className="w-4 sm:w-5 h-4 sm:h-5 ml-1 sm:ml-2" />
             </Button>
             <Button
               size="lg"
               variant="outline"
               onClick={handleDeveloperSetup}
-              className="px-6 sm:px-10 py-4 text-base sm:text-lg font-semibold bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#226F75] transition-all duration-300 w-full sm:w-auto"
+              className="px-4 sm:px-8 md:px-10 py-3 sm:py-4 text-sm sm:text-base md:text-lg font-semibold bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#226F75] transition-all duration-300 w-full sm:w-auto"
             >
-              <Heart className="w-5 h-5 mr-2" />
+              <Heart className="w-4 sm:w-5 h-4 sm:h-5 mr-1 sm:mr-2" />
               Become a Developer
             </Button>
           </div>
@@ -757,12 +757,12 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-10 bg-gradient-to-b from-[#1a4a4f] via-[#1e5a5f] to-[#226F75] text-white relative overflow-hidden">
+      <footer className="py-8 sm:py-10 md:py-12 bg-gradient-to-b from-[#1a4a4f] via-[#1e5a5f] to-[#226F75] text-white relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-8 md:gap-12 mb-6">
-            <div className="md:col-span-2">
-              <img src={Logo} alt="" className="w-[35%]" />
-              <p className="text-[#EBE1D3] text-base md:text-lg leading-relaxed mb-6 max-w-md">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-6 sm:gap-8 md:gap-12 mb-6 sm:mb-8 md:mb-6">
+            <div className="sm:col-span-1 md:col-span-2">
+              <img src={Logo} alt="" className="w-[50%] sm:w-[35%]" />
+              <p className="text-[#EBE1D3] text-xs sm:text-sm md:text-base leading-relaxed mb-4 sm:mb-6 max-w-md">
                 Connecting diaspora Africans with verified developers for
                 transparent, secure property development from anywhere in the
                 world.
@@ -784,14 +784,14 @@ const Index = () => {
             </div>
 
             <div>
-              <h4 className="font-bold text-base md:text-lg mb-4 md:mb-6 text-white">
+              <h4 className="font-bold text-sm sm:text-base md:text-lg mb-3 sm:mb-4 md:mb-6 text-white">
                 For Clients
               </h4>
-              <ul className="space-y-2 md:space-y-3">
+              <ul className="space-y-1 sm:space-y-2 md:space-y-3">
                 <li>
                   <a
                     href="#"
-                    className="text-[#EBE1D3] hover:opacity-75 transition-colors text-sm md:text-base"
+                    className="text-[#EBE1D3] hover:opacity-75 transition-colors text-xs sm:text-sm md:text-base"
                   >
                     Browse Developers
                   </a>
@@ -942,8 +942,8 @@ const Index = () => {
               </ul>
             </div>
           </div>
-          <div className="border-t border-[#EBE1D3] pt-8">
-            <p className="text-[#EBE1D3] text-center">
+          <div className="border-t border-[#EBE1D3] pt-6 sm:pt-8">
+            <p className="text-[#EBE1D3] text-center text-xs sm:text-sm md:text-base">
               &copy; 2024 BuildTrust Africa. All rights reserved.
             </p>
           </div>
