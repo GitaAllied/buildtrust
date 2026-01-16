@@ -72,20 +72,6 @@ export default function ForgotPassword() {
         <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
 
         <div className="w-full max-w-md relative z-10">
-          {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <img src={Logo} alt="Build Trust Logo" className="w-24 sm:w-28" />
-          </div>
-
-          {/* Back Button */}
-          <Link
-            to="/auth"
-            className="inline-flex items-center gap-2 text-sm text-[#226F75] hover:text-[#253E44] transition-colors mb-6 group font-medium"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            Back to sign in
-          </Link>
-
           <Card className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/80 border-2 border-white/50 rounded-3xl shadow-2xl">
             <CardHeader className="text-center space-y-4 pb-8 bg-gradient-to-b from-[#226F75]/5 to-transparent rounded-t-3xl">
               <div className="flex justify-center">
@@ -139,11 +125,6 @@ export default function ForgotPassword() {
       <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <img src={Logo} alt="Build Trust Logo" className="w-24 sm:w-28" />
-        </div>
-
         {/* Back Button */}
         <Link
           to="/auth"
