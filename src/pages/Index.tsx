@@ -29,6 +29,7 @@ import "aos/dist/aos.css";
 import CTABackground from "../assets/CTA.jpg";
 import Steps from "../assets/steps.jpg";
 import Logo from "../assets/Logo.png";
+import Footer from '../assets/Footer.png'
 import Hero from "../assets/Hero.jpg";
 import { FaFacebookF, FaX, FaInstagram, FaLinkedinIn } from "react-icons/fa6";
 
@@ -43,7 +44,6 @@ const { user, signOut, loading } = useAuth();
 const [line1Typed, setLine1Typed] = useState('');
 const [line2Typed, setLine2Typed] = useState('');
 const [showCursor, setShowCursor] = useState(true);
-const [currentTypingLine, setCurrentTypingLine] = useState(1);
 
 useEffect(() => {
   AOS.init({
@@ -265,7 +265,7 @@ useEffect(() => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
+          <nav className="hidden lg:flex items-center space-x-6 lg:space-x-8">
             <a
               href="#features"
               className="text-gray-600 hover:text-[#226F75] transition-colors font-medium text-sm md:text-base"
@@ -453,13 +453,13 @@ useEffect(() => {
       </header>
 
       {/* Hero Section */}
-      <div data-aos="fade-up" className="w-full px-4 sm:px-6 md:px-8 pt-20 sm:pt-24 md:pt-20 flex justify-between items-center flex-col-reverse md:flex-row gap-6 md:gap-8">
+      <div data-aos="fade-up" className="w-full lg:h-screen bg-gray-100 px-4 sm:px-6 md:px-8 pt-20 sm:pt-24 md:pt-20 lg:pt-[6rem] flex justify-between items-center flex-col-reverse lg:flex-row gap-6 md:gap-8 pb-[3rem]">
         {/* Left Hero Text */}
-        <div className="w-full md:w-[55%]">
-          <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 sm:mb-6 leading-tight">
-            <span className="block">Build Your Dream</span>
-            <span className="bg-gradient-to-r from-[#226F75] to-[#253E44] bg-opacity-30 bg-clip-text text-transparent">
-              Home in Africa
+        <div className="w-full lg:w-[55%]">
+          <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 sm:mb-6 leading-tight min-h-[5rem] md:min-h-[6rem] lg:min-h-[7rem]">
+            <span className="block">{line1Typed}{showCursor && line1Typed.length < "Build Your Dream".length ? '|' : ''}</span>
+            <span className="bg-gradient-to-r from-[#226F75] to-[#253E44] bg-opacity-30 bg-clip-text text-transparent block">
+              {line2Typed}{showCursor && line2Typed.length < "Home in Africa".length ? '|' : ''}
             </span>
           </h1>
 
@@ -469,11 +469,11 @@ useEffect(() => {
             complete confidence from anywhere in the world.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
             <Button
               size="lg"
               onClick={handleClientSetup}
-              className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-60 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 w-full sm:w-auto"
+              className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-60 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 animate-pulse-scale w-full lg:w-auto"
             >
               <User className="w-4 sm:w-5 h-4 sm:h-5 mr-1 sm:mr-2" />
               Join as Client
@@ -483,7 +483,7 @@ useEffect(() => {
               size="lg"
               variant="outline"
               onClick={handleDeveloperSetup}
-              className="bg-white/10 backdrop-blur-sm border border-black/10 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl hover:bg-[#226F75] hover:bg-opacity-25 transition-all duration-300 w-full sm:w-auto"
+              className="bg-white/10 backdrop-blur-sm border border-black/10 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl hover:bg-[#226F75] hover:bg-opacity-25 transition-all duration-300 w-full lg:w-auto"
             >
               <Heart className="w-5 h-5 mr-2" />
               Join as Developer
@@ -558,7 +558,7 @@ useEffect(() => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-            <div data-aos="fade-up" data-aos-delay="100" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+            <div data-aos="fade-up" data-aos-delay="100" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl shadow-lg transition-all duration-300">
               <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
                 <Shield className="text-primary dark:text-emerald-400 text-2xl sm:text-3xl" />
               </div>
@@ -570,7 +570,7 @@ useEffect(() => {
                 license verification process.
               </p>
             </div>
-            <div data-aos="fade-up" data-aos-delay="200" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+            <div data-aos="fade-up" data-aos-delay="200" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl shadow-lg transition-all duration-300">
               <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
                 <Globe className="text-amber-600 dark:text-amber-400 text-2xl sm:text-3xl" />
               </div>
@@ -582,7 +582,7 @@ useEffect(() => {
                 issues of remote construction.
               </p>
             </div>
-            <div data-aos="fade-up" data-aos-delay="300" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+            <div data-aos="fade-up" data-aos-delay="300" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl shadow-lg transition-all duration-300">
               <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
                 <MapPin className="text-blue-600 dark:text-blue-400 text-2xl sm:text-3xl" />
               </div>
@@ -594,7 +594,7 @@ useEffect(() => {
                 Nigerian cities.
               </p>
             </div>
-            <div data-aos="fade-up" data-aos-delay="400" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300">
+            <div data-aos="fade-up" data-aos-delay="400" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl shadow-lg transition-all duration-300">
               <div className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl sm:rounded-2xl bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
                 <Clock className="text-purple-600 dark:text-purple-400 text-2xl sm:text-3xl" />
               </div>
@@ -611,9 +611,9 @@ useEffect(() => {
       </section>
 
       {/* How It Works */}
-      <section data-aos="fade-up" className="w-[95%] sm:w-[90%] m-auto rounded-2xl sm:rounded-3xl overflow-hidden bg-cover bg-bottom" style={{ backgroundImage: `url(${Steps})` }}>
-        <div className="w-full h-full p-4 sm:p-6 md:p-10 text-white bg-[#253E44] bg-opacity-75 flex flex-col gap-6 md:gap-8">
-          <div className="w-full md:w-[60%] flex flex-col gap-3 sm:gap-4 md:gap-5 text-center md:text-left">
+      <section data-aos="fade-up" className="w-[95%] sm:w-[90%] mb-12 m-auto rounded-2xl sm:rounded-3xl overflow-hidden bg-cover bg-bottom" style={{ backgroundImage: `url(${Steps})` }}>
+        <div className="w-full h-full p-4 sm:p-6 md:p-10 py-[3rem] text-white bg-[#253E44] bg-opacity-75 flex flex-col gap-6 md:gap-8">
+          <div className="w-full flex flex-col gap-3 sm:gap-4 md:gap-5 text-center lg:text-left">
             <h4 className="uppercase text-xs sm:text-sm font-bold">
               Build Smarter, Build Securely - In 3 Simple Steps
             </h4>
@@ -625,7 +625,7 @@ useEffect(() => {
               to life - from big dreams to big homes
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {/* Step 1 */}
             <div className="p-4 sm:p-6 md:p-8 bg-white shadow-md text-black rounded-lg md:rounded-md flex flex-col gap-2 sm:gap-3">
               <div className="flex justify-between items-center">
@@ -670,7 +670,7 @@ useEffect(() => {
       </section>
 
       {/* Testimonials */}
-      <section data-aos="fade-up" className="py-12 sm:py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white" id="testimonials">
+      <section data-aos="fade-up" className="py-12 sm:py-16 bg-gray-100 md:py-24 " id="testimonials">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8 sm:mb-12 md:mb-16">
             <span className="text-primary font-bold tracking-[0.25em] uppercase text-[8px] sm:text-[10px]">
@@ -768,7 +768,7 @@ useEffect(() => {
       </section>
 
       {/* CTA Section */}
-      <section data-aos="fade-up" className="text-white overflow-hidden w-[95%] sm:w-[90%] m-auto rounded-2xl sm:rounded-3xl bg-cover bg-center mb-8 sm:mb-10" style={{ backgroundImage: `url(${CTABackground})` }}>
+      <section data-aos="fade-up" className="text-white overflow-hidden w-[95%] sm:w-[90%] m-auto rounded-2xl sm:rounded-3xl bg-cover bg-center my-8 sm:mb-10" style={{ backgroundImage: `url(${CTABackground})` }}>
         <div className="w-full h-full bg-[#253E44] bg-opacity-75 text-center p-4 sm:p-6 md:p-8 py-8 sm:py-12 md:py-20">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
             Ready to Start Building?
@@ -807,25 +807,25 @@ useEffect(() => {
       {/* Footer */}
       <footer className="py-8 sm:py-10 md:py-12 bg-gradient-to-b from-[#1a4a4f] via-[#1e5a5f] to-[#226F75] text-white relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-6 sm:gap-8 md:gap-12 mb-6 sm:mb-8 md:mb-6">
-            <div className="sm:col-span-1 md:col-span-2">
-              <img src={Logo} alt="" className="w-[50%] sm:w-[35%]" />
+          <div className="grid lg:grid-cols-6 gap-6 sm:gap-8 md:gap-12 mb-6 sm:mb-8 md:mb-6">
+            <div className="col-span-1 md:col-span-2">
+              <img src={Footer} alt="" className="w-[50%] sm:w-[35%]" />
               <p className="text-[#EBE1D3] text-xs sm:text-sm md:text-base leading-relaxed mb-4 sm:mb-6 max-w-md">
                 Connecting diaspora Africans with verified developers for
                 transparent, secure property development from anywhere in the
                 world.
               </p>
               <div className="flex space-x-3 md:space-x-4">
-                <div className="w-7 md:w-8 h-7 md:h-8 p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                <div className="w-7 md:w-8 h-7 md:h-8 p-[10px] md:p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
                   <FaFacebookF/>
                 </div>
-                <div className="w-7 md:w-8 h-7 md:h-8 p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                <div className="w-7 md:w-8 h-7 md:h-8 p-[10px] md:p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
                   <FaX/>
                 </div>
-                <div className="w-7 md:w-8 h-7 md:h-8 p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                <div className="w-7 md:w-8 h-7 md:h-8 p-[10px] md:p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
                   <FaInstagram/>
                 </div>
-                <div className="w-7 md:w-8 h-7 md:h-8 p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                <div className="w-7 md:w-8 h-7 md:h-8 p-[10px] md:p-3 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
                   <FaLinkedinIn/>
                 </div>
               </div>
