@@ -335,7 +335,7 @@ export default function Auth() {
                         id="signin-email"
                         type="email"
                         placeholder="you@example.com"
-                        className="pl-10 h-12 border-2 focus:border-green-500 focus:ring-green-500/20 transition-all"
+                        className="pl-10 h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
                         {...signInForm.register('email')}
                         disabled={signInLoading}
                       />
@@ -358,7 +358,7 @@ export default function Auth() {
                         id="signin-password"
                         type={showSignInPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        className="pl-10 pr-10 h-12 border-2 focus:border-green-500 focus:ring-green-500/20 transition-all"
+                        className="pl-10 pr-10 h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
                         {...signInForm.register('password')}
                         disabled={signInLoading}
                       />
@@ -386,7 +386,7 @@ export default function Auth() {
 
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+                    className="w-full h-12 bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
                     disabled={signInLoading}
                   >
                     {signInLoading ? (
@@ -405,7 +405,7 @@ export default function Auth() {
                   <div className="text-center pt-4">
                     <Link
                       to="/forgot-password"
-                      className="text-sm text-green-600 hover:text-green-700 font-medium underline"
+                      className="text-sm text-[#226F75] hover:text-[#253E44] font-medium underline"
                     >
                       Forgot Password?
                     </Link>
@@ -432,7 +432,7 @@ export default function Auth() {
                         id="signup-email"
                         type="email"
                         placeholder="you@example.com"
-                        className="pl-10 h-12 border-2 focus:border-green-500 focus:ring-green-500/20 transition-all"
+                        className="pl-10 h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
                         {...signUpForm.register('email')}
                         disabled={signUpLoading}
                       />
@@ -455,7 +455,7 @@ export default function Auth() {
                         id="signup-password"
                         type={showSignUpPassword ? "text" : "password"}
                         placeholder="Create a strong password"
-                        className="pl-10 pr-10 h-12 border-2 focus:border-green-500 focus:ring-green-500/20 transition-all"
+                        className="pl-10 pr-10 h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
                         {...signUpForm.register('password')}
                         disabled={signUpLoading}
                       />
@@ -494,7 +494,7 @@ export default function Auth() {
                         id="confirm-password"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
-                        className="pl-10 pr-10 h-12 border-2 focus:border-green-500 focus:ring-green-500/20 transition-all"
+                        className="pl-10 pr-10 h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
                         {...signUpForm.register('confirmPassword')}
                         disabled={signUpLoading}
                       />
@@ -522,7 +522,7 @@ export default function Auth() {
 
                   <Button 
                     type="submit" 
-                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50" 
+                    className="w-full h-12 bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50" 
                     disabled={signUpLoading}
                   >
                     {signUpLoading ? (
@@ -541,11 +541,11 @@ export default function Auth() {
                   <div className="text-center pt-4 border-t">
                     <p className="text-sm text-muted-foreground">
                       By signing up, you agree to our{' '}
-                      <Link to="/terms" className="text-green-600 hover:text-green-700 font-medium underline">
+                      <Link to="/terms" className="text-[#226F75] hover:text-[#253E44] font-medium underline">
                         Terms of Service
                       </Link>
                       {' '}and{' '}
-                      <Link to="/privacy" className="text-green-600 hover:text-green-700 font-medium underline">
+                      <Link to="/privacy" className="text-[#226F75] hover:text-[#253E44] font-medium underline">
                         Privacy Policy
                       </Link>
                     </p>
