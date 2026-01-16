@@ -269,10 +269,6 @@ export default function Auth() {
       <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <img src={Logo} alt="Build Trust Logo" className="w-24 sm:w-28" />
-        </div>
 
         {/* Back Button */}
         <Link 
@@ -286,12 +282,7 @@ export default function Auth() {
         <Card className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/80 border-2 border-white/50 shadow-2xl rounded-3xl">
           <CardHeader className="text-center space-y-4 pb-8 bg-gradient-to-b from-[#226F75]/5 to-transparent rounded-t-3xl">
             <div className="flex justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#226F75] to-[#253E44] rounded-full blur opacity-40 animate-pulse" />
-                <div className="relative bg-gradient-to-r from-[#226F75] to-[#253E44] p-3 rounded-full">
-                  <Sparkles className="h-8 w-8 text-white" />
-                </div>
-              </div>
+              <img src={Logo} alt="Build Trust Logo" className="h-16 w-auto" />
             </div>
             <div>
               <CardTitle className="text-3xl font-bold bg-gradient-to-r from-[#226F75] to-[#253E44] bg-clip-text text-transparent">
