@@ -77,22 +77,23 @@ const Payments = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      <div className="bg-white border-b px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <Button 
               variant="ghost" 
               size="icon"
               onClick={() => navigate(-1)}
+              className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Payments & Escrow</h1>
-              <p className="text-gray-500">Manage your project payments and milestones</p>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 truncate">Payments & Escrow</h1>
+              <p className="text-xs sm:text-sm text-gray-500 truncate">Manage your project payments and milestones</p>
             </div>
           </div>
-          <Button className="bg-green-600 hover:bg-green-700">
+          <Button className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm w-full sm:w-auto">
             <CreditCard className="mr-2 h-4 w-4" />
             Add Payment Method
           </Button>

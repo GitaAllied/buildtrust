@@ -49,82 +49,81 @@ const ProjectRequests = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      <div className="bg-white border-b px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <Button 
               variant="ghost" 
               size="icon"
               onClick={() => navigate(-1)}
+              className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Project Requests</h1>
-              <p className="text-gray-500">Review and respond to client project requests</p>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 truncate">Project Requests</h1>
+              <p className="text-xs sm:text-sm text-gray-500 truncate">Review and respond to client project requests</p>
             </div>
           </div>
-          <Badge className="bg-blue-600">{requests.length} New Requests</Badge>
+          <Badge className="bg-blue-600 text-xs flex-shrink-0">{requests.length} New Requests</Badge>
         </div>
       </div>
 
-      <div className="p-6">
-        <div className="grid gap-6">
+      <div className="p-3 sm:p-4 md:p-6">
+        <div className="space-y-3 sm:space-y-4 md:space-y-6">
           {requests.map((request) => (
             <Card key={request.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start space-x-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={request.avatar} />
-                      <AvatarFallback>{request.client.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-semibold text-lg mb-1">{request.project}</h3>
-                      <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                        <User className="h-4 w-4" />
-                        <span>{request.client}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {request.received}
-                        </Badge>
-                      </div>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                  <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
+                    <AvatarImage src={request.avatar} />
+                    <AvatarFallback className="text-xs">{request.client.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-xs sm:text-sm md:text-base mb-1 truncate">{request.project}</h3>
+                    <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600 mb-2 flex-wrap">
+                      <User className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <span className="truncate">{request.client}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {request.received}
+                      </Badge>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-green-600">{request.budget}</p>
+                    <p className="text-sm sm:text-base md:text-lg font-semibold text-green-600">{request.budget}</p>
                   </div>
                 </div>
 
-                <p className="text-gray-700 mb-4">{request.description}</p>
+                <p className="text-xs sm:text-sm text-gray-700 mb-3 sm:mb-4 line-clamp-2">{request.description}</p>
 
-                <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <span>{request.location}</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-4 text-xs sm:text-sm">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                    <span className="truncate">{request.location}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span>{request.timeline}</span>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                    <span className="truncate">{request.timeline}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="h-4 w-4 text-gray-500" />
-                    <span>{request.budget}</span>
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                    <span className="truncate text-xs">{request.budget}</span>
                   </div>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <Button 
                     size="sm" 
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 text-xs w-full sm:w-auto"
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     Accept Request
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className="text-xs w-full sm:w-auto">
                     View Details
                   </Button>
-                  <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
-                    <X className="h-4 w-4 mr-2" />
+                  <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 text-xs w-full sm:w-auto">
+                    <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     Decline
                   </Button>
                 </div>
