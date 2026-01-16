@@ -18,6 +18,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import Logo from '../assets/Logo.png';
 
 export default function EmailVerification() {
   const [searchParams] = useSearchParams();
@@ -144,8 +145,13 @@ export default function EmailVerification() {
         <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
 
         <div className="w-full max-w-md relative z-10">
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            <img src={Logo} alt="Build Trust Logo" className="w-24 sm:w-28" />
+          </div>
+
           <Card className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/80 border-2 border-white/50 rounded-3xl shadow-2xl">
-            <CardHeader className="text-center space-y-4 pb-8 bg-gradient-to-b from-green-50 to-transparent rounded-t-3xl">
+            <CardHeader className="text-center space-y-4 pb-8 bg-gradient-to-b from-[#226F75]/5 to-transparent rounded-t-3xl">
               <div className="flex justify-center">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-[#226F75] to-[#253E44] rounded-full blur opacity-40 animate-pulse" />
@@ -180,6 +186,11 @@ export default function EmailVerification() {
       <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
 
       <div className="w-full max-w-md relative z-10">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <img src={Logo} alt="Build Trust Logo" className="w-24 sm:w-28" />
+        </div>
+
         <Link
           to="/auth"
           className="inline-flex items-center gap-2 text-sm text-[#226F75] hover:text-[#253E44] transition-colors mb-6 group font-medium"
@@ -189,17 +200,12 @@ export default function EmailVerification() {
         </Link>
 
         <Card className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/80 border-2 border-white/50 rounded-3xl shadow-2xl">
-          <CardHeader className="text-center space-y-4 pb-8 bg-gradient-to-b from-blue-50 to-transparent rounded-t-3xl">
+          <CardHeader className="text-center space-y-4 pb-8 bg-gradient-to-b from-[#226F75]/5 to-transparent rounded-t-3xl">
             <div className="flex justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#226F75] to-[#253E44] rounded-full blur opacity-40 animate-pulse" />
-                <div className="relative bg-gradient-to-r from-[#226F75] to-[#253E44] p-3 rounded-full">
-                  <Mail className="h-8 w-8 text-white" />
-                </div>
-              </div>
+              <img src={Logo} alt="Build Trust Logo" className="h-16 w-auto" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-[#226F75] to-[#253E44] bg-clip-text text-transparent">
                 Verify Your Email
               </CardTitle>
               <CardDescription className="text-base mt-2">
@@ -232,14 +238,14 @@ export default function EmailVerification() {
                     placeholder="Enter your verification token"
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
-                    className="h-12 border-2 focus:border-green-500 focus:ring-green-500/20 transition-all"
+                    className="h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
                     disabled={verifying}
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+                  className="w-full h-12 bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
                   disabled={verifying || !token.trim()}
                 >
                   {verifying ? (
@@ -273,7 +279,7 @@ export default function EmailVerification() {
                 <Button
                   variant="outline"
                   onClick={handleResendVerification}
-                  className="w-full border-green-200 hover:border-green-300 hover:bg-green-50"
+                  className="w-full border-[#226F75] border-opacity-20 hover:border-opacity-30 hover:bg-[#226F75] hover:bg-opacity-30"
                   disabled={resending}
                 >
                   {resending ? (
