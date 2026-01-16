@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import Logo from '../assets/Logo.png';
 
 const signInSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -268,6 +269,11 @@ export default function Auth() {
       <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
 
       <div className="w-full max-w-md relative z-10">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <img src={Logo} alt="Build Trust Logo" className="w-24 sm:w-28" />
+        </div>
+
         {/* Back Button */}
         <Link 
           to="/" 
