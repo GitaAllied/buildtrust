@@ -92,23 +92,24 @@ const Projects = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      <div className="bg-white border-b px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <Button 
               variant="ghost" 
               size="icon"
               onClick={() => navigate(-1)}
+              className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Projects</h1>
-              <p className="text-gray-500">Track and manage your construction projects</p>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 truncate">My Projects</h1>
+              <p className="text-xs sm:text-sm text-gray-500 truncate">Track and manage your construction projects</p>
             </div>
           </div>
           <Button 
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm w-full sm:w-auto"
             onClick={() => navigate('/browse')}
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -117,21 +118,21 @@ const Projects = () => {
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-3 sm:p-4 md:p-6">
         {/* Search and Filter */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <Input 
               placeholder="Search projects..." 
-              className="pl-10"
+              className="pl-10 text-xs sm:text-sm h-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <select 
-              className="px-4 py-2 border rounded-lg bg-white"
+              className="px-3 sm:px-4 py-2 border rounded-lg bg-white text-xs sm:text-sm h-9 flex-1 sm:flex-none"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -140,7 +141,7 @@ const Projects = () => {
               <option value="progress">In Progress</option>
               <option value="completed">Completed</option>
             </select>
-            <Button variant="outline">
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm w-full sm:w-auto">
               <Filter className="mr-2 h-4 w-4" />
               More Filters
             </Button>
@@ -148,70 +149,70 @@ const Projects = () => {
         </div>
 
         {/* Projects Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8">
           <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-gray-900">4</p>
-              <p className="text-sm text-gray-600">Total Projects</p>
+            <CardContent className="p-3 sm:p-4 md:p-6 text-center">
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">4</p>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">Total Projects</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-blue-600">2</p>
-              <p className="text-sm text-gray-600">In Progress</p>
+            <CardContent className="p-3 sm:p-4 md:p-6 text-center">
+              <p className="text-lg sm:text-2xl font-bold text-blue-600">2</p>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">In Progress</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-green-600">1</p>
-              <p className="text-sm text-gray-600">Completed</p>
+            <CardContent className="p-3 sm:p-4 md:p-6 text-center">
+              <p className="text-lg sm:text-2xl font-bold text-green-600">1</p>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">Completed</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-orange-600">1</p>
-              <p className="text-sm text-gray-600">Planning</p>
+            <CardContent className="p-3 sm:p-4 md:p-6 text-center">
+              <p className="text-lg sm:text-2xl font-bold text-orange-600">1</p>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">Planning</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Projects Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
           {filteredProjects.map((project) => (
             <Card key={project.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex space-x-4">
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <img
                     src={project.image}
                     alt={project.title}
-                    className="w-24 h-24 rounded-lg object-cover"
+                    className="w-full sm:w-24 md:w-32 h-40 sm:h-24 md:h-32 rounded-lg object-cover flex-shrink-0"
                   />
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-lg">{project.title}</h3>
-                      <Badge className={getStatusColor(project.status)}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2 gap-2">
+                      <h3 className="font-semibold text-xs sm:text-sm md:text-base truncate">{project.title}</h3>
+                      <Badge className={`${getStatusColor(project.status)} text-xs flex-shrink-0`}>
                         {project.status}
                       </Badge>
                     </div>
                     
-                    <div className="space-y-2 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {project.location}
+                    <div className="space-y-1 text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">{project.location}</span>
                       </div>
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 mr-1" />
-                        {project.developer}
+                      <div className="flex items-center gap-1">
+                        <User className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">{project.developer}</span>
                       </div>
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {project.startDate} - {project.expectedCompletion}
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate text-xs">{project.startDate} - {project.expectedCompletion}</span>
                       </div>
                     </div>
 
                     {project.status === "In Progress" && (
-                      <div className="mb-4">
-                        <div className="flex justify-between text-sm mb-1">
+                      <div className="mb-3 sm:mb-4">
+                        <div className="flex justify-between text-xs mb-1">
                           <span>Progress</span>
                           <span>{project.progress}%</span>
                         </div>
@@ -219,21 +220,23 @@ const Projects = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 mb-2">
                       <div>
-                        <p className="text-sm text-gray-500">Budget</p>
-                        <p className="font-semibold text-green-600">{project.budget}</p>
+                        <p className="text-xs text-gray-500">Budget</p>
+                        <p className="font-semibold text-sm sm:text-base text-green-600">{project.budget}</p>
                       </div>
                       <Button 
                         variant="outline"
+                        size="sm"
+                        className="text-xs w-full sm:w-auto"
                         onClick={() => navigate(`/project/${project.id}`)}
                       >
                         View Details
                       </Button>
                     </div>
 
-                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-600">
+                    <div className="p-2 sm:p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs sm:text-sm text-gray-600">
                         <strong>Latest Update:</strong> {project.lastUpdate}
                       </p>
                     </div>
@@ -245,10 +248,10 @@ const Projects = () => {
         </div>
 
         {filteredProjects.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No projects found matching your criteria.</p>
+          <div className="text-center py-8 sm:py-12">
+            <p className="text-sm sm:text-base text-gray-500 mb-4">No projects found matching your criteria.</p>
             <Button 
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm w-full sm:w-auto"
               onClick={() => navigate('/browse')}
             >
               Start Your First Project
