@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,6 +42,10 @@ import ProjectRequests from "./pages/ProjectRequests";
 import UploadUpdate from "./pages/UploadUpdate";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
+import ActiveProjects from "./pages/ActiveProjects";
+import DeveloperMessages from "./pages/DeveloperMessages";
+import DeveloperPayments from "./pages/DeveloperPayments";
+import DeveloperLiscences from "./pages/DeveloperLiscences";
 
 const queryClient = new QueryClient();
 
@@ -52,15 +55,15 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/verify-email" element={<EmailVerification />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/browse" element={<BrowseDevelopers />} />
-            <Route path="/developer/:id" element={<DeveloperProfile />} />
-            <Route 
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/verify-email" element={<EmailVerification />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/browse" element={<BrowseDevelopers />} />
+          <Route path="/developer/:id" element={<DeveloperProfile />} />
+          <Route 
               path="/client-dashboard" 
               element={
                 <ProtectedRoute requiredRole="client">
@@ -269,6 +272,38 @@ const App = () => (
               } 
             />
             <Route 
+              path="/active-projects" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <ActiveProjects />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/developer-messages" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperMessages />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/developer-payments" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperPayments />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/developer-liscences" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperLiscences />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/project-requests" 
               element={
                 <ProtectedRoute requiredRole="developer">
@@ -284,10 +319,79 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route path="/support" element={<Support />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+
+          {/* UI DESIGN */}
+          {/* <Route path="/client-dashboard" element={<ClientDashboard />} />
+          <Route path="/developer-dashboard" element={<DeveloperDashboard />} />
+          <Route
+            path="/super-admin-dashboard"
+            element={<SuperAdminDashboard />}
+          />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/users/:userId" element={<AdminUserView />} />
+          <Route path="/admin/users/:userId/edit" element={<AdminUserEdit />} />
+          <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route
+            path="/admin/settings/general"
+            element={<AdminSettingsGeneral />}
+          />
+          <Route
+            path="/admin/settings/security"
+            element={<AdminSettingsSecurity />}
+          />
+          <Route
+            path="/admin/settings/password"
+            element={<AdminSettingsPassword />}
+          />
+          <Route
+            path="/admin/settings/email"
+            element={<AdminSettingsEmail />}
+          />
+          <Route
+            path="/admin/settings/payment"
+            element={<AdminSettingsPayment />}
+          />
+          <Route
+            path="/admin/settings/notifications"
+            element={<AdminSettingsNotifications />}
+          />
+          <Route path="/admin/support" element={<AdminSupport />} />
+          <Route
+            path="/admin/support/ticket/:ticketId"
+            element={<AdminSupportTicketDetail />}
+          />
+          <Route
+            path="/admin/support/create"
+            element={<AdminSupportCreate />}
+          />
+          <Route
+            path="/admin/support/categories"
+            element={<AdminSupportCategories />}
+          />
+          <Route
+            path="/admin/support/settings"
+            element={<AdminSupportSettings />}
+          />
+          <Route path="/admin/messages" element={<AdminMessages />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/payments" element={<Payments />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/contracts" element={<Contracts />} />
+          <Route path="/saved-developers" element={<SavedDevelopers />} />
+          <Route path="/project-requests" element={<ProjectRequests />} />
+          <Route path="/upload-update" element={<UploadUpdate />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/active-projects" element={<ActiveProjects />} />
+          <Route path="/developer-messages" element={<DeveloperMessages />} />
+          <Route path="/developer-payments" element={<DeveloperPayments />} />
+          <Route path="/developer-liscences" element={<DeveloperLiscences />} /> */}
+          {/* UI DESIGN */}
+
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

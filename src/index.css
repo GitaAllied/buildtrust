@@ -137,4 +137,9 @@
   .animation-delay-4000 {
     animation-delay: 4s;
   }
+
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 0px; /* Adjust width as needed */
+    height: 0px;
+  }
 }

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Logo from '../assets/Logo.png'
 
 const BrowseDevelopers = () => {
   const navigate = useNavigate();
@@ -80,16 +81,13 @@ const BrowseDevelopers = () => {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 py-4">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center">
             <button onClick={() => navigate('/')} className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">BT</span>
-              </div>
-              <span className="text-lg font-semibold text-gray-900">BuildTrust Africa</span>
+              <img src={Logo} alt="" className=" w-[20%] md:w-[15%]" />
             </button>
           </div>
           <div className="text-sm text-gray-500">
-            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
+            <span className="bg-green-100 text-green-800 px-5 py-2 rounded-full hidden md:block">
               All developers are verified and licensed
             </span>
           </div>
@@ -249,7 +247,7 @@ const BrowseDevelopers = () => {
 
                   <p className="text-sm text-gray-600 mb-4 line-clamp-2">{dev.bio}</p>
 
-                  <Button className="w-full bg-green-600 hover:bg-green-700">
+                  <Button className="w-full bg-[#253E44] hover:bg-[#253E44]/90">
                     View Profile
                   </Button>
                 </div>
