@@ -71,7 +71,7 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
     const file = uploadedFiles[type as keyof typeof uploadedFiles];
     
     return (
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/60 transition-colors">
         <div className="flex items-center justify-center mb-4">
           <h3 className="text-sm font-semibold text-gray-800">{label}</h3>
           <span className="text-red-500 ml-1">*</span>
@@ -99,7 +99,7 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
           // File uploaded
           <div className="py-4">
             <div className="flex items-center justify-center mb-4">
-              <svg className="w-10 h-10 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-10 h-10 text-[#253E44] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -114,7 +114,7 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
                   onChange={(e) => handleFileChange(e, type)}
                   className="hidden"
                 />
-                <span className="block text-xs py-2 px-3 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                <span className="block text-xs py-2 px-3 bg-blue-100 text-[#253E44] rounded hover:bg-blue-200 transition-colors">
                   Change
                 </span>
               </label>
@@ -166,16 +166,16 @@ const isComplete = uploadedFiles.id && uploadedFiles.cac && uploadedFiles.selfie
         </div>
       )}
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-[#253E44]/5 border border-[#253E44]/20 rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
-            <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+          <div className="w-6 h-6 bg-[#253E44]/10 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
+            <svg className="w-4 h-4 text-[#253E44]" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-blue-800">Upload Status</h3>
-            <p className="text-sm text-blue-700 mt-1">
+            <h3 className="text-sm font-medium text-[#253E44]">Upload Status</h3>
+            <p className="text-sm text-[#253E44] mt-1">
               {isComplete 
                 ? '✓ All documents uploaded and ready to submit' 
                 : `${Object.keys(uploadedFiles).length}/3 documents uploaded`}

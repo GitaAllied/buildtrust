@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { EmailVerificationGuard } from "@/components/EmailVerificationGuard";
@@ -38,6 +38,14 @@ import ActiveProjects from "./pages/ActiveProjects";
 import DeveloperMessages from "./pages/DeveloperMessages";
 import DeveloperPayments from "./pages/DeveloperPayments";
 import DeveloperLiscences from "./pages/DeveloperLiscences";
+// TEST
+import BuildPreferences from "./components/setup/BuildPreferences";
+import IdentityVerification from "./components/setup/IdentityVerification";
+import LicensesCredentials from "./components/setup/LicensesCredentials";
+import ProfilePreview from "./components/setup/ProfilePreview";
+import ProjectGallery from "./components/setup/ProjectGallery";
+import PortfolioSetup from "./components/PortfolioSetup";
+import ProjectRequestModal from "./components/ProjectRequestModal";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +57,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <Routes>
+            <Route path="/test" element={<PortfolioSetup onExit={() => console.log("")}/>} />
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/verify-email" element={<EmailVerification />} />
@@ -56,7 +65,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/browse" element={<BrowseDevelopers />} />
             <Route path="/developer/:id" element={<DeveloperProfile />} />
-            <Route
+            {/* <Route
               path="/client-dashboard"
               element={
                 <ProtectedRoute requiredRole="client">
@@ -239,39 +248,48 @@ const App = () => (
                   <UploadUpdate />
                 </ProtectedRoute>
               }
-            />
+            /> */}
 
             {/* UI DESIGN */}
-            {/* <Route path="/client-dashboard" element={<ClientDashboard />} />
-          <Route path="/developer-dashboard" element={<DeveloperDashboard />} />
-          <Route
-            path="/super-admin-dashboard"
-            element={<SuperAdminDashboard />}
-          />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/users/:userId" element={<AdminUserView />} />
-          <Route path="/admin/users/:userId/edit" element={<AdminUserEdit />} />
-          <Route path="/admin/reports" element={<AdminReports />} />
-          <Route path="/admin/settings" element={<AdminSettings />} />
-          <Route path="/admin/support" element={<AdminSupport />} />
-          <Route
-            path="/admin/support/ticket/:ticketId"
-            element={<AdminSupportTicketDetail />}
-          />
-          <Route path="/admin/messages" element={<AdminMessages />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/payments" element={<Payments />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/contracts" element={<Contracts />} />
-          <Route path="/saved-developers" element={<SavedDevelopers />} />
-          <Route path="/project-requests" element={<ProjectRequests />} />
-          <Route path="/upload-update" element={<UploadUpdate />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/active-projects" element={<ActiveProjects />} />
-          <Route path="/developer-messages" element={<DeveloperMessages />} />
-          <Route path="/developer-payments" element={<DeveloperPayments />} />
-          <Route path="/developer-liscences" element={<DeveloperLiscences />} /> */}
+            <Route path="/client-dashboard" element={<ClientDashboard />} />
+            <Route
+              path="/developer-dashboard"
+              element={<DeveloperDashboard />}
+            />
+            <Route
+              path="/super-admin-dashboard"
+              element={<SuperAdminDashboard />}
+            />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/users/:userId" element={<AdminUserView />} />
+            <Route
+              path="/admin/users/:userId/edit"
+              element={<AdminUserEdit />}
+            />
+            <Route path="/admin/reports" element={<AdminReports />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin/support" element={<AdminSupport />} />
+            <Route
+              path="/admin/support/ticket/:ticketId"
+              element={<AdminSupportTicketDetail />}
+            />
+            <Route path="/admin/messages" element={<AdminMessages />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/payments" element={<Payments />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/contracts" element={<Contracts />} />
+            <Route path="/saved-developers" element={<SavedDevelopers />} />
+            <Route path="/project-requests" element={<ProjectRequests />} />
+            <Route path="/upload-update" element={<UploadUpdate />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/active-projects" element={<ActiveProjects />} />
+            <Route path="/developer-messages" element={<DeveloperMessages />} />
+            <Route path="/developer-payments" element={<DeveloperPayments />} />
+            <Route
+              path="/developer-liscences"
+              element={<DeveloperLiscences />}
+            />
             {/* UI DESIGN */}
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

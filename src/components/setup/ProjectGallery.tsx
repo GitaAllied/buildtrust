@@ -69,7 +69,7 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
             type="text"
             value={project.title}
             onChange={(e) => updateProject(project.id, 'title', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#253E44]/50 focus:border-transparent"
             placeholder="e.g., Luxury Villa Development"
           />
         </div>
@@ -79,7 +79,7 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
           <select
             value={project.type}
             onChange={(e) => updateProject(project.id, 'type', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#253E44]/50 focus:border-transparent"
           >
             <option value="">Select type</option>
             <option value="residential">Residential</option>
@@ -96,7 +96,7 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
             type="text"
             value={project.location}
             onChange={(e) => updateProject(project.id, 'location', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#253E44]/50 focus:border-transparent"
             placeholder="e.g., Victoria Island, Lagos"
           />
         </div>
@@ -106,7 +106,7 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
           <select
             value={project.budget}
             onChange={(e) => updateProject(project.id, 'budget', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#253E44]/50 focus:border-transparent"
           >
             <option value="">Select budget range</option>
             <option value="under-50m">Under ₦50M</option>
@@ -124,14 +124,14 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
           value={project.description}
           onChange={(e) => updateProject(project.id, 'description', e.target.value)}
           rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#253E44]/50 focus:border-transparent"
           placeholder="Describe the project scope, challenges overcome, and your role..."
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Media Upload</label>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-500 transition-colors">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#253E44]/50 transition-colors">
           <input
             type="file"
             multiple
@@ -154,7 +154,7 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
           </label>
         </div>
         {project.media.length > 0 && (
-          <div className="mt-2 text-sm text-green-600">
+          <div className="mt-2 text-sm text-[#253E44]/60">
             {project.media.length} file(s) selected
           </div>
         )}
@@ -177,14 +177,14 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
 
       <button
         onClick={addProject}
-        className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 hover:bg-green-50 transition-colors group"
+        className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/50 hover:bg-[#253E44]/5 transition-colors group"
       >
-        <div className="w-12 h-12 bg-gray-100 group-hover:bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors">
-          <svg className="w-6 h-6 text-gray-400 group-hover:text-green-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-12 h-12 bg-gray-100 group-hover:bg-[#253E44]/10 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors">
+          <svg className="w-6 h-6 text-gray-400 group-hover:text-[#253E44]/60 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
         </div>
-        <div className="text-lg font-medium text-gray-900 group-hover:text-green-600 transition-colors">Add Another Project</div>
+        <div className="text-lg font-medium text-gray-900 group-hover:text-[#253E44]/60 transition-colors">Add Another Project</div>
         <div className="text-sm text-gray-500">Showcase more of your work</div>
       </button>
     </div>

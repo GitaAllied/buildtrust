@@ -433,8 +433,8 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
     <div className="space-y-8">
       {userType === 'developer' && (
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl mb-4">
-            <User className="w-8 h-8 text-green-600" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#253E44]/10 rounded-2xl mb-4">
+            <User className="w-8 h-8 text-[#253E44]" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Personal & Company Information</h2>
           <p className="text-gray-600 max-w-md mx-auto">
@@ -448,7 +448,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
-                <User className="w-4 h-4 mr-2 text-green-600" />
+                <User className="w-4 h-4 mr-2 text-[#253E44]" />
                 Full Name <span className="text-red-500 ml-1">*</span>
               </label>
               <input
@@ -457,14 +457,14 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
                 onChange={(e) => updateData('fullName', e.target.value)}
                 onFocus={() => handleFieldFocus('fullName')}
                 required
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-500 transition-all duration-200 text-gray-900 placeholder-gray-500 ${getFieldBorderColor('fullName', formData.fullName)} ${getFieldBgColor('fullName', formData.fullName)}`}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-[#253E44] transition-all duration-200 text-gray-900 placeholder-gray-500 ${getFieldBorderColor('fullName', formData.fullName)} ${getFieldBgColor('fullName', formData.fullName)}`}
                 placeholder="Enter your full name"
               />
             </div>
 
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
-                <Building2 className="w-4 h-4 mr-2 text-green-600" />
+                <Building2 className="w-4 h-4 mr-2 text-[#253E44]" />
                 Company Type <span className="text-red-500 ml-1">*</span>
               </label>
               <select
@@ -472,7 +472,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
                 onChange={(e) => updateData('companyType', e.target.value)}
                 onFocus={() => handleFieldFocus('companyType')}
                 required
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-500 transition-all duration-200 text-gray-900 ${getSelectBorderColor('companyType', formData.companyType)} ${getFieldBgColor('companyType', formData.companyType)}`}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-[#253E44] transition-all duration-200 text-gray-900 ${getSelectBorderColor('companyType', formData.companyType)} ${getFieldBgColor('companyType', formData.companyType)}`}
               >
                 <option value="">Select company type</option>
                 <option value="solo">Solo Developer</option>
@@ -484,7 +484,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
 
           <div className="group">
             <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
-              <Award className="w-4 h-4 mr-2 text-green-600" />
+              <Award className="w-4 h-4 mr-2 text-[#253E44]" />
               Years of Experience <span className="text-red-500 ml-1">*</span>
             </label>
             <select
@@ -492,7 +492,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
               onChange={(e) => updateData('yearsExperience', e.target.value)}
               onFocus={() => handleFieldFocus('yearsExperience')}
               required
-              className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-500 transition-all duration-200 text-gray-900 ${getSelectBorderColor('yearsExperience', formData.yearsExperience)} ${getFieldBgColor('yearsExperience', formData.yearsExperience)}`}
+              className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-[#253E44] transition-all duration-200 text-gray-900 ${getSelectBorderColor('yearsExperience', formData.yearsExperience)} ${getFieldBgColor('yearsExperience', formData.yearsExperience)}`}
             >
               <option value="">Select experience level</option>
               <option value="1-3">1-3 years (Beginner)</option>
@@ -507,7 +507,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
-                <User className="w-4 h-4 mr-2 text-blue-600" />
+                <User className="w-4 h-4 mr-2 text-[#253E44]" />
                 Full Name <span className="text-red-500 ml-1">*</span>
               </label>
               <input
@@ -523,7 +523,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
 
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
-                <Phone className="w-4 h-4 mr-2 text-blue-600" />
+                <Phone className="w-4 h-4 mr-2 text-[#253E44]" />
                 Phone Number <span className="text-red-500 ml-1">*</span>
               </label>
               <input
@@ -532,7 +532,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
                 onChange={(e) => updateData('phoneNumber', e.target.value)}
                 onFocus={() => handleFieldFocus('phoneNumber')}
                 required
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-500 ${getFieldBorderColor('phoneNumber', formData.phoneNumber)} ${getFieldBgColor('phoneNumber', formData.phoneNumber)}`}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-[#253E44] transition-all duration-200 text-gray-900 placeholder-gray-500 ${getFieldBorderColor('phoneNumber', formData.phoneNumber)} ${getFieldBgColor('phoneNumber', formData.phoneNumber)}`}
                 placeholder="+234 xxx xxx xxxx"
               />
             </div>
@@ -541,7 +541,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
-                <MapPin className="w-4 h-4 mr-2 text-blue-600" />
+                <MapPin className="w-4 h-4 mr-2 text-[#253E44]" />
                 Current Location <span className="text-red-500 ml-1">*</span>
               </label>
               <Select
@@ -586,7 +586,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
 
             <div className="group">
               <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
-                <Briefcase className="w-4 h-4 mr-2 text-blue-600" />
+                <Briefcase className="w-4 h-4 mr-2 text-[#253E44]" />
                 Occupation <span className="text-red-500 ml-1">*</span>
               </label>
               <select
@@ -594,7 +594,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
                 onChange={(e) => updateData('occupation', e.target.value)}
                 onFocus={() => handleFieldFocus('occupation')}
                 required
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-gray-900 ${getSelectBorderColor('occupation', formData.occupation)} ${getFieldBgColor('occupation', formData.occupation)}`}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-[#253E44] transition-all duration-200 text-gray-900 ${getSelectBorderColor('occupation', formData.occupation)} ${getFieldBgColor('occupation', formData.occupation)}`}
               >
                 <option value="">Select your occupation</option>
                 <option value="software-engineer">Software Engineer</option>
@@ -618,7 +618,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
         <>
           <div className="group">
             <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
-              <MapPin className="w-4 h-4 mr-2 text-green-600" />
+              <MapPin className="w-4 h-4 mr-2 text-[#253E44]" />
               Cities Covered <span className="text-red-500 ml-1">*</span>
             </label>
             <Select
@@ -682,7 +682,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
 
           <div className="group">
             <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
-              <Languages className="w-4 h-4 mr-2 text-green-600" />
+              <Languages className="w-4 h-4 mr-2 text-[#253E44]" />
               Languages Spoken <span className="text-red-500 ml-1">*</span>
             </label>
             <Select
@@ -748,7 +748,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
 
       <div className="group">
         <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
-          <FileText className={`w-4 h-4 mr-2 ${userType === 'developer' ? 'text-green-600' : 'text-blue-600'}`} />
+          <FileText className={`w-4 h-4 mr-2 ${userType === 'developer' ? 'text-[#253E44]' : 'text-[#226F75]'}`} />
           About / Bio <span className="text-red-500 ml-1">*</span>
         </label>
         <textarea
@@ -760,7 +760,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
           required
           className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 transition-all duration-200 text-gray-900 placeholder-gray-500 resize-none ${getFieldBorderColor('bio', formData.bio)} ${getFieldBgColor('bio', formData.bio)} ${
             userType === 'developer'
-              ? 'focus:ring-green-500'
+              ? 'focus:ring-[#253E44]'
               : 'focus:ring-blue-500'
           }`}
           placeholder={userType === 'developer' ? "Tell potential clients about your experience, specialties, and what makes you unique..." : "Tell developers about your project needs and expectations..."}

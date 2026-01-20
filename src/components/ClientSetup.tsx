@@ -9,6 +9,7 @@ import PersonalInfo from "./setup/PersonalInfo";
 import BuildPreferences from "./setup/BuildPreferences";
 import ProgressTracker from "./setup/ProgressTracker";
 import NavigationButtons from "./setup/NavigationButtons";
+import Logo from '../assets/Logo.png'
 
 interface ClientSetupProps {
   onExit: () => void;
@@ -135,7 +136,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
           <div>
             <div className="text-center mb-6 sm:mb-8">
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <User className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+                <User className="w-6 h-6 sm:w-8 sm:h-8 text-[#226F75]" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Tell us about yourself</h2>
               <p className="text-sm sm:text-base text-gray-600 px-4">Help us personalize your experience and connect you with the right developers.</p>
@@ -161,7 +162,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
           <div>
             <div className="text-center mb-6 sm:mb-8">
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Home className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+                <Home className="w-6 h-6 sm:w-8 sm:h-8 text-[#253E44]" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">What are you looking to build?</h2>
               <p className="text-sm sm:text-base text-gray-600 px-4">Share your project requirements and preferences to find the perfect match.</p>
@@ -186,8 +187,8 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         return (
           <div>
             <div className="text-center mb-6 sm:mb-8">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#253E44]/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-[#253E44]/60" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Review Your Profile</h2>
               <p className="text-sm sm:text-base text-gray-600 px-4">Everything looks great! You're ready to start your building journey.</p>
@@ -289,13 +290,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-lg">BT</span>
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">BuildTrust Africa</h1>
-                <p className="text-xs sm:text-sm text-gray-500">Client Profile Setup</p>
-              </div>
+              <img src={Logo} alt="" className=" w-[20%] md:w-[10%]"/>
             </div>
             <Button variant="ghost" onClick={onExit} className="flex-shrink-0">
               <span className="hidden sm:inline">Exit Setup</span>
