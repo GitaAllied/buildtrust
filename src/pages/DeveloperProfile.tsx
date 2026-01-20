@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectRequestModal from "../components/ProjectRequestModal";
+import Logo from '../assets/Logo.png'
 
 const DeveloperProfile = () => {
   const navigate = useNavigate();
@@ -98,19 +99,11 @@ const DeveloperProfile = () => {
       <header className="bg-white border-b border-gray-200 py-4">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <button onClick={() => navigate('/browse')} className="text-gray-400 hover:text-gray-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
             <button onClick={() => navigate('/')} className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">BT</span>
-              </div>
-              <span className="text-lg font-semibold text-gray-900">BuildTrust Africa</span>
+              <img src={Logo} alt="" className="w-[20%] md:w-[15%]" />
             </button>
           </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
+          <div className=" items-center space-x-2 text-sm text-gray-500 hidden md:flex">
             <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -147,7 +140,7 @@ const DeveloperProfile = () => {
                     </svg>
                     {developer.rating} ({developer.completedProjects} projects)
                   </div>
-                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                  <div className="bg-[#226F75]/10 text-[#226F75] px-2 py-1 rounded-full">
                     {developer.transparencyScore}% Trust Score
                   </div>
                 </div>
@@ -155,7 +148,7 @@ const DeveloperProfile = () => {
               <div className="mt-6 lg:mt-0">
                 <Button 
                   onClick={() => setShowRequestModal(true)}
-                  className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3 h-auto"
+                  className="bg-[#253E44] hover:bg-[#253E44]/70 text-lg px-8 py-3 h-auto"
                 >
                   Request to Build
                 </Button>
@@ -202,7 +195,7 @@ const DeveloperProfile = () => {
                         <h4 className="font-medium text-gray-900 mb-2">Build Types</h4>
                         <div className="flex flex-wrap gap-2">
                           {developer.buildTypes.map((type) => (
-                            <span key={type} className="bg-green-100 text-green-700 px-2 py-1 rounded text-sm">
+                            <span key={type} className="bg-[#226F75]/10 text-[#226F75] px-2 py-1 rounded text-sm">
                               {type}
                             </span>
                           ))}

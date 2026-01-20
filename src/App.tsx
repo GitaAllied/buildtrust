@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -44,6 +43,10 @@ import ProjectRequests from "./pages/ProjectRequests";
 import UploadUpdate from "./pages/UploadUpdate";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
+import ActiveProjects from "./pages/ActiveProjects";
+import DeveloperMessages from "./pages/DeveloperMessages";
+import DeveloperPayments from "./pages/DeveloperPayments";
+import DeveloperLiscences from "./pages/DeveloperLiscences";
 
 const queryClient = new QueryClient();
 
@@ -54,7 +57,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-            <Routes>
+          <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/verify-email" element={<EmailVerification />} />
@@ -62,7 +65,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/browse" element={<BrowseDevelopers />} />
             <Route path="/developer/:id" element={<DeveloperProfile />} />
-            <Route 
+            <Route
               path="/client-dashboard" 
               element={
                 <ProtectedRoute requiredRole="client">
@@ -271,6 +274,38 @@ const App = () => (
               } 
             />
             <Route 
+              path="/active-projects" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <ActiveProjects />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/developer-messages" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperMessages />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/developer-payments" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperPayments />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/developer-liscences" 
+              element={
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperLiscences />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/project-requests" 
               element={
                 <ProtectedRoute requiredRole="developer">
@@ -286,6 +321,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+<<<<<<< HEAD
             <Route path="/support" element={<Support />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
