@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import z from "zod";
 
 interface IdentityVerificationProps {
   data: any;
@@ -8,94 +7,138 @@ interface IdentityVerificationProps {
 }
 
 const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => {
-  const [files, setFiles] = useState({
-    id: null as File | null,
-    cac: null as File | null,
-    selfie: null as File | null,
-});
-const [error, setError] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<{
+    id?: { name: string; size: number };
+    cac?: { name: string; size: number };
+    selfie?: { name: string; size: number };
+  }>({});
+  const [error, setError] = useState<string | null>(null);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-  const ALLOWED_DOC_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png'];
 
-  const handleFileUpload = (type: string, file: File | null) => {
-    setError(null);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+    console.log('handleFileChange called for:', type);
+    
+    const file = e.currentTarget.files?.[0];
     if (!file) {
-      setFiles(prev => ({ ...prev, [type]: null }));
-      onChange({ ...data, [type]: null });
+      console.log('No file selected');
       return;
     }
 
-    // Validate file type depending on the field
+    console.log('File selected:', file.name, file.type, file.size);
+    setError(null);
+
+    // Validate size
+    if (file.size > MAX_FILE_SIZE) {
+      setError('File too large. Max 10 MB.');
+      return;
+    }
+
+    // Validate type
     if (type === 'selfie') {
-      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        setError('Selfie must be a JPG or PNG image.');
+      if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        setError('Selfie must be JPG or PNG');
         return;
       }
     } else {
-      if (!ALLOWED_DOC_TYPES.includes(file.type)) {
-        setError('Invalid file type. Allowed: PDF, JPG, PNG');
+      if (!['application/pdf', 'image/jpeg', 'image/png'].includes(file.type)) {
+        setError('Invalid file type. Use PDF or image.');
         return;
       }
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      setError('File too large. Max size is 10 MB');
-      return;
-    }
+    // Store file metadata
+    setUploadedFiles(prev => ({
+      ...prev,
+      [type]: { name: file.name, size: file.size }
+    }));
 
-    setFiles(prev => ({ ...prev, [type]: file }));
+    // Pass file to parent
     onChange({ ...data, [type]: file });
+    console.log('File saved:', type);
   };
 
-  const FileUploadBox = ({ label, type, accept }: { label: string; type: string; accept: string }) => (
-    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors">
-      <div className="flex items-center justify-center mb-3">
-        <h3 className="text-sm font-semibold text-gray-800">{label}</h3>
-        <span className="text-red-500 ml-1">*</span>
-      </div>
-      <input
-        type="file"
-        accept={accept}
-        onChange={(e) => handleFileUpload(type, e.target.files?.[0] || null)}
-        className="hidden"
-        id={`file-${type}`}
-        required
-      />
-      <label htmlFor={`file-${type}`} className="cursor-pointer">
-        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
+  const removeFile = (type: string) => {
+    setUploadedFiles(prev => {
+      const updated = { ...prev };
+      delete updated[type as keyof typeof updated];
+      return updated;
+    });
+    onChange({ ...data, [type]: null });
+  };
+
+  const FileUploadBox = ({ label, type, accept }: { label: string; type: string; accept: string }) => {
+    const file = uploadedFiles[type as keyof typeof uploadedFiles];
+    
+    return (
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+        <div className="flex items-center justify-center mb-4">
+          <h3 className="text-sm font-semibold text-gray-800">{label}</h3>
+          <span className="text-red-500 ml-1">*</span>
         </div>
-        <div className="text-xs text-gray-500">Click to upload or drag and drop</div>
-        {files[type as keyof typeof files] && (
-          <div className="mt-2 text-xs text-green-600 font-medium">
-            ✓ {files[type as keyof typeof files]?.name}
+
+        {!file ? (
+          // No file uploaded
+          <label className="block cursor-pointer">
+            <input
+              type="file"
+              accept={accept}
+              onChange={(e) => handleFileChange(e, type)}
+              className="hidden"
+            />
+            <div className="flex flex-col items-center justify-center py-6">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+              <p className="text-xs text-gray-500">Click or drag file here</p>
+            </div>
+          </label>
+        ) : (
+          // File uploaded
+          <div className="py-4">
+            <div className="flex items-center justify-center mb-4">
+              <svg className="w-10 h-10 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-gray-800 mb-1 break-words">{file.name}</p>
+            <p className="text-xs text-gray-500 mb-4">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+            
+            <div className="flex gap-2">
+              <label className="flex-1 cursor-pointer">
+                <input
+                  type="file"
+                  accept={accept}
+                  onChange={(e) => handleFileChange(e, type)}
+                  className="hidden"
+                />
+                <span className="block text-xs py-2 px-3 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                  Change
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={() => removeFile(type)}
+                className="flex-1 text-xs py-2 px-3 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
           </div>
         )}
-      </label>
-    </div>
-  );
-
-  const isComplete = files.id && files.cac && files.selfie;
-
-  const handleNext = () => {
-    if (!isComplete) {
-      setError('Please upload all required documents to continue.');
-      return false;
-    }
-    setError(null);
-    onChange({ ...data, verificationComplete: true });
-    return true;
+      </div>
+    );
   };
+
+const isComplete = uploadedFiles.id && uploadedFiles.cac && uploadedFiles.selfie;
 
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Identity Verification</h2>
-        <p className="text-gray-600">Upload your identification documents to verify your identity. This helps build trust with potential clients.</p>
+        <p className="text-gray-600">Upload your identification documents to verify your identity.</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -118,32 +161,25 @@ const [error, setError] = useState<string | null>(null);
       />
 
       {error && (
-        <div className="rounded-md bg-red-50 border border-red-200 p-3 mt-4 text-sm text-red-700">
+        <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center mt-0.5">
-            <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
+            <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-amber-800">Verification Status: Pending Approval</h3>
-            <p className="text-sm text-amber-700 mt-1">
-              Your documents will be reviewed within 24-48 hours. You'll receive an email notification once approved.
+            <h3 className="text-sm font-medium text-blue-800">Upload Status</h3>
+            <p className="text-sm text-blue-700 mt-1">
+              {isComplete 
+                ? '✓ All documents uploaded and ready to submit' 
+                : `${Object.keys(uploadedFiles).length}/3 documents uploaded`}
             </p>
-            <div className="mt-3">
-              <div className="flex items-center justify-between text-xs text-amber-700 mb-1">
-                <span>Verification Progress</span>
-                <span>{Object.values(files).filter(Boolean).length}/3 Complete</span>
-              </div>
-              <div className="w-full bg-amber-200 rounded-full h-2">
-                <div className="bg-amber-500 h-2 rounded-full" style={{ width: `${(Object.values(files).filter(Boolean).length / 3) * 100}%` }}></div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

@@ -92,6 +92,9 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         
         await refreshUser();
         
+        // Clear localStorage on successful submission
+        localStorage.removeItem('buildtrust_personal_info');
+        
         setIsComplete(true);
       } catch (error: any) {
         console.error('❌ FAILED TO SAVE PROFILE:', {
@@ -148,6 +151,8 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.personal}
+              userType="client"
             />
           </div>
         );
@@ -172,6 +177,8 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.preferences}
+              userType="client"
             />
           </div>
         );
@@ -210,6 +217,8 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.preferences}
+              userType="client"
             />
           </div>
         );
@@ -227,6 +236,8 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.personal}
+              userType="client"
             />
           </div>
         );
