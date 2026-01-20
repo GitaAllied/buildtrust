@@ -83,7 +83,7 @@ const NavigationButtons = ({
             px-6 py-3 rounded-lg font-medium transition-colors
             ${!isFormComplete
               ? 'cursor-not-allowed opacity-50 bg-gray-400'
-              : 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800'
+              : 'bg-[#253E44] text-white hover:bg-[#253E44]/90 active:bg-[#253E44]/80'
             }
           `}
         >

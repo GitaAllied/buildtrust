@@ -13,6 +13,7 @@ import BuildPreferences from "./setup/BuildPreferences";
 import ProfilePreview from "./setup/ProfilePreview";
 import ProgressTracker from "./setup/ProgressTracker";
 import NavigationButtons from "./setup/NavigationButtons";
+import Logo from '../assets/Logo.png'
 
 interface PortfolioSetupProps {
   onExit: () => void;
@@ -462,7 +463,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
           <div className="space-y-4">
             <Button 
               onClick={handleGoToDashboard}
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full bg-[#253E44] hover:bg-[#253E44]/90"
             >
               Go to Developer Dashboard
             </Button>
@@ -487,13 +488,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-lg">BT</span>
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">BuildTrust Africa</h1>
-                <p className="text-xs sm:text-sm text-gray-500">Developer Profile Setup</p>
-              </div>
+              <img src={Logo} alt="" className=" w-[20%] md:w-[15%]"/>
             </div>
             <Button variant="ghost" onClick={onExit} className="flex-shrink-0">
               <span className="hidden sm:inline">Exit Setup</span>

@@ -16,8 +16,8 @@ const ProgressTracker = ({ currentStep, totalSteps }: ProgressTrackerProps) => {
           <div key={stepNumber} className="flex items-center">
             <div className={`
               w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors
-              ${isCompleted ? 'bg-green-600 text-white' : ''}
-              ${isCurrent ? 'bg-green-600 text-white' : ''}
+              ${isCompleted ? 'bg-[#226F75] text-white' : ''}
+              ${isCurrent ? 'bg-[#226F75] text-white' : ''}
               ${!isCompleted && !isCurrent ? 'bg-gray-200 text-gray-500' : ''}
             `}>
               {isCompleted ? (
@@ -31,7 +31,7 @@ const ProgressTracker = ({ currentStep, totalSteps }: ProgressTrackerProps) => {
             {stepNumber < totalSteps && (
               <div className={`
                 w-16 h-1 mx-2 transition-colors
-                ${stepNumber < currentStep ? 'bg-green-600' : 'bg-gray-200'}
+                ${stepNumber < currentStep ? 'bg-[#226F75]' : 'bg-gray-200'}
               `} />
             )}
           </div>

@@ -14,11 +14,11 @@ const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
       </div>
 
       {/* Profile Header */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-[#253E44]/80 to-[#253E44]/90 rounded-xl p-6 text-white">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold">{personal.fullName || "Your Name"}</h1>
-            <p className="text-green-100 mt-1">{personal.companyType || "Developer"} • {personal.yearsExperience || "Experience Level"}</p>
+            <p className="text-[#253E44]/10 mt-1">{personal.companyType || "Developer"} • {personal.yearsExperience || "Experience Level"}</p>
             <div className="flex items-center space-x-4 mt-3">
               <div className="flex items-center space-x-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,7 +36,7 @@ const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
             </div>
           </div>
           <div className="text-right">
-            <div className="inline-flex items-center px-3 py-1 bg-green-500 rounded-full text-sm font-medium">
+            <div className="inline-flex items-center px-3 py-1 bg-[#253E44]/50 rounded-full text-sm font-medium">
               ✓ Verified Developer
             </div>
           </div>
@@ -90,7 +90,7 @@ const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Preferred Project Types</h4>
                 <div className="flex flex-wrap gap-2">
                   {preferences.projectTypes.slice(0, 3).map((type: string, index: number) => (
-                    <span key={index} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                    <span key={index} className="px-2 py-1 bg-[#253E44]/10 text-[#253E44]/80 rounded text-xs">
                       {type}
                     </span>
                   ))}
@@ -115,9 +115,9 @@ const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
       )}
 
       {/* Submit Section */}
-      <div className="bg-gradient-to-r from-gray-50 to-green-50 border border-gray-200 rounded-lg p-6 text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="bg-gradient-to-r from-gray-50 to-[#253E44]/5 border border-gray-200 rounded-lg p-6 text-center">
+        <div className="w-16 h-16 bg-[#253E44]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-[#253E44]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>

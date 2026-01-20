@@ -63,7 +63,7 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => toggleArrayItem(field, option)}
-                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                className="w-4 h-4 text-[#253E44] border-gray-300 rounded focus:ring-[#253E44]"
               />
               <span className="text-sm text-gray-700">{option}</span>
             </label>
@@ -122,7 +122,7 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
         <select
           value={preferences.budgetRange}
           onChange={(e) => updatePreferences('budgetRange', e.target.value)}
-          className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#253E44] focus:border-transparent"
         >
           <option value="">Select preferred budget range</option>
           <option value="under-50m">Under ₦50M</option>
@@ -153,7 +153,7 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
                     value={style}
                     checked={preferences.workingStyle === style}
                     onChange={(e) => updatePreferences('workingStyle', e.target.value)}
-                    className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
+                    className="w-4 h-4 text-[#253E44] border-gray-300 focus:ring-[#253E44]"
                   />
                   <span className="text-sm text-gray-700">{style}</span>
                 </label>
@@ -166,7 +166,7 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
             <select
               value={preferences.availability}
               onChange={(e) => updatePreferences('availability', e.target.value)}
-              className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#253E44] focus:border-transparent"
             >
               <option value="">Select availability</option>
               <option value="immediate">Available immediately</option>
@@ -194,16 +194,16 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
         </>
       )}
 
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+      <div className="bg-[#253E44]/5 border border-[#253E44]/5 rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
-            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-6 h-6 bg-[#253E44]/10 rounded-full flex items-center justify-center mt-0.5">
+            <svg className="w-4 h-4 text-[#253E44]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-green-800">Smart Matching</h3>
-            <p className="text-sm text-green-700 mt-1">
+            <h3 className="text-sm font-medium text-[#253E44]/80">Smart Matching</h3>
+            <p className="text-sm text-[#253E44] mt-1">
               Your preferences help us match you with clients looking for developers with your specific expertise and availability.
             </p>
           </div>

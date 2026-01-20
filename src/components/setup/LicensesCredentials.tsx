@@ -89,7 +89,7 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
         </div>
       </div>
 
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors">
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/60 transition-colors">
         <input
           type="file"
           multiple
@@ -116,8 +116,8 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
           {files[type as keyof typeof files].map((file: File, index: number) => (
             <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 bg-[#253E44]/10 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-[#253E44]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
@@ -175,16 +175,16 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
         examples={["Client recommendation letters", "Project completion certificates", "Testimonial documents"]}
       />
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-[#253E44]/5 border border-[#253E44]/20 rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-6 h-6 bg-[#253E44]/10 rounded-full flex items-center justify-center mt-0.5">
+            <svg className="w-4 h-4 text-[#253E44]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-blue-800">Verification Process</h3>
-            <p className="text-sm text-blue-700 mt-1">
+            <h3 className="text-sm font-medium text-[#253E44]/80">Verification Process</h3>
+            <p className="text-sm text-[#253E44]/70 mt-1">
               All uploaded documents will be verified by our team. Verified credentials will be displayed with a badge on your profile.
             </p>
           </div>
