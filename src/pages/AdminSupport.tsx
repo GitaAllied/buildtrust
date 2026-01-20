@@ -645,111 +645,104 @@ const AdminSupport = () => {
           <div className="flex-1 w-full p-6">
             {/* TICKET */}
             {activeSection === "tickets" && (
-              <div>
-                <div className=" grid grid-cols-1 gap-6">
-                  {/* Main Content */}
-                  <div className=" space-y-6">
-                    {/* Support Tickets */}
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center justify-between flex-col md:flex-row gap-4">
-                          <CardTitle className="flex items-center">
-                            <MessageSquare className="mr-2 h-5 w-5" />
-                            Support Tickets
-                          </CardTitle>
-                          <div className="flex items-center space-x-3 w-full">
-                            <Select
-                              value={selectedCategory}
-                              onValueChange={setSelectedCategory}
-                            >
-                              <SelectTrigger className="w-full sm:w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
-                                <SelectItem value="payment">Payment</SelectItem>
-                                <SelectItem value="technical">
-                                  Technical
-                                </SelectItem>
-                                <SelectItem value="account">Account</SelectItem>
-                                <SelectItem value="system">System</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Select
-                              value={selectedStatus}
-                              onValueChange={setSelectedStatus}
-                            >
-                              <SelectTrigger className="w-full sm:w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Status</SelectItem>
-                                <SelectItem value="open">Open</SelectItem>
-                                <SelectItem value="inprogress">
-                                  In Progress
-                                </SelectItem>
-                                <SelectItem value="resolved">
-                                  Resolved
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+              <div className="min-h-screen bg-gray-50">
+                <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                  {/* Support Tickets */}
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between flex-col md:flex-row gap-4">
+                        <CardTitle className="flex items-center">
+                          <MessageSquare className="mr-2 h-5 w-5" />
+                          Support Tickets
+                        </CardTitle>
+                        <div className="flex items-center space-x-3 w-full md:w-fit">
+                          <Select
+                            value={selectedCategory}
+                            onValueChange={setSelectedCategory}
+                          >
+                            <SelectTrigger className="w-full sm:w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All</SelectItem>
+                              <SelectItem value="payment">Payment</SelectItem>
+                              <SelectItem value="technical">
+                                Technical
+                              </SelectItem>
+                              <SelectItem value="account">Account</SelectItem>
+                              <SelectItem value="system">System</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={selectedStatus}
+                            onValueChange={setSelectedStatus}
+                          >
+                            <SelectTrigger className="w-full sm:w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Status</SelectItem>
+                              <SelectItem value="open">Open</SelectItem>
+                              <SelectItem value="inprogress">
+                                In Progress
+                              </SelectItem>
+                              <SelectItem value="resolved">Resolved</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {filteredTickets.map((ticket) => (
-                            <div
-                              key={ticket.id}
-                              className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                            >
-                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center justify-between md:justify-start space-x-2 mb-2">
-                                    <h4 className="font-medium text-gray-900">
-                                      {ticket.subject}
-                                    </h4>
-                                    {getPriorityBadge(ticket.priority)}
-                                  </div>
-                                  <div className="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
-                                    <span className="flex items-center">
-                                      <User className="h-4 w-4 mr-1" />
-                                      {ticket.user}
-                                    </span>
-                                    <span className="flex items-center">
-                                      <Mail className="h-4 w-4 mr-1" />
-                                      {ticket.email}
-                                    </span>
-                                    <span>Category: {ticket.category}</span>
-                                  </div>
-                                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                    <span>Created: {ticket.created}</span>
-                                    <span>
-                                      Last update: {ticket.lastUpdate}
-                                    </span>
-                                  </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {filteredTickets.map((ticket) => (
+                          <div
+                            key={ticket.id}
+                            className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between md:justify-start space-x-2 mb-2">
+                                  <h4 className="font-medium text-gray-900">
+                                    {ticket.subject}
+                                  </h4>
+                                  {getPriorityBadge(ticket.priority)}
                                 </div>
-                                <div className="flex items-center justify-between md:justify-start space-x-2 mt-3 sm:mt-0">
-                                  {getStatusBadge(ticket.status)}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      navigate(
-                                        `/admin/support/ticket/${ticket.id}`,
-                                      )
-                                    }
-                                  >
-                                    View
-                                  </Button>
+                                <div className="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
+                                  <span className="flex items-center">
+                                    <User className="h-4 w-4 mr-1" />
+                                    {ticket.user}
+                                  </span>
+                                  <span className="flex items-center">
+                                    <Mail className="h-4 w-4 mr-1" />
+                                    {ticket.email}
+                                  </span>
+                                  <span>Category: {ticket.category}</span>
+                                </div>
+                                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                  <span>Created: {ticket.created}</span>
+                                  <span>Last update: {ticket.lastUpdate}</span>
                                 </div>
                               </div>
+                              <div className="flex items-center justify-between md:justify-start space-x-2 mt-3 sm:mt-0">
+                                {getStatusBadge(ticket.status)}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    navigate(
+                                      `/admin/support/ticket/${ticket.id}`,
+                                    )
+                                  }
+                                >
+                                  View
+                                </Button>
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                   {/* Recent Activity */}
                   <Card>
                     <CardHeader>
