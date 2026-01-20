@@ -18,18 +18,9 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
-import AdminSettingsGeneral from "./pages/AdminSettingsGeneral";
-import AdminSettingsSecurity from "./pages/AdminSettingsSecurity";
-import AdminSettingsPassword from "./pages/AdminSettingsPassword";
-import AdminSettingsEmail from "./pages/AdminSettingsEmail";
-import AdminSettingsPayment from "./pages/AdminSettingsPayment";
-import AdminSettingsNotifications from "./pages/AdminSettingsNotifications";
 import AdminSupport from "./pages/AdminSupport";
 import AdminMessages from "./pages/AdminMessages";
 import AdminSupportTicketDetail from "./pages/AdminSupportTicketDetail";
-import AdminSupportCreate from "./pages/AdminSupportCreate";
-import AdminSupportCategories from "./pages/AdminSupportCategories";
-import AdminSupportSettings from "./pages/AdminSupportSettings";
 import AdminUserView from "./pages/AdminUserView";
 import AdminUserEdit from "./pages/AdminUserEdit";
 import Messages from "./pages/Messages";
@@ -128,54 +119,6 @@ const App = () => (
               } 
             />
             <Route 
-              path="/admin/settings/general" 
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSettingsGeneral />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/settings/security" 
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSettingsSecurity />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/settings/password" 
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSettingsPassword />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/settings/email" 
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSettingsEmail />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/settings/payment" 
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSettingsPayment />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/settings/notifications" 
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSettingsNotifications />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
               path="/admin/support" 
               element={
                 <ProtectedRoute requiredRole="admin">
@@ -188,30 +131,6 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminSupportTicketDetail />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/support/create" 
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSupportCreate />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/support/categories" 
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSupportCategories />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/support/settings" 
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSupportSettings />
                 </ProtectedRoute>
               } 
             />
@@ -332,46 +251,10 @@ const App = () => (
           <Route path="/admin/users/:userId/edit" element={<AdminUserEdit />} />
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
-          <Route
-            path="/admin/settings/general"
-            element={<AdminSettingsGeneral />}
-          />
-          <Route
-            path="/admin/settings/security"
-            element={<AdminSettingsSecurity />}
-          />
-          <Route
-            path="/admin/settings/password"
-            element={<AdminSettingsPassword />}
-          />
-          <Route
-            path="/admin/settings/email"
-            element={<AdminSettingsEmail />}
-          />
-          <Route
-            path="/admin/settings/payment"
-            element={<AdminSettingsPayment />}
-          />
-          <Route
-            path="/admin/settings/notifications"
-            element={<AdminSettingsNotifications />}
-          />
           <Route path="/admin/support" element={<AdminSupport />} />
           <Route
             path="/admin/support/ticket/:ticketId"
             element={<AdminSupportTicketDetail />}
-          />
-          <Route
-            path="/admin/support/create"
-            element={<AdminSupportCreate />}
-          />
-          <Route
-            path="/admin/support/categories"
-            element={<AdminSupportCategories />}
-          />
-          <Route
-            path="/admin/support/settings"
-            element={<AdminSupportSettings />}
           />
           <Route path="/admin/messages" element={<AdminMessages />} />
           <Route path="/messages" element={<Messages />} />
