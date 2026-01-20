@@ -16,6 +16,7 @@ import {
   Sparkles,
   Eye,
   EyeOff,
+  CheckCircle,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
