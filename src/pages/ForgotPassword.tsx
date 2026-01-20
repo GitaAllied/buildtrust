@@ -214,7 +214,7 @@ export default function ForgotPassword() {
         {/* Additional Info */}
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Trusted by diaspora Nigerians worldwide
+            Trusted by diaspora Africa worldwide
           </p>
         </div>
       </div>
