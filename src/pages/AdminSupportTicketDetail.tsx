@@ -167,16 +167,11 @@ const AdminSupportTicketDetail = () => {
                 className="flex items-center space-x-2"
               >
                 <ArrowLeft className="h-5 w-5" />
-                <span>Back to Support</span>
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Support Ticket #{ticket.id}</h1>
                 <p className="text-sm text-gray-500">{ticket.subject}</p>
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Shield className="h-6 w-6 text-red-600" />
-              <span className="text-sm font-medium text-gray-700">Super Admin</span>
             </div>
           </div>
         </div>
@@ -300,7 +295,7 @@ const AdminSupportTicketDetail = () => {
                     >
                       <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                         message.sender === "admin"
-                          ? 'bg-red-600 text-white'
+                          ? 'bg-[#253E44]/90 text-white'
                           : 'bg-gray-200 text-gray-900'
                       }`}>
                         <div className="flex items-center space-x-2 mb-1">
@@ -342,7 +337,7 @@ const AdminSupportTicketDetail = () => {
                     <Button
                       onClick={handleSendMessage}
                       disabled={!newMessage.trim()}
-                      className="bg-red-600 hover:bg-red-700"
+                      className="bg-[#253E44] hover:bg-[#253E44]/70"
                     >
                       <Send className="h-4 w-4" />
                     </Button>

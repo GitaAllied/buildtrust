@@ -242,8 +242,8 @@ const AdminUserEdit = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+        <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-start justify-between flex-col md:flex-row md:items-center gap-4">
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
@@ -251,7 +251,6 @@ const AdminUserEdit = () => {
                 className="flex items-center space-x-2"
               >
                 <ArrowLeft className="h-5 w-5" />
-                <span>Back to Profile</span>
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Edit User</h1>
@@ -266,7 +265,7 @@ const AdminUserEdit = () => {
               <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-[#253E44] hover:bg-[#253E44]/90"
               >
                 {saving ? (
                   <>

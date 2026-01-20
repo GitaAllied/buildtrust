@@ -184,8 +184,8 @@ const AdminUserView = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+        <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-start justify-between flex-col md:flex-row md:items-center gap-4">
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
@@ -193,7 +193,6 @@ const AdminUserView = () => {
                 className="flex items-center space-x-2"
               >
                 <ArrowLeft className="h-5 w-5" />
-                <span>Back to Users</span>
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">User Profile</h1>
@@ -202,7 +201,7 @@ const AdminUserView = () => {
             </div>
             <Button
               onClick={() => navigate(`/admin/users/${user.id}/edit`)}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-[#253E44] hover:bg-[#253E44]/90"
             >
               <Edit className="mr-2 h-4 w-4" />
               Edit User
@@ -217,7 +216,7 @@ const AdminUserView = () => {
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center flex-col md:flex-row space-x-4">
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={user.avatar} alt={user.name} />
                     <AvatarFallback className="text-lg">
@@ -230,7 +229,7 @@ const AdminUserView = () => {
                       {getStatusIcon(user.status)}
                       {getStatusBadge(user.status)}
                     </div>
-                    <p className="text-gray-600 mt-1">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
+                    <p className="text-gray-600 mt-1 text-center md:text-left">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
                     <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
                       <div className="flex items-center space-x-1">
                         <Mail className="h-4 w-4" />
