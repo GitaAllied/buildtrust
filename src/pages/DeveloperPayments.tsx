@@ -1,73 +1,59 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
+  X,
+  Menu,
   CheckCircle,
   Clock,
   Download,
   CreditCard,
-  Menu,
-  X,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import {
   FaBriefcase,
-  FaFileContract,
+  FaDownload,
   FaGear,
   FaMessage,
   FaMoneyBill,
+  FaUpload,
   FaUser,
-  FaUserGear,
 } from "react-icons/fa6";
 
-const Payments = () => {
+const DeveloperPayments = () => {
   const [activeTab, setActiveTab] = useState("payments");
-  const [activeSection, setActiveSection] = useState("overview");
-  const navigate = useNavigate();
-
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [activeSection, setActiveSection] = useState("overview");
+
+  const [selectedConversation, setSelectedConversation] = useState(1);
+    const [newMessage, setNewMessage] = useState("");  
 
   const sidebarItems = [
-    { id: "dashboard", label: "Dashboard", icon: <FaUser /> },
-    { id: "projects", label: "Projects", icon: <FaBriefcase /> },
-    { id: "payments", label: "Payments", icon: <FaMoneyBill />, active: true },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: <FaUser />
+    },
+    { id: "requests", label: "Project Requests", icon: <FaDownload /> },
+    { id: "projects", label: "Active Projects", icon: <FaBriefcase /> },
+    { id: "upload", label: "Upload Update", icon: <FaUpload /> },
     { id: "messages", label: "Messages", icon: <FaMessage /> },
-    { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
-    { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
-    { id: "settings", label: "Settings", icon: <FaGear /> },
+    { id: "payments", label: "Payments", icon: <FaMoneyBill />,
+      active: true, },
+    { id: "profile", label: "Licenses & Profile", icon: <FaUser /> },
+    { id: "support", label: "Support", icon: <FaGear /> },
   ];
-
-  const handleNavigation = (itemId: string) => {
-    switch (itemId) {
-      case "dashboard":
-        setActiveTab(itemId);
-        navigate("/client-dashboard");
-        break;
-      case "projects":
-        navigate("/projects");
-        break;
-      case "payments":
-        navigate("/payments");
-        break;
-      case "messages":
-        navigate("/messages");
-        break;
-      case "contracts":
-        navigate("/contracts");
-        break;
-      case "saved":
-        navigate("/saved-developers");
-        break;
-      case "settings":
-        navigate("/settings");
-        break;
-      default:
-        navigate("/browse");
-    }
-  };
 
   const projects = [
     {
@@ -167,12 +153,44 @@ const Payments = () => {
     }).format(amount);
   };
 
+  const handleNavigation = (itemId: string) => {
+    switch (itemId) {
+      case "dashboard":
+        setActiveTab(itemId);
+        navigate("/developer-dashboard");
+        break;
+      case "requests":
+        navigate("/project-requests");
+        break;
+      case "projects":
+        navigate("/active-projects");
+        break;
+      case "upload":
+        navigate("/upload-update");
+        break;
+      case "messages":
+        navigate("/developer-messages");
+        break;
+      case "payments":
+        navigate("/developer-payments");
+        break;
+      case "profile":
+        navigate("/developer-liscences");
+        break;
+      case "support":
+        navigate("/support");
+        break;
+      default:
+        navigate("/browse");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 flex flex-col md:flex-row">
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-        <div className="flex items-center space-x-2 w-[20%]">
-          <img src={Logo} alt="Build Trust Africa Logo" />
+        <div className="flex items-center gap-2 w-[20%]">
+          <img src={Logo} alt="" />
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -195,7 +213,7 @@ const Payments = () => {
         <div className="p-4 sm:p-6 border-b border-white/20 hidden md:block">
           <button
             onClick={() => navigate("/")}
-            className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full"
           >
             <img src={Logo} alt="" className="w-[55%]" />
           </button>
@@ -220,6 +238,8 @@ const Payments = () => {
           ))}
         </nav>
       </div>
+
+      {/* Main Content */}
       <div className="w-full flex-1 min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white border-b px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
@@ -471,4 +491,4 @@ const Payments = () => {
   );
 };
 
-export default Payments;
+export default DeveloperPayments;
