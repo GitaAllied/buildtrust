@@ -255,6 +255,10 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
 
           // If server confirms setup_completed, navigate to developer dashboard
           if (updated && updated.user && updated.user.setup_completed === 1) {
+            // Clear localStorage on successful submission
+            localStorage.removeItem('buildtrust_personal_info');
+            localStorage.removeItem('buildtrust_identity_data');
+            
             // Refresh auth context (so Index and others pick up new status)
             await refreshUser();
             navigate('/developer-dashboard', { replace: true });
@@ -262,6 +266,11 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
           }
 
           await refreshUser();
+          
+          // Clear localStorage on successful completion
+          localStorage.removeItem('buildtrust_personal_info');
+          localStorage.removeItem('buildtrust_identity_data');
+          
           setIsComplete(true);
         } catch (error: any) {
           console.error('Failed to save profile:', error);
@@ -320,6 +329,8 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.personal}
+              userType="developer"
             />
           </div>
         );
@@ -336,6 +347,8 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.identity}
+              userType="developer"
             />
           </div>
         );
@@ -352,6 +365,8 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.personal}
+              userType="developer"
             />
           </div>
         );
@@ -368,6 +383,8 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.personal}
+              userType="developer"
             />
           </div>
         );
@@ -384,6 +401,8 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.personal}
+              userType="developer"
             />
           </div>
         );
@@ -397,6 +416,8 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.personal}
+              userType="developer"
             />
           </div>
         );
@@ -414,6 +435,8 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
+              formData={formData.personal}
+              userType="developer"
             />
           </div>
         );

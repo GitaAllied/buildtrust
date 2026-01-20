@@ -11,6 +11,7 @@ interface ProtectedRouteProps {
  * - If no requiredRole is specified: checks authentication only (allows any authenticated user)
  * - If requiredRole is specified: checks both authentication and role matching
  * - Redirects to /auth if user is not authenticated
+ * - Redirects to /email-verification if email is not verified
  * - Redirects to / if user is authenticated but doesn't have the required role
  */
 export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
@@ -24,6 +25,11 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect to email verification if email is not verified
+  if (!user.email_verified) {
+    return <Navigate to="/verify-email" replace />;
   }
 
   // Check role if required
