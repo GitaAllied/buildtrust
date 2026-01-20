@@ -65,7 +65,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/browse" element={<BrowseDevelopers />} />
             <Route path="/developer/:id" element={<DeveloperProfile />} />
-            <Route
+            <Route 
               path="/client-dashboard" 
               element={
                 <ProtectedRoute requiredRole="client">
@@ -321,7 +321,6 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-<<<<<<< HEAD
             <Route path="/support" element={<Support />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
