@@ -87,7 +87,7 @@ const BrowseDevelopers = () => {
             </button>
           </div>
           <div className="text-sm text-gray-500">
-            <span className="bg-green-100 text-green-800 px-5 py-2 rounded-full hidden md:block">
+            <span className="bg-[#226F75]/10 text-[#226F75]/80 px-5 py-2 rounded-full hidden md:block">
               All developers are verified and licensed
             </span>
           </div>

@@ -135,7 +135,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         return (
           <div>
             <div className="text-center mb-6 sm:mb-8">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#226F75]/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <User className="w-6 h-6 sm:w-8 sm:h-8 text-[#226F75]" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Tell us about yourself</h2>
@@ -161,7 +161,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         return (
           <div>
             <div className="text-center mb-6 sm:mb-8">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#226F75]/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <Home className="w-6 h-6 sm:w-8 sm:h-8 text-[#253E44]" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">What are you looking to build?</h2>
@@ -187,8 +187,8 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         return (
           <div>
             <div className="text-center mb-6 sm:mb-8">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#253E44]/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-[#253E44]/60" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#226F75]/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-[#226F75]/60" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Review Your Profile</h2>
               <p className="text-sm sm:text-base text-gray-600 px-4">Everything looks great! You're ready to start your building journey.</p>
@@ -247,10 +247,10 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
 
   if (isComplete) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="min-h-screen bg-[#226F75]/10 flex items-center justify-center p-4 sm:p-6">
         <div className="max-w-sm sm:max-w-md w-full bg-white rounded-xl shadow-xl p-6 sm:p-8 text-center">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-            <CheckCircle className="w-8 h-8 sm:w-12 sm:h-12 text-blue-600" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#226F75]/10 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <CheckCircle className="w-8 h-8 sm:w-12 sm:h-12 text-[#226F75]" />
           </div>
 
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
@@ -264,7 +264,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
           <div className="space-y-3 sm:space-y-4">
             <Button
               onClick={() => { onExit(); navigate('/browse'); }}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+              className="w-full bg-[#226F75] hover:bg-[#226F75]/90 text-sm sm:text-base py-2 sm:py-3"
             >
               Browse Developers
             </Button>
@@ -284,13 +284,13 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-[#226F75]/10">
       {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <img src={Logo} alt="" className=" w-[20%] md:w-[10%]"/>
+              <img src={Logo} alt="" className=" w-[20%]"/>
             </div>
             <Button variant="ghost" onClick={onExit} className="flex-shrink-0">
               <span className="hidden sm:inline">Exit Setup</span>

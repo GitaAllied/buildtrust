@@ -93,7 +93,7 @@ const DeveloperLiscences = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
@@ -170,7 +170,7 @@ const DeveloperLiscences = () => {
                     onClick={() => setActiveSection(section.id)}
                     className={`w-full flex items-center space-x-3 justify-center px-4 py-3 rounded-lg transition-colors ${
                       activeSection === section.id
-                        ? "bg-green-50 text-[#253E44] font-medium"
+                        ? "bg-[#226F75]/10 text-[#253E44] font-medium"
                         : "text-gray-600 hover:bg-[#226F75]/20"
                     }`}
                   >

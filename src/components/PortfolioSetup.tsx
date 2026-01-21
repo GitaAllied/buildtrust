@@ -446,10 +446,10 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
 
   if (isComplete) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#226F75]/10 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-xl shadow-xl p-8 text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-12 h-12 text-green-600" />
+          <div className="w-20 h-20 bg-[#226F75]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-12 h-12 text-[#226F75]/60" />
           </div>
           
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -482,13 +482,13 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+    <div className="min-h-screen bg-[#226F75]/10">
       {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <img src={Logo} alt="" className=" w-[20%] md:w-[15%]"/>
+              <img src={Logo} alt="" className=" w-[20%]"/>
             </div>
             <Button variant="ghost" onClick={onExit} className="flex-shrink-0">
               <span className="hidden sm:inline">Exit Setup</span>

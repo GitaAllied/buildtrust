@@ -159,7 +159,7 @@ const DeveloperDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
@@ -412,7 +412,7 @@ const DeveloperDashboard = () => {
               </div>
 
               {/* Upload Progress Card */}
-              <Card className="border-blue-200 bg-blue-50">
+              <Card className="border-[#226F75]/20 bg-[#226F75]/5">
                 <CardHeader className="pb-3 px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-6">
                   <CardTitle className="flex items-center text-xs sm:text-sm md:text-base text-[#253E44] gap-2">
                     <Camera className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />

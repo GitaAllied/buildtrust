@@ -233,7 +233,7 @@ useEffect(() => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50">
+    <div className="min-h-screen bg-[#226F75]/10">
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(6deg); }
@@ -299,7 +299,7 @@ useEffect(() => {
                   <Button
                     variant="outline"
                     onClick={() => navigate("/developer-dashboard")}
-                    className="hidden sm:inline-flex border-green-200 hover:border-green-300 hover:bg-green-50 text-xs sm:text-sm"
+                    className="hidden sm:inline-flex border-[#226F75]/20 hover:border-[#226F75]/30 hover:bg-[#226F75]/5 text-xs sm:text-sm"
                   >
                     Developer Dashboard
                   </Button>
@@ -394,7 +394,7 @@ useEffect(() => {
                           navigate("/client-dashboard");
                           setMobileMenuOpen(false);
                         }}
-                        className="w-full border-green-200 hover:border-green-300 hover:bg-green-50"
+                        className="w-full border-[#226F75]/20 hover:border-[#226F75]/30 hover:bg-[#226F75]/50"
                       >
                         Client Dashboard
                       </Button>
@@ -406,7 +406,7 @@ useEffect(() => {
                           navigate("/developer-dashboard");
                           setMobileMenuOpen(false);
                         }}
-                        className="w-full border-green-200 hover:border-green-300 hover:bg-green-50"
+                        className="w-full border-[#226F75]/20 hover:border-[#226F75]/30 hover:bg-[#226F75]/50"
                       >
                         Developer Dashboard
                       </Button>
@@ -703,13 +703,13 @@ useEffect(() => {
                   </div>
 
                   <div className="relative mb-6">
-                    <div className="absolute -top-2 -left-2 text-4xl md:text-6xl text-green-100 font-serif">
+                    <div className="absolute -top-2 -left-2 text-4xl md:text-6xl text-[#226F75]/10 font-serif">
                       "
                     </div>
                     <p className="text-gray-700 text-base md:text-lg leading-relaxed italic pl-4">
                       "{testimonial.text}"
                     </p>
-                    <div className="absolute -bottom-4 -right-2 text-4xl md:text-6xl text-green-100 font-serif">
+                    <div className="absolute -bottom-4 -right-2 text-4xl md:text-6xl text-[#226F75]/10 font-serif">
                       "
                     </div>
                   </div>
@@ -722,7 +722,7 @@ useEffect(() => {
                           .map((n) => n[0])
                           .join("")}
                       </div>
-                      <div className="absolute -bottom-1 -right-1 w-4 md:w-5 h-4 md:h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                      <div className="absolute -bottom-1 -right-1 w-4 md:w-5 h-4 md:h-5 bg-[#226F75]/50 rounded-full border-2 border-white flex items-center justify-center">
                         <Check className="w-2 md:w-3 h-2 md:h-3 text-white" />
                       </div>
                     </div>

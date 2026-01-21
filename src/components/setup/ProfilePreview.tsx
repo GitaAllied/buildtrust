@@ -18,7 +18,7 @@ const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold">{personal.fullName || "Your Name"}</h1>
-            <p className="text-[#253E44]/10 mt-1">{personal.companyType || "Developer"} • {personal.yearsExperience || "Experience Level"}</p>
+            <p className="text-white mt-1">{personal.companyType || "Developer"} • {personal.yearsExperience || "Experience Level"}</p>
             <div className="flex items-center space-x-4 mt-3">
               <div className="flex items-center space-x-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,19 +127,19 @@ const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
         </p>
         <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
           <div className="flex items-center space-x-1">
-            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-[#253E44]/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             <span>Identity Verified</span>
           </div>
           <div className="flex items-center space-x-1">
-            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-[#253E44]/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             <span>Profile Complete</span>
           </div>
           <div className="flex items-center space-x-1">
-            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-[#253E44]/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             <span>Ready for Review</span>

@@ -543,51 +543,6 @@ const AdminSettings = () => {
             </div>
           </div>
         </div>
-
-        {/* Content */}
-        {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {settingsCategories.map((category) => {
-              const IconComponent = category.icon;
-              return (
-                <Card
-                  key={category.id}
-                  className="hover:shadow-lg transition-shadow cursor-pointer p-3 md:p-4"
-                  onClick={() => handleNavigateToSetting(category.path)}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <div className={`p-2 rounded-lg ${category.bgColor}`}>
-                        <IconComponent
-                          className={`h-6 w-6 ${category.color}`}
-                        />
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <CardTitle className="text-base md:text-lg">
-                      {category.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600">
-                      {category.description}
-                    </p>
-                    <Button
-                      variant="ghost"
-                      className="mt-4 p-0 h-auto text-sm text-blue-600 hover:text-blue-800 w-full sm:w-auto text-left"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleNavigateToSetting(category.path);
-                      }}
-                    >
-                      Configure Settings →
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div> */}
         <div className="w-full flex-1 min-h-screen bg-gray-50 flex flex-col">
           <div className="flex flex-col">
             {/* Sidebar */}
@@ -601,7 +556,7 @@ const AdminSettings = () => {
                       onClick={() => setActiveSection(section.id)}
                       className={`w-full flex items-center space-x-3 justify-center px-4 py-3 rounded-lg transition-colors ${
                         activeSection === section.id
-                          ? "bg-green-50 text-[#253E44] font-medium"
+                          ? "bg-[#226F75]/10 text-[#253E44] font-medium"
                           : "text-gray-600 hover:bg-[#226F75]/20"
                       }`}
                     >
@@ -1578,11 +1533,11 @@ const AdminSettings = () => {
                           </div>
 
                           {/* Password Requirements */}
-                          <div className="bg-blue-50 p-4 rounded-lg">
+                          <div className="bg-[#226F75]/5 p-4 rounded-lg">
                             <h4 className="text-sm font-medium text-blue-900 mb-2">
                               Password Requirements:
                             </h4>
-                            <ul className="text-sm text-blue-800 space-y-1">
+                            <ul className="text-sm text-[#253E44] space-y-1">
                               <li>• At least 8 characters long</li>
                               <li>• At least one uppercase letter</li>
                               <li>• At least one lowercase letter</li>

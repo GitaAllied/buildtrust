@@ -261,7 +261,7 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center relative px-4 py-12 overflow-hidden">
       {/* Animated Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 -z-10" />
+      <div className="absolute inset-0 bg-[#226F75]/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 -z-10" />
       
       {/* Decorative Elements */}
       <div className="absolute top-0 left-0 w-72 h-72 bg-[#226F75]/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />

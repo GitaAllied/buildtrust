@@ -163,7 +163,7 @@ const ActiveProjects = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
@@ -395,7 +395,7 @@ const ActiveProjects = () => {
                 No projects found matching your criteria.
               </p>
               <Button
-                className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm w-full sm:w-auto"
+                className="bg-[#253E44] hover:bg-[#253E44]/70 text-xs sm:text-sm w-full sm:w-auto"
                 onClick={() => navigate("/browse")}
               >
                 Start Your First Project
