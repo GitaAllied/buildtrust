@@ -439,7 +439,7 @@ const AdminMessages = () => {
                         onClick={() => setSelectedConversation(conversation)}
                         className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
                           selectedConversation?.id === conversation.id
-                            ? "bg-blue-50 border-blue-200"
+                            ? "bg-[#226F75]/10 border-[#226F75]/20"
                             : ""
                         }`}
                       >
@@ -550,7 +550,7 @@ const AdminMessages = () => {
                           <div
                             className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                               message.senderId === 0
-                                ? "bg-red-600 text-white"
+                                ? "bg-[#253E44] text-white"
                                 : "bg-gray-200 text-gray-900"
                             }`}
                           >
@@ -590,7 +590,7 @@ const AdminMessages = () => {
                         <Button
                           onClick={handleSendMessage}
                           disabled={!newMessage.trim()}
-                          className="bg-red-600 hover:bg-red-700"
+                          className="bg-[#253E44]/90 hover:bg-[#253E44]"
                         >
                           <Send className="h-4 w-4" />
                         </Button>

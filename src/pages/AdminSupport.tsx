@@ -630,7 +630,7 @@ const AdminSupport = () => {
                     onClick={() => setActiveSection(section.id)}
                     className={`w-full flex items-center space-x-3 justify-center px-4 py-3 rounded-lg transition-colors ${
                       activeSection === section.id
-                        ? "bg-green-50 text-[#253E44] font-medium"
+                        ? "bg-[#226F75]/10 text-[#253E44] font-medium"
                         : "text-gray-600 hover:bg-[#226F75]/20"
                     }`}
                   >

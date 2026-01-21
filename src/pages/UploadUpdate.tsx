@@ -81,7 +81,7 @@ const UploadUpdate = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
@@ -163,7 +163,7 @@ const UploadUpdate = () => {
                   id="project"
                   value={selectedProject}
                   onChange={(e) => setSelectedProject(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-xs sm:text-sm h-9"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#226F75]/50 text-xs sm:text-sm h-9"
                 >
                   <option value="">Choose a project...</option>
                   {projects.map((project) => (

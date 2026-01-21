@@ -138,7 +138,7 @@ const DeveloperMessages = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
@@ -229,7 +229,7 @@ const DeveloperMessages = () => {
                   onClick={() => setSelectedConversation(conv.id)}
                   className={`p-3 sm:p-4 border-b hover:bg-gray-50 cursor-pointer text-xs sm:text-sm ${
                     selectedConversation === conv.id
-                      ? "bg-green-50 border-r-2 border-r-green-600"
+                      ? "bg-[#226F75]/10 border-r-2 border-r-[#226F75]/60"
                       : ""
                   }`}
                 >
@@ -299,7 +299,7 @@ const DeveloperMessages = () => {
                     <p>{msg.message}</p>
                     <p
                       className={`text-xs mt-1 ${
-                        msg.isOwn ? "text-green-100" : "text-gray-500"
+                        msg.isOwn ? "text-white" : "text-gray-500"
                       }`}
                     >
                       {msg.time}

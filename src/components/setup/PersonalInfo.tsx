@@ -516,7 +516,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
                 onChange={(e) => updateData('fullName', e.target.value)}
                 onFocus={() => handleFieldFocus('fullName')}
                 required
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-500 ${getFieldBorderColor('fullName', formData.fullName)} ${getFieldBgColor('fullName', formData.fullName)}`}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-[#226F75]/50 transition-all duration-200 text-gray-900 placeholder-gray-500 ${getFieldBorderColor('fullName', formData.fullName)} ${getFieldBgColor('fullName', formData.fullName)}`}
                 placeholder="Enter your full name"
               />
             </div>
@@ -761,7 +761,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
           className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 transition-all duration-200 text-gray-900 placeholder-gray-500 resize-none ${getFieldBorderColor('bio', formData.bio)} ${getFieldBgColor('bio', formData.bio)} ${
             userType === 'developer'
               ? 'focus:ring-[#253E44]'
-              : 'focus:ring-blue-500'
+              : 'focus:ring-[#226F75]'
           }`}
           placeholder={userType === 'developer' ? "Tell potential clients about your experience, specialties, and what makes you unique..." : "Tell developers about your project needs and expectations..."}
         />

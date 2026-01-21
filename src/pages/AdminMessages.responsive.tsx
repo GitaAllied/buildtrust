@@ -280,7 +280,7 @@ const AdminMessages = () => {
                       key={conversation.id}
                       onClick={() => setSelectedConversation(conversation)}
                       className={`p-3 md:p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors text-xs md:text-sm ${
-                        selectedConversation?.id === conversation.id ? 'bg-blue-50 border-blue-200' : ''
+                        selectedConversation?.id === conversation.id ? 'bg-[#226F75]/5 border-[#226F75]/20' : ''
                       }`}
                     >
                       <div className="flex items-start space-x-2 md:space-x-3">

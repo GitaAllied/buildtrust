@@ -100,7 +100,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen flex items-center justify-center relative px-4 py-12 overflow-hidden">
         {/* Animated Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 -z-10" />
+        <div className="absolute inset-0 bg-[#226F75]/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 -z-10" />
 
         {/* Decorative Elements */}
         <div className="absolute top-0 left-0 w-72 h-72 bg-[#226F75]/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
@@ -151,7 +151,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen flex items-center justify-center relative px-4 py-12 overflow-hidden">
         {/* Animated Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 -z-10" />
+        <div className="absolute inset-0 bg-[#226F75]/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 -z-10" />
 
         <div className="w-full max-w-md relative z-10">
           <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-2 shadow-2xl">
@@ -178,7 +178,7 @@ export default function ResetPassword() {
               <div className="text-center space-y-4">
                 <Link
                   to="/forgot-password"
-                  className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-medium underline"
+                  className="inline-flex items-center gap-2 text-[#226F75]/60 hover:text-[#226F75]/70 font-medium underline"
                 >
                   Request a new password reset
                 </Link>
@@ -201,7 +201,7 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen flex items-center justify-center relative px-4 py-12 overflow-hidden">
       {/* Animated Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 -z-10" />
+      <div className="absolute inset-0 bg-[#226F75]/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 -z-10" />
 
       {/* Decorative Elements */}
       <div className="absolute top-0 left-0 w-72 h-72 bg-[#226F75]/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
