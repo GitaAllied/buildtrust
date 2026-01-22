@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, User, MapPin, Home, DollarSign, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle, User, MapPin } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/lib/api";
 import PersonalInfo from "./setup/PersonalInfo";
-import BuildPreferences from "./setup/BuildPreferences";
 import ProgressTracker from "./setup/ProgressTracker";
 import NavigationButtons from "./setup/NavigationButtons";
 import Logo from '../assets/Logo.png'
@@ -23,16 +21,11 @@ interface PersonalFormData extends Record<string, unknown> {
   preferredContact?: string;
 }
 
-interface PreferencesFormData {
-  [key: string]: unknown;
-}
-
 const ClientSetup = ({ onExit }: ClientSetupProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isComplete, setIsComplete] = useState(false);
   const [formData, setFormData] = useState({
-    personal: {} as PersonalFormData,
-    preferences: {} as PreferencesFormData
+    personal: {} as PersonalFormData
   });
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
@@ -45,7 +38,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
   }, [user, navigate]);
 
   const handleStepComplete = async () => {
-    if (currentStep < 3) {
+    if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
     } else {
       // Define profileData outside try to avoid ReferenceError in catch
@@ -56,29 +49,6 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         bio: formData.personal.occupation,
         preferred_contact: formData.personal.preferredContact,
       };
-
-      // Add preferences data from BuildPreferences
-      if (formData.preferences) {
-        const prefs = formData.preferences as any;
-        if (prefs.projectTypes && prefs.projectTypes.length > 0) {
-          profileData.project_types = prefs.projectTypes;
-        }
-        if (prefs.preferredCities && prefs.preferredCities.length > 0) {
-          profileData.preferred_cities = prefs.preferredCities;
-        }
-        if (prefs.budgetRange) {
-          profileData.budget_range = prefs.budgetRange;
-        }
-        if (prefs.workingStyle) {
-          profileData.working_style = prefs.workingStyle;
-        }
-        if (prefs.availability) {
-          profileData.availability = prefs.availability;
-        }
-        if (prefs.specializations && prefs.specializations.length > 0) {
-          profileData.specializations = prefs.specializations;
-        }
-      }
 
       // Remove undefined or empty string values
       const cleanedProfileData: Record<string, any> = {};
@@ -95,6 +65,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         
         // Clear localStorage on successful submission
         localStorage.removeItem('buildtrust_personal_info');
+        localStorage.removeItem('buildtrust_preferences');
         
         setIsComplete(true);
       } catch (error: any) {
@@ -148,7 +119,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
             />
             <NavigationButtons
               currentStep={currentStep}
-              totalSteps={3}
+              totalSteps={2}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
@@ -158,32 +129,6 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
           </div>
         );
       case 2:
-        return (
-          <div>
-            <div className="text-center mb-6 sm:mb-8">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#226F75]/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Home className="w-6 h-6 sm:w-8 sm:h-8 text-[#253E44]" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">What are you looking to build?</h2>
-              <p className="text-sm sm:text-base text-gray-600 px-4">Share your project requirements and preferences to find the perfect match.</p>
-            </div>
-            <BuildPreferences
-              data={formData.preferences}
-              onChange={(data) => updateFormData('preferences', data)}
-              userType="client"
-            />
-            <NavigationButtons
-              currentStep={currentStep}
-              totalSteps={3}
-              onNext={handleStepComplete}
-              onPrev={handleStepBack}
-              canContinue={true}
-              formData={formData.preferences}
-              userType="client"
-            />
-          </div>
-        );
-      case 3:
         return (
           <div>
             <div className="text-center mb-6 sm:mb-8">
@@ -202,10 +147,6 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
                   <span className="text-gray-600 text-sm sm:text-base">Personal information completed</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Home className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
-                  <span className="text-gray-600 text-sm sm:text-base">Building preferences set</span>
-                </div>
-                <div className="flex items-center space-x-3">
                   <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
                   <span className="text-gray-600 text-sm sm:text-base">Ready to connect with developers</span>
                 </div>
@@ -214,11 +155,11 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
 
             <NavigationButtons
               currentStep={currentStep}
-              totalSteps={3}
+              totalSteps={2}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
-              formData={formData.preferences}
+              formData={formData.personal}
               userType="client"
             />
           </div>
@@ -233,7 +174,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
             />
             <NavigationButtons
               currentStep={currentStep}
-              totalSteps={3}
+              totalSteps={2}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
@@ -302,7 +243,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
 
       {/* Progress Tracker */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <ProgressTracker currentStep={currentStep} totalSteps={3} />
+        <ProgressTracker currentStep={currentStep} totalSteps={2} />
       </div>
 
       {/* Main Content */}
