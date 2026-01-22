@@ -10,7 +10,6 @@ import {
   Users,
   MapPin,
   Clock,
-  LogOut,
   User,
   ArrowRight,
   Check,
@@ -39,7 +38,7 @@ const Index = () => {
   const [showSetup, setShowSetup] = useState(false);
   const [showClientSetup, setShowClientSetup] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-const { user, signOut, loading } = useAuth();
+const { user, loading } = useAuth();
 
 const [line1Typed, setLine1Typed] = useState('');
 const [line2Typed, setLine2Typed] = useState('');
@@ -313,14 +312,6 @@ useEffect(() => {
                     Admin Dashboard
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  onClick={signOut}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
               </div>
             ) : (
               <div className="flex items-center space-x-3">
