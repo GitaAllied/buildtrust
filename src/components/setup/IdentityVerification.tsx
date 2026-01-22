@@ -1,22 +1,63 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { apiClient } from "@/lib/api";
 
 interface IdentityVerificationProps {
   data: any;
   onChange: (data: any) => void;
 }
 
+interface FileData {
+  name: string;
+  size: number;
+  type: string;
+  uploadedUrl?: string;
+  isUploading?: boolean;
+}
+
 const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => {
+  const { user } = useAuth();
   const [uploadedFiles, setUploadedFiles] = useState<{
-    id?: { name: string; size: number };
-    cac?: { name: string; size: number };
-    selfie?: { name: string; size: number };
+    id?: FileData;
+    cac?: FileData;
+    selfie?: FileData;
   }>({});
   const [error, setError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+  const uploadFileToBackend = useCallback(
+    async (file: File, documentType: string) => {
+      if (!user?.id) {
+        setError('User not authenticated');
+        return null;
+      }
+
+      try {
+        setUploadProgress(prev => ({ ...prev, [documentType]: 0 }));
+        
+        console.log(`📤 Uploading ${documentType} document:`, file.name);
+        
+        const result = await apiClient.uploadDocument(user.id, documentType, file);
+        
+        console.log(`✅ ${documentType} uploaded successfully:`, result);
+        setUploadProgress(prev => ({ ...prev, [documentType]: 100 }));
+        
+        return result;
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Upload failed';
+        console.error(`❌ Failed to upload ${documentType}:`, errorMsg);
+        setError(`Failed to upload ${documentType}: ${errorMsg}`);
+        setUploadProgress(prev => ({ ...prev, [documentType]: 0 }));
+        return null;
+      }
+    },
+    [user?.id]
+  );
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
     console.log('handleFileChange called for:', type);
     
     const file = e.currentTarget.files?.[0];
@@ -47,15 +88,52 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
       }
     }
 
-    // Store file metadata
+    // Mark as uploading
     setUploadedFiles(prev => ({
       ...prev,
-      [type]: { name: file.name, size: file.size }
+      [type]: { 
+        name: file.name, 
+        size: file.size, 
+        type: file.type,
+        isUploading: true
+      }
     }));
 
-    // Pass file to parent
-    onChange({ ...data, [type]: file });
-    console.log('File saved:', type);
+    // Upload to backend
+    const uploadResult = await uploadFileToBackend(file, type);
+
+    if (uploadResult) {
+      // Update with successful upload
+      setUploadedFiles(prev => ({
+        ...prev,
+        [type]: { 
+          name: file.name, 
+          size: file.size, 
+          type: file.type,
+          uploadedUrl: uploadResult.url || uploadResult.file_path,
+          isUploading: false
+        }
+      }));
+
+      // Pass uploaded file data to parent
+      onChange({ 
+        ...data, 
+        [type]: {
+          file,
+          uploadedUrl: uploadResult.url || uploadResult.file_path,
+          documentId: uploadResult.id
+        }
+      });
+      console.log('File uploaded successfully:', type);
+    } else {
+      // Remove from state if upload failed
+      setUploadedFiles(prev => {
+        const updated = { ...prev };
+        delete updated[type as keyof typeof updated];
+        return updated;
+      });
+      onChange({ ...data, [type]: null });
+    }
   };
 
   const removeFile = (type: string) => {
@@ -64,11 +142,17 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
       delete updated[type as keyof typeof updated];
       return updated;
     });
+    setUploadProgress(prev => {
+      const updated = { ...prev };
+      delete updated[type];
+      return updated;
+    });
     onChange({ ...data, [type]: null });
   };
 
-  const FileUploadBox = ({ label, type, accept }: { label: string; type: string; accept: string }) => {
+  const FileUploadBox = ({ label, type, accept, documentType }: { label: string; type: string; accept: string; documentType: string }) => {
     const file = uploadedFiles[type as keyof typeof uploadedFiles];
+    const progress = uploadProgress[type] || 0;
     
     return (
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/60 transition-colors">
@@ -85,6 +169,7 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
               accept={accept}
               onChange={(e) => handleFileChange(e, type)}
               className="hidden"
+              disabled={!user}
             />
             <div className="flex flex-col items-center justify-center py-6">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
@@ -95,11 +180,26 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
               <p className="text-xs text-gray-500">Click or drag file here</p>
             </div>
           </label>
+        ) : file.isUploading ? (
+          // Uploading
+          <div className="py-4">
+            <div className="flex items-center justify-center mb-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#253E44]"></div>
+            </div>
+            <p className="text-sm font-medium text-gray-800 mb-2">Uploading...</p>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-[#253E44] h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{progress}%</p>
+          </div>
         ) : (
           // File uploaded
           <div className="py-4">
             <div className="flex items-center justify-center mb-4">
-              <svg className="w-10 h-10 text-[#253E44] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-10 h-10 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -113,6 +213,7 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
                   accept={accept}
                   onChange={(e) => handleFileChange(e, type)}
                   className="hidden"
+                  disabled={!user}
                 />
                 <span className="block text-xs py-2 px-3 bg-blue-100 text-[#253E44] rounded hover:bg-blue-200 transition-colors">
                   Change
@@ -132,7 +233,8 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
     );
   };
 
-const isComplete = uploadedFiles.id && uploadedFiles.cac && uploadedFiles.selfie;
+  const isComplete = uploadedFiles.id && uploadedFiles.cac && uploadedFiles.selfie && 
+                     !uploadedFiles.id.isUploading && !uploadedFiles.cac.isUploading && !uploadedFiles.selfie.isUploading;
 
   return (
     <div className="space-y-8">
@@ -146,11 +248,13 @@ const isComplete = uploadedFiles.id && uploadedFiles.cac && uploadedFiles.selfie
           label="Government ID" 
           type="id" 
           accept="image/*,.pdf"
+          documentType="identity"
         />
         <FileUploadBox 
           label="CAC Certificate" 
           type="cac" 
           accept="image/*,.pdf"
+          documentType="license"
         />
       </div>
 
@@ -158,6 +262,7 @@ const isComplete = uploadedFiles.id && uploadedFiles.cac && uploadedFiles.selfie
         label="Selfie for Verification" 
         type="selfie" 
         accept="image/*"
+        documentType="certification"
       />
 
       {error && (
@@ -178,7 +283,7 @@ const isComplete = uploadedFiles.id && uploadedFiles.cac && uploadedFiles.selfie
             <p className="text-sm text-[#253E44] mt-1">
               {isComplete 
                 ? '✓ All documents uploaded and ready to submit' 
-                : `${Object.keys(uploadedFiles).length}/3 documents uploaded`}
+                : `${Object.keys(uploadedFiles).filter(k => !uploadedFiles[k as keyof typeof uploadedFiles]?.isUploading).length}/3 documents uploaded`}
             </p>
           </div>
         </div>
