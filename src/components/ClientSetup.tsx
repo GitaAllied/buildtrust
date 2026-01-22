@@ -23,7 +23,6 @@ interface PersonalFormData extends Record<string, unknown> {
 
 const ClientSetup = ({ onExit }: ClientSetupProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [isComplete, setIsComplete] = useState(false);
   const [formData, setFormData] = useState({
     personal: {} as PersonalFormData
   });
@@ -67,7 +66,9 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         localStorage.removeItem('buildtrust_personal_info');
         localStorage.removeItem('buildtrust_preferences');
         
-        setIsComplete(true);
+        // Redirect to client dashboard
+        onExit();
+        navigate('/client-dashboard');
       } catch (error: any) {
         console.error('❌ FAILED TO SAVE PROFILE:', {
           message: error.message,
@@ -185,44 +186,6 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         );
     }
   };
-
-  if (isComplete) {
-    return (
-      <div className="min-h-screen bg-[#226F75]/10 flex items-center justify-center p-4 sm:p-6">
-        <div className="max-w-sm sm:max-w-md w-full bg-white rounded-xl shadow-xl p-6 sm:p-8 text-center">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#226F75]/10 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-            <CheckCircle className="w-8 h-8 sm:w-12 sm:h-12 text-[#226F75]" />
-          </div>
-
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
-            Welcome to BuildTrust Africa!
-          </h1>
-
-          <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 px-2">
-            Your client profile is set up and ready. Start browsing verified developers and begin your building journey today.
-          </p>
-
-          <div className="space-y-3 sm:space-y-4">
-            <Button
-              onClick={() => { onExit(); navigate('/browse'); }}
-              className="w-full bg-[#226F75] hover:bg-[#226F75]/90 text-sm sm:text-base py-2 sm:py-3"
-            >
-              Browse Developers
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => { onExit(); navigate('/'); }}
-              className="w-full text-sm sm:text-base py-2 sm:py-3"
-            >
-              Return to Homepage
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#226F75]/10">
