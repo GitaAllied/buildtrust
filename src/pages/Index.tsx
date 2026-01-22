@@ -402,17 +402,6 @@ useEffect(() => {
                         Developer Dashboard
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        signOut();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
-                    </Button>
                   </>
                 ) : (
                   <>
