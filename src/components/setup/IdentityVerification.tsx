@@ -1,6 +1,5 @@
 
-import { useState, useCallback } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
 
 interface IdentityVerificationProps {
   data: any;
@@ -8,117 +7,28 @@ interface IdentityVerificationProps {
 }
 
 interface FileData {
+  file: File;
   name: string;
   size: number;
   type: string;
-  uploadedUrl?: string;
-  isUploading?: boolean;
-  documentId?: number;
 }
 
 const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => {
-  const { user } = useAuth();
   const [uploadedFiles, setUploadedFiles] = useState<{
     id?: FileData;
     cac?: FileData;
     selfie?: FileData;
-  }>({});
+  }>(data || {});
   const [error, setError] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
-  const uploadFileToBackend = useCallback(
-    async (file: File, documentType: string) => {
-      if (!user?.id) {
-        setError('User not authenticated. Please refresh and try again.');
-        return null;
-      }
-
-      return new Promise((resolve) => {
-        try {
-          setUploadProgress(prev => ({ ...prev, [documentType]: 0 }));
-          
-          console.log(`📤 Uploading ${documentType} document:`, file.name);
-          
-          const token = localStorage.getItem('auth_token');
-          const xhr = new XMLHttpRequest();
-
-          // Track upload progress
-          xhr.upload.addEventListener('progress', (e) => {
-            if (e.lengthComputable) {
-              const percentComplete = Math.round((e.loaded / e.total) * 100);
-              console.log(`⏳ ${documentType} upload progress: ${percentComplete}%`);
-              setUploadProgress(prev => ({ ...prev, [documentType]: percentComplete }));
-            }
-          });
-
-          xhr.addEventListener('load', () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const result = JSON.parse(xhr.responseText);
-                console.log(`✅ ${documentType} uploaded successfully:`, result);
-                setUploadProgress(prev => ({ ...prev, [documentType]: 100 }));
-                resolve(result);
-              } catch (e) {
-                console.error('Failed to parse response:', e);
-                setError(`Failed to parse server response for ${documentType}`);
-                resolve(null);
-              }
-            } else {
-              const errorText = xhr.responseText;
-              console.error(`❌ Upload failed (${xhr.status}):`, errorText);
-              setError(`Failed to upload ${documentType}: Server error ${xhr.status}`);
-              resolve(null);
-            }
-          });
-
-          xhr.addEventListener('error', () => {
-            console.error(`❌ Network error uploading ${documentType}`);
-            setError(`Network error uploading ${documentType}`);
-            resolve(null);
-          });
-
-          xhr.addEventListener('abort', () => {
-            console.log(`⚠️ Upload cancelled for ${documentType}`);
-            setError(`Upload cancelled for ${documentType}`);
-            resolve(null);
-          });
-
-          const formData = new FormData();
-          formData.append('type', documentType);
-          formData.append('file', file);
-
-          const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-          const url = `${baseUrl}/users/${user.id}/documents`;
-          
-          console.log(`🌐 Sending to: ${url}`);
-          
-          xhr.open('POST', url, true);
-          if (token) {
-            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-          }
-          
-          xhr.send(formData);
-        } catch (err) {
-          const errorMsg = err instanceof Error ? err.message : 'Upload failed';
-          console.error(`❌ Error: ${errorMsg}`);
-          setError(`Error uploading ${documentType}: ${errorMsg}`);
-          resolve(null);
-        }
-      });
-    },
-    [user?.id]
-  );
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
     const file = e.currentTarget.files?.[0];
     if (!file) {
-      console.log('No file selected');
       return;
     }
 
-    console.log('File selected:', file.name, file.type, file.size);
     setError(null);
 
     // Validate size
@@ -140,75 +50,33 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
       }
     }
 
-    // Mark as uploading
-    setUploadedFiles(prev => ({
-      ...prev,
-      [type]: { 
-        name: file.name, 
-        size: file.size, 
-        type: file.type,
-        isUploading: true
+    // Store file locally
+    const newFiles = {
+      ...uploadedFiles,
+      [type]: {
+        file,
+        name: file.name,
+        size: file.size,
+        type: file.type
       }
-    }));
+    };
 
-    // Upload to backend
-    const uploadResult = await uploadFileToBackend(file, type);
-
-    if (uploadResult) {
-      // Update with successful upload
-      setUploadedFiles(prev => ({
-        ...prev,
-        [type]: { 
-          name: file.name, 
-          size: file.size, 
-          type: file.type,
-          uploadedUrl: uploadResult.url || uploadResult.file_path,
-          documentId: uploadResult.id,
-          isUploading: false
-        }
-      }));
-
-      // Pass uploaded file data to parent
-      onChange({ 
-        ...data, 
-        [type]: {
-          file,
-          uploadedUrl: uploadResult.url || uploadResult.file_path,
-          documentId: uploadResult.id
-        }
-      });
-      console.log('File uploaded successfully:', type);
-    } else {
-      // Remove from state if upload failed
-      setUploadedFiles(prev => {
-        const updated = { ...prev };
-        delete updated[type as keyof typeof updated];
-        return updated;
-      });
-      onChange({ ...data, [type]: null });
-    }
+    setUploadedFiles(newFiles);
+    onChange(newFiles);
     
     // Reset input
     e.currentTarget.value = '';
   };
 
   const removeFile = (type: string) => {
-    setUploadedFiles(prev => {
-      const updated = { ...prev };
-      delete updated[type as keyof typeof updated];
-      return updated;
-    });
-    setUploadProgress(prev => {
-      const updated = { ...prev };
-      delete updated[type];
-      return updated;
-    });
-    onChange({ ...data, [type]: null });
+    const newFiles = { ...uploadedFiles };
+    delete newFiles[type as keyof typeof newFiles];
+    setUploadedFiles(newFiles);
+    onChange(newFiles);
   };
 
   const FileUploadBox = ({ label, type, accept }: { label: string; type: string; accept: string }) => {
     const file = uploadedFiles[type as keyof typeof uploadedFiles];
-    const progress = uploadProgress[type] || 0;
     
     return (
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/60 transition-colors">
@@ -218,7 +86,7 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
         </div>
 
         {!file ? (
-          // No file uploaded
+          // No file selected
           <label className="block cursor-pointer">
             <input
               type="file"
@@ -235,23 +103,8 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
               <p className="text-xs text-gray-500">Click to select {label.toLowerCase()}</p>
             </div>
           </label>
-        ) : file.isUploading ? (
-          // Uploading
-          <div className="py-4">
-            <div className="flex items-center justify-center mb-4">
-              <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-[#253E44]"></div>
-            </div>
-            <p className="text-sm font-medium text-gray-800 mb-2">Uploading...</p>
-            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-[#226F75] to-[#253E44] h-3 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <p className="text-xs text-gray-600 mt-2 font-semibold">{progress}% Complete</p>
-          </div>
         ) : (
-          // File uploaded
+          // File selected
           <div className="py-4">
             <div className="flex items-center justify-center mb-4">
               <div className="relative">
@@ -289,14 +142,8 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
     );
   };
 
-  const uploadedCount = Object.values(uploadedFiles).filter(f => f && !f.isUploading).length;
-  const isComplete = uploadedCount === 3 && 
-                     uploadedFiles.id && 
-                     uploadedFiles.cac && 
-                     uploadedFiles.selfie &&
-                     !uploadedFiles.id.isUploading && 
-                     !uploadedFiles.cac.isUploading && 
-                     !uploadedFiles.selfie.isUploading;
+  const uploadedCount = Object.values(uploadedFiles).length;
+  const isComplete = uploadedCount === 3;
 
   return (
     <div className="space-y-8">
@@ -326,7 +173,7 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
 
       {error && (
         <div className="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-700">
-          <p className="font-medium">Upload Error</p>
+          <p className="font-medium">Error</p>
           <p>{error}</p>
         </div>
       )}
@@ -339,11 +186,11 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-[#253E44]">Upload Status</h3>
+            <h3 className="text-sm font-medium text-[#253E44]">Document Status</h3>
             <p className="text-sm text-[#253E44] mt-1">
               {isComplete 
-                ? '✓ All documents uploaded successfully!' 
-                : `${uploadedCount}/3 documents uploaded`}
+                ? '✓ All documents selected. Ready to submit!' 
+                : `${uploadedCount}/3 documents selected`}
             </p>
           </div>
         </div>
