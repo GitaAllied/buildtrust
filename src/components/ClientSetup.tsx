@@ -47,6 +47,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         location: formData.personal.currentLocation,
         bio: formData.personal.occupation,
         preferred_contact: formData.personal.preferredContact,
+        setup_completed: true,
       };
 
       // Remove undefined or empty string values
