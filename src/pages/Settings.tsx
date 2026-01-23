@@ -63,15 +63,33 @@ const Settings = () => {
 
   // Load user data on mount
   useEffect(() => {
-    if (user) {
-      const nameParts = user.name ? user.name.split(" ") : ["", ""];
-      setProfileData({
-        firstName: nameParts[0] || "",
-        lastName: nameParts.slice(1).join(" ") || "",
-        email: user.email || "",
-        phone: user.phone || "",
-      });
-    }
+    const loadUserData = async () => {
+      if (user) {
+        try {
+          // Fetch full user data from API to ensure all fields are included
+          const fullUserData = await apiClient.getCurrentUser();
+          
+          const nameParts = fullUserData.name ? fullUserData.name.split(" ") : ["", ""];
+          setProfileData({
+            firstName: nameParts[0] || "",
+            lastName: nameParts.slice(1).join(" ") || "",
+            email: fullUserData.email || "",
+            phone: fullUserData.phone || "",
+          });
+        } catch (error) {
+          // Fallback to auth context user data if API call fails
+          const nameParts = user.name ? user.name.split(" ") : ["", ""];
+          setProfileData({
+            firstName: nameParts[0] || "",
+            lastName: nameParts.slice(1).join(" ") || "",
+            email: user.email || "",
+            phone: user.phone || "",
+          });
+        }
+      }
+    };
+
+    loadUserData();
   }, [user]);
 
   const handleProfileInputChange = (field: string, value: string) => {
