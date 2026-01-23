@@ -24,10 +24,12 @@ interface PersonalFormData extends Record<string, unknown> {
 const ClientSetup = ({ onExit }: ClientSetupProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    personal: {} as PersonalFormData
+    personal: {} as PersonalFormData,
+    documents: {} as Record<string, any>
   });
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
+  const [uploadingDocuments, setUploadingDocuments] = useState(false);
 
   // Check email verification on component mount
   useEffect(() => {
@@ -59,6 +61,26 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
       });
 
       try {
+        setUploadingDocuments(true);
+        
+        // Upload any identity documents if they exist
+        if (user?.id && formData.documents) {
+          const docTypes = ['id', 'cac', 'selfie'];
+          for (const docType of docTypes) {
+            const doc = formData.documents[docType];
+            if (doc && doc.file instanceof File) {
+              try {
+                console.log(`📤 Uploading ${docType} document...`);
+                await apiClient.uploadDocument(user.id, docType, doc.file);
+                console.log(`✅ ${docType} document uploaded`);
+              } catch (uploadErr) {
+                console.error(`❌ Failed to upload ${docType}:`, uploadErr);
+                // Continue with other documents even if one fails
+              }
+            }
+          }
+        }
+
         const response = await apiClient.updateProfile(cleanedProfileData);
         
         await refreshUser();
@@ -81,6 +103,8 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
         });
         // show user-friendly UI message
         alert('An error occurred while updating your profile. Check console for details.');
+      } finally {
+        setUploadingDocuments(false);
       }
     }
   };
