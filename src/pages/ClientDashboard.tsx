@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { apiClient } from "@/lib/api";
 import Logo from "../assets/Logo.png";
 import {
   FaBriefcase,
@@ -32,92 +33,123 @@ const ClientDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
-  const sidebarItems = [
-    { id: "dashboard", label: "Dashboard", icon: <FaUser />, active: true },
-    { id: "projects", label: "Projects", icon: <FaBriefcase /> },
-    { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
-    { id: "messages", label: "Messages", icon: <FaMessage /> },
-    { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
-    { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
-    { id: "settings", label: "Settings", icon: <FaGear /> },
-    { id: "signout", label: "Sign Out", icon: <LogOut />, isDanger: true },
-  ];
+  // Dynamic state for user data
+  const [activeProjects, setActiveProjects] = useState([]);
+  const [recentUpdates, setRecentUpdates] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [stats, setStats] = useState({
+    totalInvestment: "₦0",
+    completedProjects: 0,
+    activeProjectsCount: 0,
+    avgRating: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const activeProjects = [
-    {
-      id: 1,
-      title: "Modern Duplex in Lekki",
-      location: "Lekki, Lagos",
-      progress: 45,
-      developer: "Engr. Adewale Structures",
-      image:
-        "https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=300&h=200&fit=crop",
-      status: "Foundation Complete",
-    },
-    {
-      id: 2,
-      title: "Commercial Plaza",
-      location: "Victoria Island, Lagos",
-      progress: 20,
-      developer: "Prime Build Ltd",
-      image:
-        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=300&h=200&fit=crop",
-      status: "Site Preparation",
-    },
-  ];
+  // Fetch user dashboard data on mount
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch current user data to ensure it's fresh
+        const currentUser = await apiClient.getCurrentUser();
+        
+        // Since we don't have dedicated endpoints yet, we'll use mock data
+        // that would be replaced with actual API calls
+        setActiveProjects([
+          {
+            id: 1,
+            title: "Modern Duplex in Lekki",
+            location: "Lekki, Lagos",
+            progress: 45,
+            developer: "Engr. Adewale Structures",
+            image:
+              "https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=300&h=200&fit=crop",
+            status: "Foundation Complete",
+          },
+          {
+            id: 2,
+            title: "Commercial Plaza",
+            location: "Victoria Island, Lagos",
+            progress: 20,
+            developer: "Prime Build Ltd",
+            image:
+              "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=300&h=200&fit=crop",
+            status: "Site Preparation",
+          },
+        ]);
 
-  const recentUpdates = [
-    {
-      id: 1,
-      project: "Modern Duplex",
-      type: "photo",
-      timestamp: "2 hours ago",
-      image:
-        "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=150&h=150&fit=crop",
-    },
-    {
-      id: 2,
-      project: "Commercial Plaza",
-      type: "video",
-      timestamp: "1 day ago",
-      image:
-        "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=150&h=150&fit=crop",
-    },
-    {
-      id: 3,
-      project: "Modern Duplex",
-      type: "photo",
-      timestamp: "3 days ago",
-      image:
-        "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=150&h=150&fit=crop",
-    },
-  ];
+        setRecentUpdates([
+          {
+            id: 1,
+            project: "Modern Duplex",
+            type: "photo",
+            timestamp: "2 hours ago",
+            image:
+              "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=150&h=150&fit=crop",
+          },
+          {
+            id: 2,
+            project: "Commercial Plaza",
+            type: "video",
+            timestamp: "1 day ago",
+            image:
+              "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=150&h=150&fit=crop",
+          },
+          {
+            id: 3,
+            project: "Modern Duplex",
+            type: "photo",
+            timestamp: "3 days ago",
+            image:
+              "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=150&h=150&fit=crop",
+          },
+        ]);
 
-  const messages = [
-    {
-      id: 1,
-      developer: "Engr. Adewale",
-      lastMessage: "Foundation work completed ahead of schedule!",
-      time: "1h ago",
-      unread: true,
-    },
-    {
-      id: 2,
-      developer: "Prime Build Ltd",
-      lastMessage: "Site survey documents ready for review",
-      time: "3h ago",
-      unread: false,
-    },
-    {
-      id: 3,
-      developer: "Covenant Builders",
-      lastMessage: "Thank you for choosing our services",
-      time: "2 days ago",
-      unread: false,
-    },
-  ];
+        setMessages([
+          {
+            id: 1,
+            developer: "Engr. Adewale",
+            lastMessage: "Foundation work completed ahead of schedule!",
+            time: "1h ago",
+            unread: true,
+          },
+          {
+            id: 2,
+            developer: "Prime Build Ltd",
+            lastMessage: "Site survey documents ready for review",
+            time: "3h ago",
+            unread: false,
+          },
+          {
+            id: 3,
+            developer: "Covenant Builders",
+            lastMessage: "Thank you for choosing our services",
+            time: "2 days ago",
+            unread: false,
+          },
+        ]);
+
+        setStats({
+          totalInvestment: "₦25.4M",
+          completedProjects: 3,
+          activeProjectsCount: 2,
+          avgRating: 4.8,
+        });
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
 
   const handleNavigation = (itemId: string) => {
     switch (itemId) {
@@ -150,6 +182,17 @@ const ClientDashboard = () => {
         navigate("/browse");
     }
   };
+
+  const sidebarItems = [
+    { id: "dashboard", label: "Dashboard", icon: <FaUser />, active: true },
+    { id: "projects", label: "Projects", icon: <FaBriefcase /> },
+    { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
+    { id: "messages", label: "Messages", icon: <FaMessage /> },
+    { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
+    { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
+    { id: "settings", label: "Settings", icon: <FaGear /> },
+    { id: "signout", label: "Sign Out", icon: <LogOut />, isDanger: true },
+  ];
 
   return (
     <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
@@ -221,7 +264,7 @@ const ClientDashboard = () => {
                 </Avatar>
                 <div className="min-w-0">
                   <h1 className="text-base sm:text-lg md:text-2xl font-bold text-[#253E44] truncate">
-                    Welcome, Divine
+                    Welcome, {user?.name || "Client"}
                   </h1>
                   <p className="text-xs sm:text-sm text-gray-500 truncate">
                     Managing 2 active projects
@@ -454,20 +497,20 @@ const ClientDashboard = () => {
                   <div className="flex justify-between text-xs sm:text-sm">
                     <span className="text-gray-600">Total Investment</span>
                     <span className="font-bold text-[#226F75] truncate">
-                      ₦25.4M
+                      {stats.totalInvestment}
                     </span>
                   </div>
                   <div className="flex justify-between text-xs sm:text-sm border-t border-white/50 pt-3">
                     <span className="text-gray-600">Projects Completed</span>
-                    <span className="font-bold text-[#253E44]">3</span>
+                    <span className="font-bold text-[#253E44]">{stats.completedProjects}</span>
                   </div>
                   <div className="flex justify-between text-xs sm:text-sm border-t border-white/50 pt-3">
                     <span className="text-gray-600">Active Projects</span>
-                    <span className="font-bold text-[#253E44]">2</span>
+                    <span className="font-bold text-[#253E44]">{stats.activeProjectsCount}</span>
                   </div>
                   <div className="flex justify-between text-xs sm:text-sm border-t border-white/50 pt-3">
                     <span className="text-gray-600">Avg. Rating Given</span>
-                    <span className="font-bold text-[#226F75]">4.8/5</span>
+                    <span className="font-bold text-[#226F75]">{stats.avgRating}/5</span>
                   </div>
                 </CardContent>
               </Card>
