@@ -84,7 +84,7 @@ function ProtectedRoute({ children, isAuthenticated }: { children: JSX.Element; 
 }
 
 const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
-  const [currentStep, setCurrentStep] = useState(2);
+  const [currentStep, setCurrentStep] = useState(1);
   const [isComplete, setIsComplete] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     personal: {
