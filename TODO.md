@@ -1,6 +1,24 @@
-- [x] Update fadeInUp variant to include transition with duration 1.5s
-- [x] Change all useInView hooks from once: true to once: false
-- [x] Add motion.section to How It Works section with scroll animation
-- [x] Add motion.section to Testimonials section with scroll animation
-- [x] Add motion.section to CTA section with scroll animation
-- [x] Implement stagger animation for features cards
+# Sidebar Fix Task
+- [x] Update ClientDashboard.tsx
+- [x] Update DeveloperDashboard.tsx
+- [x] Update Projects.tsx
+- [x] Update Payments.tsx
+- [x] Update Messages.tsx
+- [x] Update Settings.tsx
+- [x] Update Contracts.ts 
+- [x] Update SavedDevelopers.ts 
+- [x] Update ActiveProjects.tsx
+- [x] Update DeveloperMessages. sx
+- [x] Update DeveloperPayments.tsx
+- [x] Update DeveloperLiscences.tsx
+- [x] Update ProjectRequests.tsx
+- [x] Update UploadUpdate.ts 
+- [x] Update Support.tsx
+- [x] Update SuperAdminDashboard.tsx
+- [x] Update AdminUsers.t x
+- [x] Update AdminReports.ts 
+- [x] Update AdminSettings.tsx
+- [x] Update AdminSupport.tsx
+- [x] Update AdminMessages.tsx
+- [ ] Update AdminUserView.tsx
+- [ ] Update AdminUserEdit.tsx
