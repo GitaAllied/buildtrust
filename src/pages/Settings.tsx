@@ -67,16 +67,24 @@ const Settings = () => {
       if (user) {
         try {
           // Fetch full user data from API to ensure all fields are included
-          const fullUserData = await apiClient.getCurrentUser();
+          const response = await apiClient.getCurrentUser();
+          console.log('Fetched user data:', response);
+          
+          // Extract user object from response (API returns {user: {...}})
+          const fullUserData = response.user || response;
+          console.log('Extracted user object:', fullUserData);
           
           const nameParts = fullUserData.name ? fullUserData.name.split(" ") : ["", ""];
-          setProfileData({
+          const newProfileData = {
             firstName: nameParts[0] || "",
             lastName: nameParts.slice(1).join(" ") || "",
             email: fullUserData.email || "",
             phone: fullUserData.phone || "",
-          });
+          };
+          console.log('Setting profile data:', newProfileData);
+          setProfileData(newProfileData);
         } catch (error) {
+          console.error('Error fetching user data:', error);
           // Fallback to auth context user data if API call fails
           const nameParts = user.name ? user.name.split(" ") : ["", ""];
           setProfileData({
