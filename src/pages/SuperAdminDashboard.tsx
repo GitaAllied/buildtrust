@@ -188,7 +188,7 @@ const SuperAdminDashboard = () => {
       <div
         className={`${
           sidebarOpen ? "block" : "hidden"
-        } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed md:relative top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
+        } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
       >
         <div className="p-4 sm:p-6 border-b border-white/20 hidden md:block">
           <button
@@ -220,10 +220,9 @@ const SuperAdminDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 w-full">
+      <div className="flex-1 md:pl-64 w-full">
         {/* Header */}
-        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm">
-          <div className="p-3 sm:p-4 md:p-6">
+        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
             <div className="flex sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
                 <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
@@ -251,7 +250,6 @@ const SuperAdminDashboard = () => {
                 </Button>
               </div>
             </div>
-          </div>
         </div>
 
         <div className="p-4 md:p-6">

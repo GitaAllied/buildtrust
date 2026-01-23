@@ -247,7 +247,7 @@ const AdminReports = () => {
       <div
         className={`${
           sidebarOpen ? "block" : "hidden"
-        } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed md:relative top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
+        } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
       >
         <div className="p-4 sm:p-6 border-b border-white/20 hidden md:block">
           <button
@@ -277,10 +277,9 @@ const AdminReports = () => {
           ))}
         </nav>
       </div>
-      <div className="w-full flex-1 min-h-screen bg-gray-50 flex flex-col">
+      <div className="w-full flex-1 md:pl-64 min-h-screen bg-gray-50 flex flex-col">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
             <div className="flex items-start justify-between flex-col md:flex-row md:items-center gap-4 md:gap-0">
               <div className="flex items-center space-x-4 ">
                 <div>
@@ -319,7 +318,6 @@ const AdminReports = () => {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
           </div>
         </div>
 
