@@ -68,14 +68,9 @@ const Settings = () => {
         try {
           // Fetch full user data from API to ensure all fields are included
           const response = await apiClient.getCurrentUser();
-          console.log('🔍 Fetched user data:', response);
           
           // Extract user object from response (API returns {user: {...}})
           const fullUserData = response.user || response;
-          console.log('🔍 Extracted user object:', fullUserData);
-          console.log('🔍 Phone raw value:', fullUserData.phone, 'Type:', typeof fullUserData.phone);
-          console.log('🔍 Phone truthy?:', !!fullUserData.phone);
-          console.log('🔍 All field keys:', Object.keys(fullUserData));
           
           const nameParts = fullUserData.name ? fullUserData.name.split(" ") : ["", ""];
           const phoneValue = fullUserData.phone && String(fullUserData.phone).trim() !== '' ? String(fullUserData.phone).trim() : '';
@@ -85,10 +80,8 @@ const Settings = () => {
             email: fullUserData.email || "",
             phone: phoneValue,
           };
-          console.log('🔍 Setting profile data:', newProfileData);
           setProfileData(newProfileData);
         } catch (error) {
-          console.error('❌ Error fetching user data:', error);
           // Fallback to auth context user data if API call fails
           const nameParts = user.name ? user.name.split(" ") : ["", ""];
           const phoneValue = user.phone && String(user.phone).trim() !== '' ? String(user.phone).trim() : '';
@@ -146,9 +139,6 @@ const Settings = () => {
       // Reload fresh user data from API to populate form with latest values
       const response = await apiClient.getCurrentUser();
       const fullUserData = response.user || response;
-      
-      console.log('💾 After save - fetched fresh data:', fullUserData);
-      console.log('💾 Phone value after save:', fullUserData.phone);
       
       const nameParts = fullUserData.name ? fullUserData.name.split(" ") : ["", ""];
       const phoneValue = fullUserData.phone && String(fullUserData.phone).trim() !== '' ? String(fullUserData.phone).trim() : '';
