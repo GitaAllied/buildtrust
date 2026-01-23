@@ -73,13 +73,15 @@ const Settings = () => {
           // Extract user object from response (API returns {user: {...}})
           const fullUserData = response.user || response;
           console.log('Extracted user object:', fullUserData);
+          console.log('Phone value from DB:', fullUserData.phone);
+          console.log('All fields:', Object.keys(fullUserData));
           
           const nameParts = fullUserData.name ? fullUserData.name.split(" ") : ["", ""];
           const newProfileData = {
             firstName: nameParts[0] || "",
             lastName: nameParts.slice(1).join(" ") || "",
             email: fullUserData.email || "",
-            phone: fullUserData.phone || "",
+            phone: fullUserData.phone ? String(fullUserData.phone).trim() : "",
           };
           console.log('Setting profile data:', newProfileData);
           setProfileData(newProfileData);
@@ -91,7 +93,7 @@ const Settings = () => {
             firstName: nameParts[0] || "",
             lastName: nameParts.slice(1).join(" ") || "",
             email: user.email || "",
-            phone: user.phone || "",
+            phone: user.phone ? String(user.phone).trim() : "",
           });
         }
       }
@@ -135,7 +137,20 @@ const Settings = () => {
         phone: profileData.phone,
       });
 
+      // Refresh user in auth context
       await refreshUser();
+
+      // Reload fresh user data from API to populate form with latest values
+      const response = await apiClient.getCurrentUser();
+      const fullUserData = response.user || response;
+      
+      const nameParts = fullUserData.name ? fullUserData.name.split(" ") : ["", ""];
+      setProfileData({
+        firstName: nameParts[0] || "",
+        lastName: nameParts.slice(1).join(" ") || "",
+        email: fullUserData.email || "",
+        phone: fullUserData.phone ? String(fullUserData.phone).trim() : "",
+      });
 
       setProfileMessage({
         type: "success",
