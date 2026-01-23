@@ -19,6 +19,13 @@ interface PortfolioSetupProps {
   onExit: () => void;
 }
 
+interface FileData {
+  file: File;
+  name: string;
+  size: number;
+  type: string;
+}
+
 interface Project {
   id: string;
   title: string;
@@ -46,11 +53,9 @@ interface FormData {
     [key: string]: unknown;
   };
   identity: {
-    idDocumentType?: string;
-    idNumber?: string;
-    idCountry?: string;
-    documents?: any[];
-    [key: string]: unknown;
+    id?: FileData;
+    cac?: FileData;
+    selfie?: FileData;
   };
   credentials: {
     licenses?: any[];
@@ -79,7 +84,7 @@ function ProtectedRoute({ children, isAuthenticated }: { children: JSX.Element; 
 }
 
 const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(2);
   const [isComplete, setIsComplete] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     personal: {
@@ -194,8 +199,9 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
           }
 
           // Upload identity docs
-          if (userId && formData.identity && Array.isArray((formData.identity as any).documents)) {
-            for (const f of (formData.identity as any).documents) {
+          if (userId && formData.identity) {
+            const identityFiles = [formData.identity.id?.file, formData.identity.cac?.file, formData.identity.selfie?.file].filter(Boolean);
+            for (const f of identityFiles) {
               if (f instanceof File) {
                 await apiClient.uploadDocument(userId, 'identity', f);
                 uploadedCount++;
@@ -356,17 +362,17 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
       case 3:
         return (
           <div>
-            <LicensesCredentials 
-              data={formData.credentials} 
-              onChange={(data) => updateFormData('credentials', data)} 
+            <LicensesCredentials
+              data={formData.credentials}
+              onChange={(data) => updateFormData('credentials', data)}
             />
-            <NavigationButtons 
+            <NavigationButtons
               currentStep={currentStep}
               totalSteps={6}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
-              formData={formData.personal}
+              formData={formData.credentials}
               userType="developer"
             />
           </div>
