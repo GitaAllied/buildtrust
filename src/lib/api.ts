@@ -213,6 +213,13 @@ class ApiClient {
     });
   }
 
+  async changePassword(data: { currentPassword: string; newPassword: string; confirmPassword: string }): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async getCurrentUser() {
     return this.request('/auth/me', { method: 'GET' });
   }
