@@ -6,26 +6,29 @@ interface IdentityVerificationProps {
   onChange: (data: any) => void;
 }
 
+interface FileData {
+  file: File;
+  name: string;
+  size: number;
+  type: string;
+}
+
 const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => {
   const [uploadedFiles, setUploadedFiles] = useState<{
-    id?: { name: string; size: number };
-    cac?: { name: string; size: number };
-    selfie?: { name: string; size: number };
-  }>({});
+    id?: FileData;
+    cac?: FileData;
+    selfie?: FileData;
+  }>(data || {});
   const [error, setError] = useState<string | null>(null);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
-    console.log('handleFileChange called for:', type);
-    
     const file = e.currentTarget.files?.[0];
     if (!file) {
-      console.log('No file selected');
       return;
     }
 
-    console.log('File selected:', file.name, file.type, file.size);
     setError(null);
 
     // Validate size
@@ -47,24 +50,29 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
       }
     }
 
-    // Store file metadata
-    setUploadedFiles(prev => ({
-      ...prev,
-      [type]: { name: file.name, size: file.size }
-    }));
+    // Store file locally
+    const newFiles = {
+      ...uploadedFiles,
+      [type]: {
+        file,
+        name: file.name,
+        size: file.size,
+        type: file.type
+      }
+    };
 
-    // Pass file to parent
-    onChange({ ...data, [type]: file });
-    console.log('File saved:', type);
+    setUploadedFiles(newFiles);
+    onChange(newFiles);
+    
+    // Reset input
+    e.currentTarget.value = '';
   };
 
   const removeFile = (type: string) => {
-    setUploadedFiles(prev => {
-      const updated = { ...prev };
-      delete updated[type as keyof typeof updated];
-      return updated;
-    });
-    onChange({ ...data, [type]: null });
+    const newFiles = { ...uploadedFiles };
+    delete newFiles[type as keyof typeof newFiles];
+    setUploadedFiles(newFiles);
+    onChange(newFiles);
   };
 
   const FileUploadBox = ({ label, type, accept }: { label: string; type: string; accept: string }) => {
@@ -78,7 +86,7 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
         </div>
 
         {!file ? (
-          // No file uploaded
+          // No file selected
           <label className="block cursor-pointer">
             <input
               type="file"
@@ -92,16 +100,18 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
               </div>
-              <p className="text-xs text-gray-500">Click or drag file here</p>
+              <p className="text-xs text-gray-500">Click to select {label.toLowerCase()}</p>
             </div>
           </label>
         ) : (
-          // File uploaded
+          // File selected
           <div className="py-4">
             <div className="flex items-center justify-center mb-4">
-              <svg className="w-10 h-10 text-[#253E44] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <div className="relative">
+                <svg className="w-12 h-12 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
             </div>
             <p className="text-sm font-medium text-gray-800 mb-1 break-words">{file.name}</p>
             <p className="text-xs text-gray-500 mb-4">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
@@ -114,14 +124,14 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
                   onChange={(e) => handleFileChange(e, type)}
                   className="hidden"
                 />
-                <span className="block text-xs py-2 px-3 bg-blue-100 text-[#253E44] rounded hover:bg-blue-200 transition-colors">
+                <span className="block text-xs py-2 px-3 bg-blue-100 text-[#253E44] rounded hover:bg-blue-200 transition-colors font-medium">
                   Change
                 </span>
               </label>
               <button
                 type="button"
                 onClick={() => removeFile(type)}
-                className="flex-1 text-xs py-2 px-3 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                className="flex-1 text-xs py-2 px-3 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium"
               >
                 Remove
               </button>
@@ -132,7 +142,8 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
     );
   };
 
-const isComplete = uploadedFiles.id && uploadedFiles.cac && uploadedFiles.selfie;
+  const uploadedCount = Object.values(uploadedFiles).length;
+  const isComplete = uploadedCount === 3;
 
   return (
     <div className="space-y-8">
@@ -161,8 +172,9 @@ const isComplete = uploadedFiles.id && uploadedFiles.cac && uploadedFiles.selfie
       />
 
       {error && (
-        <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-          {error}
+        <div className="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+          <p className="font-medium">Error</p>
+          <p>{error}</p>
         </div>
       )}
 
@@ -174,11 +186,11 @@ const isComplete = uploadedFiles.id && uploadedFiles.cac && uploadedFiles.selfie
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-[#253E44]">Upload Status</h3>
+            <h3 className="text-sm font-medium text-[#253E44]">Document Status</h3>
             <p className="text-sm text-[#253E44] mt-1">
               {isComplete 
-                ? '✓ All documents uploaded and ready to submit' 
-                : `${Object.keys(uploadedFiles).length}/3 documents uploaded`}
+                ? '✓ All documents selected. Ready to submit!' 
+                : `${uploadedCount}/3 documents selected`}
             </p>
           </div>
         </div>

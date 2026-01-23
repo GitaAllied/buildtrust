@@ -13,8 +13,10 @@ import {
   Camera,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import Logo from "../assets/Logo.png";
 import {
   FaBriefcase,
@@ -30,6 +32,7 @@ const ClientDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", icon: <FaUser />, active: true },
@@ -39,6 +42,7 @@ const ClientDashboard = () => {
     { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
     { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
     { id: "settings", label: "Settings", icon: <FaGear /> },
+    { id: "signout", label: "Sign Out", icon: <LogOut />, isDanger: true },
   ];
 
   const activeProjects = [
@@ -139,6 +143,9 @@ const ClientDashboard = () => {
       case "settings":
         navigate("/settings");
         break;
+      case "signout":
+        signOut();
+        break;
       default:
         navigate("/browse");
     }
@@ -186,7 +193,9 @@ const ClientDashboard = () => {
                 setSidebarOpen(false);
               }}
               className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl mb-1 transition-all text-xs sm:text-sm font-medium flex gap-2 items-center ${
-                activeTab === item.id
+                item.isDanger
+                  ? "text-red-600 hover:bg-red-50 hover:text-red-700"
+                  : activeTab === item.id
                   ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
                   : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
               }`}
