@@ -61,6 +61,13 @@ const Settings = () => {
     text: string;
   } | null>(null);
 
+  // Account information state
+  const [accountInfo, setAccountInfo] = useState({
+    accountId: "",
+    memberSince: "",
+    accountType: "",
+  });
+
   // Load user data on mount
   useEffect(() => {
     const loadUserData = async () => {
@@ -68,10 +75,10 @@ const Settings = () => {
         try {
           // Fetch full user data from API to ensure all fields are included
           const response = await apiClient.getCurrentUser();
-          
+
           // Extract user object from response (API returns {user: {...}})
           const fullUserData = response.user || response;
-          
+
           const nameParts = fullUserData.name ? fullUserData.name.split(" ") : ["", ""];
           const phoneValue = fullUserData.phone && String(fullUserData.phone).trim() !== '' ? String(fullUserData.phone).trim() : '';
           const newProfileData = {
@@ -81,6 +88,17 @@ const Settings = () => {
             phone: phoneValue,
           };
           setProfileData(newProfileData);
+
+          // Set account information from API data
+          const accountId = fullUserData.id ? `BT-${fullUserData.role?.charAt(0).toUpperCase() || 'U'}-${String(fullUserData.id).padStart(6, '0')}` : "";
+          const memberSince = fullUserData.created_at ? new Date(fullUserData.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "";
+          const accountType = fullUserData.role ? `${fullUserData.role.charAt(0).toUpperCase()}${fullUserData.role.slice(1)}` : "";
+
+          setAccountInfo({
+            accountId,
+            memberSince,
+            accountType,
+          });
         } catch (error) {
           // Fallback to auth context user data if API call fails
           const nameParts = user.name ? user.name.split(" ") : ["", ""];
@@ -90,6 +108,13 @@ const Settings = () => {
             lastName: nameParts.slice(1).join(" ") || "",
             email: user.email || "",
             phone: phoneValue,
+          });
+
+          // Set fallback account info
+          setAccountInfo({
+            accountId: "",
+            memberSince: "",
+            accountType: "",
           });
         }
       }
@@ -664,9 +689,9 @@ const Settings = () => {
                     <div className="border-t pt-6">
                       <h4 className="font-medium mb-2">Account Information</h4>
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p>Account ID: BT-DN-001234</p>
-                        <p>Member since: October 2024</p>
-                        <p>Account type: Premium Client</p>
+                        <p>Account ID: {accountInfo.accountId || 'Loading...'}</p>
+                        <p>Member since: {accountInfo.memberSince || 'Loading...'}</p>
+                        <p>Account type: {accountInfo.accountType || 'Loading...'}</p>
                       </div>
                     </div>
                   </CardContent>
