@@ -367,6 +367,17 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
 
   // Save to localStorage whenever formData changes
   useEffect(() => {
+    console.log('💾 [PersonalInfo] Saving to localStorage:', {
+      fullName: formData.fullName,
+      bio: formData.bio,
+      yearsExperience: formData.yearsExperience,
+      companyType: formData.companyType,
+      languages: formData.languages,
+      citiesCovered: formData.citiesCovered,
+      currentLocation: formData.currentLocation,
+      phoneNumber: formData.phoneNumber,
+      preferredContact: formData.preferredContact
+    });
     localStorage.setItem(PERSONAL_INFO_STORAGE_KEY, JSON.stringify(formData));
   }, [formData]);
 

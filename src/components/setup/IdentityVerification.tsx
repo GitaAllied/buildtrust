@@ -51,6 +51,11 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
 
   // Save to localStorage whenever files change
   useEffect(() => {
+    console.log('💾 [IdentityVerification] Saving to localStorage:', {
+      id_file: files.id ? { name: files.id.name, size: files.id.size } : null,
+      cac_file: files.cac ? { name: files.cac.name, size: files.cac.size } : null,
+      selfie_file: files.selfie ? { name: files.selfie.name, size: files.selfie.size } : null
+    });
     localStorage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(files));
   }, [files]);
 

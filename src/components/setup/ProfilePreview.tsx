@@ -17,6 +17,22 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
   // Scroll to top on component mount
   useEffect(() => {
     window.scrollTo(0, 0);
+    console.log('👁️ [ProfilePreview] Loading from localStorage');
+    
+    const personalData = localStorage.getItem('buildtrust_personal_info');
+    const preferencesData = localStorage.getItem('buildtrust_build_preferences');
+    const identityData = localStorage.getItem('buildtrust_identity_verification');
+    const credentialsData = localStorage.getItem('buildtrust_licenses_credentials');
+    const projectsData = localStorage.getItem('buildtrust_projects_gallery');
+    
+    console.log('📋 [ProfilePreview] Complete form data:', {
+      personal: personalData ? 'Loaded ✓' : 'Missing ✗',
+      preferences: preferencesData ? 'Loaded ✓' : 'Missing ✗',
+      identity: identityData ? 'Loaded ✓' : 'Missing ✗',
+      credentials: credentialsData ? 'Loaded ✓' : 'Missing ✗',
+      projects: projectsData ? 'Loaded ✓' : 'Missing ✗'
+    });
+    
     console.log('ProfilePreview formData:', formData);
     console.log('PersonalInfo role:', formData.personal?.role);
   }, []);

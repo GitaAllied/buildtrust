@@ -248,6 +248,12 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
         // Submit to backend endpoint that handles all database inserts
         const response = await apiClient.completePortfolioSetup(submitData);
         
+        console.log('✅ [API RESPONSE] Portfolio setup response received:', {
+          userId: response.user_id,
+          message: response.message,
+          preferencesStored: response.preferences_saved,
+          summary: response.summary
+        });
         console.log('✅ Portfolio setup response:', response);
 
         // Clear all setup localStorage keys on successful submission
