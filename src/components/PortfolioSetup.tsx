@@ -134,7 +134,9 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
     
     const preferencesData = (() => {
       const saved = localStorage.getItem('buildtrust_build_preferences');
-      return saved ? JSON.parse(saved) : null;
+      const parsed = saved ? JSON.parse(saved) : null;
+      console.log('📦 Loaded preferences from localStorage:', parsed);
+      return parsed;
     })();
 
     // When loading from localStorage, always ensure role matches authenticated user's role
@@ -236,8 +238,17 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
           preferences: formData.preferences,
         };
 
+        console.log('📤 Submitting form data with preferences:', {
+          personalFields: Object.keys(formData.personal || {}),
+          preferencesData: formData.preferences,
+          projectCount: projectsWithSerializedMedia.length,
+          identityDocs: Object.keys(formData.identity || {}).length
+        });
+
         // Submit to backend endpoint that handles all database inserts
         const response = await apiClient.completePortfolioSetup(submitData);
+        
+        console.log('✅ Portfolio setup response:', response);
 
         // Clear all setup localStorage keys on successful submission
         localStorage.removeItem('buildtrust_personal_info');
