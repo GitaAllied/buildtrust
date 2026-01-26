@@ -26,8 +26,35 @@ const NavigationButtons = ({
 
     // For developer step 2 (IdentityVerification), check if identity is complete
     if (userType === 'developer' && currentStep === 2) {
-      const isIdentityComplete = (formData.isIdentityComplete as boolean) || false;
-      return isIdentityComplete;
+      const hasId = (formData.id as any)?.file !== undefined;
+      const hasCac = (formData.cac as any)?.file !== undefined;
+      const hasSelfie = (formData.selfie as any)?.file !== undefined;
+      return hasId && hasCac && hasSelfie;
+    }
+
+    // For developer step 3 (LicensesCredentials), check if all credential types have files
+    if (userType === 'developer' && currentStep === 3) {
+      const licenses = (formData.licenses as any[]) || [];
+      const certifications = (formData.certifications as any[]) || [];
+      const testimonials = (formData.testimonials as any[]) || [];
+      return licenses.length > 0 && certifications.length > 0 && testimonials.length > 0;
+    }
+
+    // For developer step 4 (ProjectGallery), check if at least one project is complete
+    if (userType === 'developer' && currentStep === 4) {
+      const projects = (formData as any[]) || [];
+      if (!Array.isArray(projects) || projects.length === 0) {
+        return false;
+      }
+      // Check if at least the first project has required fields filled
+      const firstProject = projects[0];
+      if (!firstProject) return false;
+      const title = (firstProject.title as string)?.trim() || '';
+      const type = (firstProject.type as string)?.trim() || '';
+      const location = (firstProject.location as string)?.trim() || '';
+      const budget = (firstProject.budget as string)?.trim() || '';
+      const description = (firstProject.description as string)?.trim() || '';
+      return title && type && location && budget && description;
     }
 
     const fullName = (formData.fullName as string)?.trim() || '';

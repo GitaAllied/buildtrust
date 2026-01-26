@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   TrendingUp,
+  LogOut,
 } from "lucide-react";
 import PortfolioSetup from "@/components/PortfolioSetup";
 import ClientSetup from "@/components/ClientSetup";
@@ -38,7 +39,7 @@ const Index = () => {
   const [showSetup, setShowSetup] = useState(false);
   const [showClientSetup, setShowClientSetup] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-const { user, loading } = useAuth();
+const { user, loading, signOut } = useAuth();
 
 const [line1Typed, setLine1Typed] = useState('');
 const [line2Typed, setLine2Typed] = useState('');
@@ -312,6 +313,14 @@ useEffect(() => {
                     Admin Dashboard
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  onClick={signOut}
+                  className="hidden sm:inline-flex border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600 hover:text-red-700 text-xs sm:text-sm"
+                >
+                  <LogOut className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2" />
+                  Sign Out
+                </Button>
               </div>
             ) : (
               <div className="flex items-center space-x-3">
@@ -402,6 +411,29 @@ useEffect(() => {
                         Developer Dashboard
                       </Button>
                     )}
+                    {user.role === 'admin' && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          navigate("/super-admin-dashboard");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full border-purple-200 hover:border-purple-300 hover:bg-purple-50"
+                      >
+                        Admin Dashboard
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        signOut();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600 hover:text-red-700"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </Button>
                   </>
                 ) : (
                   <>
