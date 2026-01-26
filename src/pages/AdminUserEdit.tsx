@@ -241,9 +241,9 @@ const AdminUserEdit = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
-          <div className="flex items-start justify-between flex-col md:flex-row md:items-center gap-4">
-            <div className="flex items-center space-x-4">
+      <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
+          <div className="flex justify-between items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-0 md:space-x-4">
               <Button
                 variant="ghost"
                 onClick={() => navigate(`/admin/users/${userId}`)}
@@ -256,10 +256,10 @@ const AdminUserEdit = () => {
                 <p className="text-sm text-gray-500">Update user information and settings</p>
               </div>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex gap-2 md:gap-0 md:space-x-3">
               <Button variant="outline" onClick={handleCancel}>
-                <X className="mr-2 h-4 w-4" />
-                Cancel
+                <X className="md:mr-2 h-4 w-4" />
+                <span className=" hidden md:block">Cancel</span>
               </Button>
               <Button
                 onClick={handleSave}
@@ -273,8 +273,8 @@ const AdminUserEdit = () => {
                   </>
                 ) : (
                   <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
+                    <Save className="md:mr-2 h-4 w-4" />
+                    <span className=" hidden md:block">Save Changes</span>
                   </>
                 )}
               </Button>

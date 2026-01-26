@@ -183,8 +183,8 @@ const AdminUserView = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
-          <div className="flex items-start justify-between flex-col md:flex-row md:items-center gap-4">
+      <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
+          <div className="flex items-center justify-between md:items-center gap-4">
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
@@ -202,8 +202,8 @@ const AdminUserView = () => {
               onClick={() => navigate(`/admin/users/${user.id}/edit`)}
               className="bg-[#253E44] hover:bg-[#253E44]/90"
             >
-              <Edit className="mr-2 h-4 w-4" />
-              Edit User
+              <Edit className=" mr-0 md:mr-2 h-4 w-4" />
+              <p className=" hidden md:block">Edit User</p>
             </Button>
           </div>
       </div>

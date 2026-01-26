@@ -22,6 +22,8 @@ import {
   DollarSign,
   Menu,
   Bell,
+  Image,
+  Video,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import {
@@ -157,6 +159,41 @@ const DeveloperDashboard = () => {
         navigate("/browse");
     }
   };
+  
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<{ url: string; type: string }[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    
+    // Add new files to existing ones
+    setFiles(prev => [...prev, ...selectedFiles]);
+
+    // Generate previews
+    selectedFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviews(prev => [...prev, {
+          url: reader.result as string,
+          type: file.type.startsWith('video') ? 'video' : 'image'
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset input
+    e.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearAll = () => {
+    setFiles([]);
+    setPreviews([]);
+  };
 
   return (
     <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
@@ -215,40 +252,40 @@ const DeveloperDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 w-full md:pl-64">
         {/* Header */}
-        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
-            <div className="flex sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
-              <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
-                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
-                  <AvatarImage src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop" />
-                  <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
-                    EA
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <h1 className="text-base sm:text-lg md:text-2xl font-bold text-[#253E44] truncate">
-                    Welcome back, {user?.name || "Developer"}
-                  </h1>
-                  <div className="flex items-center gap-2 flex-wrap mt-1">
-                    <span className="text-xs sm:text-sm text-gray-500">
-                      Trust Score:
-                    </span>
-                    <span className="text-xs sm:text-sm font-medium text-[#226F75]">
-                      92%
-                    </span>
-                  </div>
+        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
+          <div className="flex sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
+                <AvatarImage src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop" />
+                <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
+                  EA
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg md:text-2xl font-bold text-[#253E44] truncate">
+                  Welcome back, {user?.name || "Developer"}
+                </h1>
+                <div className="flex items-center gap-2 flex-wrap mt-1">
+                  <span className="text-xs sm:text-sm text-gray-500">
+                    Trust Score:
+                  </span>
+                  <span className="text-xs sm:text-sm font-medium text-[#226F75]">
+                    92%
+                  </span>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 hover:bg-[#226F75]/10"
-              >
-                <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
-                  3
-                </Badge>
-              </Button>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 hover:bg-[#226F75]/10"
+            >
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
+                3
+              </Badge>
+            </Button>
+          </div>
         </div>
 
         <div className="p-3 sm:p-4 md:p-6">
@@ -269,12 +306,12 @@ const DeveloperDashboard = () => {
                   {projectRequests.map((request) => (
                     <Card
                       key={request.id}
-                      className="hover:shadow-xl transition-all duration-300 border border-white/50 bg-white/80 rounded-2xl overflow-hidden group"
+                      className="hover:shadow-xl transition-all duration-300 border border-white/50 bg-white/80 rounded-2xl overflow-hidden group w-full"
                     >
                       <CardContent className="p-4 sm:p-5 md:p-6">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                        <div className="flex flex-col justify-between gap-4">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-3 flex-wrap">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap justify-between">
                               <h3 className="font-bold text-xs sm:text-sm md:text-base text-[#253E44] truncate">
                                 {request.project}
                               </h3>
@@ -282,19 +319,19 @@ const DeveloperDashboard = () => {
                                 {request.received}
                               </Badge>
                             </div>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                            <p className="text-xs sm:text-sm text-gray-600 mb-1">
                               Client:{" "}
                               <span className="font-medium">
                                 {request.client}
                               </span>
                             </p>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                            <p className="text-xs sm:text-sm text-gray-600 mb-1">
                               Location:{" "}
                               <span className="font-medium">
                                 {request.location}
                               </span>
                             </p>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-3">
+                            <p className="text-xs sm:text-sm text-gray-600 mb-1">
                               Timeline:{" "}
                               <span className="font-medium">
                                 {request.timeline}
@@ -304,27 +341,28 @@ const DeveloperDashboard = () => {
                               {request.budget}
                             </p>
                           </div>
-                          <div className="flex flex-col md:flex-row gap-2 w-full sm:w-auto min-w-[100px]">
+                          <div className="flex flex-col md:flex-row md:justify-between gap-2 w-full sm:w-auto min-w-[100px]">
                             <Button
                               size="sm"
-                              className=" bg-transparent text-[#253E44] border border-gray-100 text-xs w-full sm:w-auto shadow-md"
+                              className=" bg-transparent text-[#253E44] hover:bg-[#226F75]/10 border border-gray-100 text-xs w-full sm:w-[33%] shadow-md"
                               onClick={() => navigate("/project-requests")}
                             >
                               View Details
                             </Button>
                             <Button
                               size="sm"
-                              className="bg-green-600 hover:bg-green-400 text-xs w-full sm:w-auto shadow-md"
+                              className="bg-green-600 hover:bg-green-400 text-xs w-full sm:w-[33%] shadow-md"
                               onClick={() => navigate("/active-projects")}
                             >
                               Accept
                             </Button>
                             <Button
                               size="sm"
-                              className="text-red-600 hover:bg-red-50 border-red-200 text-xs w-full sm:w-auto"
+                              className="bg-red-600 hover:bg-red-400 text-xs w-full sm:w-[33%] shadow-md text-white"
                               variant="outline"
                             >
-                              <X className="h-3 w-3" />
+                              {/* <X className="h-3 w-3" /> */}
+                              Reject
                             </Button>
                           </div>
                         </div>
@@ -348,15 +386,30 @@ const DeveloperDashboard = () => {
                       <CardContent className="p-4 sm:p-5 md:p-6">
                         <div className="flex flex-col gap-4">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-xs sm:text-sm md:text-base text-[#253E44] mb-2 truncate">
-                              {project.title}
-                            </h3>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-3">
-                              Client:{" "}
-                              <span className="font-medium text-gray-700">
-                                {project.client}
-                              </span>
-                            </p>
+                            <div className=" flex justify-between">
+                              <div>
+                                <h3 className="font-bold text-xs sm:text-sm md:text-base text-[#253E44] mb-2 truncate">
+                                  {project.title}
+                                </h3>
+                                <p className="text-xs sm:text-sm text-gray-600 mb-3">
+                                  Client:{" "}
+                                  <span className="font-medium text-gray-700">
+                                    {project.client}
+                                  </span>
+                                </p>
+                              </div>
+                              <Badge
+                                className={`
+                                ${
+                                  project.status === "On Track"
+                                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                                    : "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-md"
+                                }
+                              w-fit h-fit p-1.5 px-4`}
+                              >
+                                {project.status}
+                              </Badge>
+                            </div>
 
                             <div className="mb-4">
                               <div className="flex justify-between text-xs sm:text-sm mb-2 text-[#226F75] font-medium">
@@ -374,33 +427,24 @@ const DeveloperDashboard = () => {
                               <span>Last update: {project.lastUpdate}</span>
                             </div>
                           </div>
-                          <div className="flex flex-col md:flex-row justify-between gap-2 w-full sm:w-auto min-w-[120px]">
-                            <div className=" flex flex-col md:flex-row items-center gap-5 ">
+                          <div className="flex flex-col md:flex-row justify-between gap-2 w-full">
+                            <div className=" flex flex-col md:flex-row md:justify-between items-center gap-2 w-full">
                               <Button
                                 size="sm"
-                                className="bg-[#226F75] border border-gray-100 bg-opacity-10 text-[#253E44] w-full md:w-fit md:px-5 shadow-md"
+                                className="bg-[#226F75] border border-gray-100 bg-opacity-10 text-[#253E44] w-full md:px-5 md:w-[49%] hover:bg-[#226F75]/30"
                                 onClick={() => navigate("/upload-update")}
                               >
                                 Update Progress
                               </Button>
                               <Button
                                 size="sm"
-                                className="bg-[#226F75] border border-gray-100 bg-opacity-10 text-[#253E44] w-full md:w-fit md:px-5 shadow-md"
+                                className="bg-[#226F75] border border-gray-100 bg-opacity-10 text-[#253E44] w-full md:w-[49%] md:px-5 hover:bg-[#226F75]/30"
                                 onClick={() => navigate("/developer-messages")}
                               >
                                 <MessageSquare className="h-3 w-3 mr-1" />
                                 Message
                               </Button>
                             </div>
-                            <Badge
-                              className={`
-                                ${project.status === "On Track"
-                                  ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
-                                  : "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-md"}
-                              w-fit`}
-                            >
-                              {project.status}
-                            </Badge>
                           </div>
                         </div>
                       </CardContent>
@@ -452,23 +496,84 @@ const DeveloperDashboard = () => {
                       className="text-xs min-h-20"
                     />
                   </div>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs w-full sm:w-auto"
+                  <div className="flex flex-col md:flex-row items-start sm:items-center gap-2 w-full justify-between">
+                    <button
+                      onClick={() =>
+                        document.getElementById("file-upload")?.click()
+                      }
+                      className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors w-full md:w-[49%]"
                     >
-                      <Upload className="mr-1 h-3 w-3" />
-                      Upload Photos
-                    </Button>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Photos/Videos
+                    </button>
+
+                    <input
+                      id="file-upload"
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
                     <Button
-                      className="bg-[#226F75] hover:bg-[#226F75]/70 text-xs w-full sm:w-auto"
+                      className="bg-[#226F75] hover:bg-[#226F75]/70 text-xs w-full sm:w-auto md:w-[49%]"
                       size="sm"
                       onClick={() => navigate("/upload-update")}
                     >
                       Submit Update
                     </Button>
                   </div>
+                  {files.length > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-600">
+                        {files.length} file{files.length !== 1 ? "s" : ""}{" "}
+                        selected
+                      </span>
+                      <button
+                        onClick={clearAll}
+                        className="text-sm text-red-600 hover:text-red-700 underline"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                  )}
+                  {files.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-gray-700">
+                        Selected Files:
+                      </h3>
+                      <div className="space-y-2">
+                        {files.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                          >
+                            {file.type.startsWith("image") ? (
+                              <Image className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                            ) : (
+                              <Video className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                            )}
+
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {file.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {(file.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+
+                            <button
+                              onClick={() => removeFile(index)}
+                              className="p-1 hover:bg-gray-200 rounded transition-colors"
+                            >
+                              <X className="h-4 w-4 text-gray-500" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

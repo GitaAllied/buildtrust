@@ -147,7 +147,7 @@ const Contracts = () => {
       </div>
       <div className="w-full flex-1 md:pl-64 min-h-screen bg-gray-50">
         {/* Header */}
-        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
+        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div>
@@ -170,7 +170,7 @@ const Contracts = () => {
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <FileText className="h-5 w-5 text-gray-600" />
-                        <h3 className="font-semibold text-lg">
+                        <h3 className="font-semibold text-base md:text-lg">
                           {contract.title}
                         </h3>
                         <Badge

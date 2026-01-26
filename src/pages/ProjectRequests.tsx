@@ -180,8 +180,8 @@ const ProjectRequests = () => {
 
       <div className="flex-1 md:pl-64 w-full min-h-screen bg-gray-50">
         {/* Header */}
-        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <div className="min-w-0">
                 <h1 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 truncate">
@@ -193,7 +193,7 @@ const ProjectRequests = () => {
               </div>
             </div>
             <Badge className="bg-blue-600 text-xs flex-shrink-0">
-              {requests.length} New Requests
+              {requests.length} New <span className=" hidden md:block">Requests</span>
             </Badge>
           </div>
         </div>
@@ -203,7 +203,7 @@ const ProjectRequests = () => {
             {requests.map((request) => (
               <Card
                 key={request.id}
-                className="hover:shadow-md transition-shadow"
+                className=" transition-shadow"
               >
                 <CardContent className="p-3 sm:p-4 md:p-6">
                   <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
@@ -217,7 +217,7 @@ const ProjectRequests = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-xs sm:text-sm md:text-base mb-1 truncate">
+                      <h3 className="font-semibold text-xs sm:text-sm md:text-base text-center md:text-left mb-1 truncate">
                         {request.project}
                       </h3>
                       <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600 mb-2 flex-wrap">
@@ -239,7 +239,7 @@ const ProjectRequests = () => {
                     {request.description}
                   </p>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-4 text-xs sm:text-sm">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-xs sm:text-sm">
                     <div className="flex justify-center items-center gap-1">
                       <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
                       <span className="truncate">{request.location}</span>
@@ -257,25 +257,25 @@ const ProjectRequests = () => {
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <Button
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700 text-xs w-full sm:w-auto"
-                    >
-                      <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      Accept Request
-                    </Button>
-                    <Button
-                      size="sm"
                       variant="outline"
-                      className="text-xs w-full sm:w-auto"
+                      className="text-xs w-full sm:w-[33%]"
                     >
                       View Details
                     </Button>
                     <Button
                       size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700 text-xs w-full sm:w-auto"
+                      className="bg-green-600 hover:bg-green-700 text-xs w-full sm:w-[33%]"
                     >
-                      <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      Decline
+                      {/* <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> */}
+                      Accept
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-red-600 hover:bg-red-700 text-xs w-full sm:w-[33%] text-white"
+                    >
+                      {/* <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> */}
+                      Reject
                     </Button>
                   </div>
                 </CardContent>

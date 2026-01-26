@@ -210,10 +210,10 @@ const ClientDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 md:pl-64 w-full">
         {/* Header */}
-        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
+            <div className="flex flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
-                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
+                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20 hidden md:flex">
                   <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" />
                   <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
                     DN
