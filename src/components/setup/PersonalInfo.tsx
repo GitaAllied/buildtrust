@@ -5,7 +5,7 @@ import Select from "react-select";
 interface PersonalInfoProps {
   data: Record<string, unknown>;
   onChange: (data: Record<string, unknown>) => void;
-  userType?: 'client' | 'developer';
+  userType?: 'client' | 'developer' | 'admin';
 }
 
 const PERSONAL_INFO_STORAGE_KEY = 'buildtrust_personal_info';
@@ -329,30 +329,36 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
   const [formData, setFormData] = useState<Record<string, unknown>>(() => {
     // Try to load from localStorage first
     const savedData = localStorage.getItem(PERSONAL_INFO_STORAGE_KEY);
+    let loadedData: Record<string, unknown> = {};
+    
     if (savedData) {
       try {
-        return JSON.parse(savedData);
+        loadedData = JSON.parse(savedData);
       } catch (e) {
         console.error('Failed to load personal info from localStorage', e);
       }
     }
     
-    // Fallback to props data or default values
+    // Always use the userType from props to ensure correct role is set
+    const roleValue = userType === 'developer' ? 'developer' : userType === 'admin' ? 'admin' : 'client';
+    
+    // Ensure the role always matches the authenticated user's role
     return {
-      fullName: '',
-      bio: '',
-      ...(userType === 'developer' ? {
-        role: 'developer',
+      ...loadedData,
+      role: roleValue,
+      ...(userType === 'developer' && !loadedData.companyType ? {
         companyType: '',
         yearsExperience: '',
         citiesCovered: [] as string[],
         languages: [] as string[],
-      } : {
-        role: 'client',
+      } : userType === 'admin' && !loadedData.adminRole ? {
+        adminRole: '',
+        department: '',
+      } : userType === 'client' && !loadedData.phoneNumber ? {
         phoneNumber: '',
         currentLocation: '',
         occupation: '',
-      }),
+      } : {}),
       ...data
     };
   });
@@ -363,6 +369,14 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
   useEffect(() => {
     localStorage.setItem(PERSONAL_INFO_STORAGE_KEY, JSON.stringify(formData));
   }, [formData]);
+
+  // Ensure role always matches the authenticated user's role
+  useEffect(() => {
+    const correctRole = userType === 'developer' ? 'developer' : userType === 'admin' ? 'admin' : 'client';
+    if (formData.role !== correctRole) {
+      setFormData(prev => ({ ...prev, role: correctRole }));
+    }
+  }, [userType, formData.role]);
 
   const updateData = (field: string, value: unknown) => {
     const newData = { ...formData, [field]: value };
@@ -411,7 +425,12 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
       
       const langs = (languages as string[]) || [];
       if (langs.length === 0) return false;
+    } else if (userType === 'admin') {
+      const { adminRole, department } = formData;
+      if (!adminRole || !(adminRole as string).trim()) return false;
+      if (!department || !(department as string).trim()) return false;
     } else {
+      // Client role validation
       const { phoneNumber, currentLocation, occupation } = formData;
       if (!phoneNumber || !(phoneNumber as string).trim()) return false;
       if (!currentLocation || !(currentLocation as string).trim()) return false;
@@ -425,7 +444,7 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
     if (!isFormValid()) {
       return;
     }
-    onChange({ ...formData, personalInfoComplete: true });
+    onChange({ ...formData, personalInfoComplete: true, role: formData.role || userType || 'client' });
   };
 
   const toggleArrayItem = (field: string, item: string) => {
@@ -446,6 +465,18 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Personal & Company Information</h2>
           <p className="text-gray-600 max-w-md mx-auto">
             Tell us about yourself and your development practice to help clients find you.
+          </p>
+        </div>
+      )}
+
+      {userType === 'admin' && (
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#253E44]/10 rounded-2xl mb-4">
+            <User className="w-8 h-8 text-[#253E44]" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Admin Profile Information</h2>
+          <p className="text-gray-600 max-w-md mx-auto">
+            Complete your administrative profile information.
           </p>
         </div>
       )}
@@ -506,6 +537,65 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
               <option value="4-7">4-7 years (Intermediate)</option>
               <option value="8-15">8-15 years (Experienced)</option>
               <option value="15+">15+ years (Expert)</option>
+            </select>
+          </div>
+        </>
+      ) : userType === 'admin' ? (
+        <>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="group">
+              <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
+                <User className="w-4 h-4 mr-2 text-[#253E44]" />
+                Full Name <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.fullName as string}
+                onChange={(e) => updateData('fullName', e.target.value)}
+                onFocus={() => handleFieldFocus('fullName')}
+                required
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-[#253E44] transition-all duration-200 text-gray-900 placeholder-gray-500 ${getFieldBorderColor('fullName', formData.fullName)} ${getFieldBgColor('fullName', formData.fullName)}`}
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            <div className="group">
+              <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
+                <Award className="w-4 h-4 mr-2 text-[#253E44]" />
+                Admin Role <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.adminRole as string}
+                onChange={(e) => updateData('adminRole', e.target.value)}
+                onFocus={() => handleFieldFocus('adminRole')}
+                required
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-[#253E44] transition-all duration-200 text-gray-900 placeholder-gray-500 ${getFieldBorderColor('adminRole', formData.adminRole)} ${getFieldBgColor('adminRole', formData.adminRole)}`}
+                placeholder="e.g., System Administrator, Content Manager"
+              />
+            </div>
+          </div>
+
+          <div className="group">
+            <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
+              <Building2 className="w-4 h-4 mr-2 text-[#253E44]" />
+              Department <span className="text-red-500 ml-1">*</span>
+            </label>
+            <select
+              value={formData.department as string}
+              onChange={(e) => updateData('department', e.target.value)}
+              onFocus={() => handleFieldFocus('department')}
+              required
+              className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-[#253E44] transition-all duration-200 text-gray-900 ${getSelectBorderColor('department', formData.department)} ${getFieldBgColor('department', formData.department)}`}
+            >
+              <option value="">Select department</option>
+              <option value="operations">Operations</option>
+              <option value="support">Support</option>
+              <option value="compliance">Compliance</option>
+              <option value="moderation">Moderation</option>
+              <option value="technical">Technical</option>
+              <option value="management">Management</option>
+              <option value="other">Other</option>
             </select>
           </div>
         </>

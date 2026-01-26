@@ -1,5 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 
+interface FileMetadata {
+  name: string;
+  size: number;
+  type: string;
+}
+
+interface CredentialsData {
+  licenses: File[];
+  certifications: File[];
+  testimonials: File[];
+  fileMetadata?: {
+    licenses: FileMetadata[];
+    certifications: FileMetadata[];
+    testimonials: FileMetadata[];
+  };
+}
+
 interface LicensesCredentialsProps {
   data: any;
   onChange: (data: any) => void;
@@ -8,27 +25,56 @@ interface LicensesCredentialsProps {
 const CREDENTIALS_STORAGE_KEY = 'buildtrust_licenses_credentials';
 
 const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
-  const [files, setFiles] = useState(() => {
-    // Try to load from localStorage first
-    const savedData = localStorage.getItem(CREDENTIALS_STORAGE_KEY);
-    if (savedData) {
+  const fileStoreRef = useRef<{ [key: string]: File }>({});
+  const lastSavedRef = useRef<string>('');
+  const isInitializedRef = useRef(false);
+  
+  const [files, setFiles] = useState<CredentialsData>(() => {
+    // First, try to use the data prop if provided
+    if (data && typeof data === 'object') {
+      isInitializedRef.current = true;
+      return {
+        licenses: data.licenses || [],
+        certifications: data.certifications || [],
+        testimonials: data.testimonials || [],
+        fileMetadata: data.fileMetadata || {
+          licenses: [],
+          certifications: [],
+          testimonials: []
+        }
+      };
+    }
+
+    // Fall back to localStorage
+    const savedMetadata = localStorage.getItem(CREDENTIALS_STORAGE_KEY);
+    if (savedMetadata) {
       try {
-        return JSON.parse(savedData);
+        const metadata = JSON.parse(savedMetadata);
+        isInitializedRef.current = true;
+        return {
+          licenses: [],
+          certifications: [],
+          testimonials: [],
+          fileMetadata: metadata
+        };
       } catch (e) {
-        console.error('Failed to load credentials data from localStorage', e);
+        console.error('Failed to load credentials data from localStorage');
       }
     }
     
-    // Fallback to props data or default values
     return {
-      licenses: [] as File[],
-      certifications: [] as File[],
-      testimonials: [] as File[],
-      ...data
+      licenses: [],
+      certifications: [],
+      testimonials: [],
+      fileMetadata: {
+        licenses: [],
+        certifications: [],
+        testimonials: []
+      }
     };
   });
+  
   const [error, setError] = useState<string | null>(null);
-  const lastEmittedRef = useRef<string | null>(null);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
   const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
@@ -38,72 +84,96 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Save to localStorage whenever files change
+  // Notify parent immediately on mount if we have data
   useEffect(() => {
-    localStorage.setItem(CREDENTIALS_STORAGE_KEY, JSON.stringify(files));
-  }, [files]);
+    if (isInitializedRef.current) {
+      onChange(files);
+      isInitializedRef.current = false; // Only notify once on mount
+    }
+  }, []);
 
-  // Sync internal state with parent (emit only when necessary to avoid loops)
+  // Save metadata to localStorage whenever files change
+  useEffect(() => {
+    if (files.fileMetadata) {
+      localStorage.setItem(CREDENTIALS_STORAGE_KEY, JSON.stringify(files.fileMetadata));
+    }
+  }, [files.fileMetadata]);
+
+  // Notify parent of changes when data is modified
   useEffect(() => {
     const serialized = JSON.stringify(files);
-    if (lastEmittedRef.current !== serialized) {
-      lastEmittedRef.current = serialized;
+    if (lastSavedRef.current !== serialized) {
+      lastSavedRef.current = serialized;
       onChange(files);
     }
   }, [files, onChange]);
 
   const handleFileUpload = (type: string, fileList: FileList | null) => {
-    console.log(`File upload handler called for ${type}`, fileList);
     setError(null);
     
     if (!fileList || fileList.length === 0) {
-      console.log('No files selected');
       return;
     }
 
     const incoming = Array.from(fileList);
     const valid: File[] = [];
+    const newMetadata: FileMetadata[] = [];
 
     for (const f of incoming) {
-      console.log(`Processing file: ${f.name}, type: ${f.type}, size: ${f.size}`);
-      
       if (!ALLOWED_TYPES.includes(f.type)) {
-        console.warn(`Invalid type for ${f.name}: ${f.type}`);
         setError(`Invalid file type for ${f.name}. Allowed: PDF, JPG, PNG`);
         continue;
       }
       
       if (f.size > MAX_FILE_SIZE) {
-        console.warn(`File too large: ${f.name}`);
         setError(`File ${f.name} is too large. Max size is 10 MB`);
         continue;
       }
       
       valid.push(f);
+      newMetadata.push({
+        name: f.name,
+        size: f.size,
+        type: f.type
+      });
+      
+      // Store actual files in memory for backend upload
+      const fileKey = `${type}-${f.name}-${f.lastModified}`;
+      fileStoreRef.current[fileKey] = f;
     }
 
     if (valid.length > 0) {
-      const currentFiles = files[type as keyof typeof files] as File[];
-      const updatedFiles = { 
-        ...files, 
-        [type]: [...currentFiles, ...valid] 
-      };
-      console.log(`Updated ${type} files:`, updatedFiles[type as keyof typeof updatedFiles]);
-      setFiles(updatedFiles);
-      onChange(updatedFiles);
+      setFiles(prev => {
+        const typeKey = type as keyof CredentialsData;
+        const currentMetadata = prev.fileMetadata || { licenses: [], certifications: [], testimonials: [] };
+        
+        return {
+          ...prev,
+          [type]: [...(prev[typeKey] as File[]), ...valid],
+          fileMetadata: {
+            ...currentMetadata,
+            [type]: [...(currentMetadata[typeKey as keyof typeof currentMetadata] || []), ...newMetadata]
+          }
+        };
+      });
     }
   };
 
   const removeFile = (type: string, index: number) => {
-    const updatedFiles = {
-      ...files,
-      [type]: (files[type as keyof typeof files] as File[]).filter((_: any, i: number) => i !== index)
-    };
-    setFiles(updatedFiles);
-    onChange(updatedFiles);
+    setFiles(prev => {
+      const typeKey = type as keyof CredentialsData;
+      const currentMetadata = prev.fileMetadata || { licenses: [], certifications: [], testimonials: [] };
+      
+      return {
+        ...prev,
+        [type]: (prev[typeKey] as File[]).filter((_: any, i: number) => i !== index),
+        fileMetadata: {
+          ...currentMetadata,
+          [type]: (currentMetadata[typeKey as keyof typeof currentMetadata] || []).filter((_: any, i: number) => i !== index)
+        }
+      };
+    });
   };
-
-  const isComplete = files.licenses.length > 0 && files.certifications.length > 0 && files.testimonials.length > 0;
 
   // Render file upload section
   const renderUploadSection = (
@@ -131,7 +201,6 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
       e.preventDefault();
       e.stopPropagation();
       e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
-      console.log('Files dropped:', e.dataTransfer.files);
       handleFileUpload(type, e.dataTransfer.files);
     };
 
@@ -170,7 +239,6 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
             multiple
             accept=".pdf,.jpg,.jpeg,.png"
             onChange={(e) => {
-              console.log(`Input changed for ${type}:`, e.target.files);
               handleFileUpload(type, e.target.files);
             }}
             className="hidden"
