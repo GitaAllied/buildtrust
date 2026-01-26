@@ -344,6 +344,18 @@ class ApiClient {
       // Don't set Content-Type header - FormData will set it automatically with boundary
     });
   }
+
+  async getDevelopers() {
+    return this.request('/developers', {
+      method: 'GET',
+    });
+  }
+
+  async getDeveloperById(id: string | number) {
+    return this.request(`/developers/${id}`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
