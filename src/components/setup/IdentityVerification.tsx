@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface FileData {
   file: File;
@@ -16,14 +16,30 @@ interface IdentityVerificationProps {
   onChange: (data: any) => void;
 }
 
+const IDENTITY_STORAGE_KEY = 'buildtrust_identity_verification';
+
 const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => {
-  const [files, setFiles] = useState({
-    id: null as FileData | null,
-    cac: null as FileData | null,
-    selfie: null as FileData | null,
-    ...data
+  const [files, setFiles] = useState(() => {
+    // Try to load from localStorage first
+    const savedData = localStorage.getItem(IDENTITY_STORAGE_KEY);
+    if (savedData) {
+      try {
+        return JSON.parse(savedData);
+      } catch (e) {
+        console.error('Failed to load identity data from localStorage', e);
+      }
+    }
+    
+    // Fallback to props data or default values
+    return {
+      id: null as FileData | null,
+      cac: null as FileData | null,
+      selfie: null as FileData | null,
+      ...data
+    };
   });
   const [error, setError] = useState<string | null>(null);
+  const lastEmittedRef = useRef<string | null>(null);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
   const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
@@ -33,13 +49,19 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
     window.scrollTo(0, 0);
   }, []);
 
-  // Sync internal state with external props
+  // Save to localStorage whenever files change
   useEffect(() => {
-    setFiles(prev => ({
-      ...prev,
-      ...data
-    }));
-  }, [data]);
+    localStorage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(files));
+  }, [files]);
+
+  // Sync internal state with parent (emit only when necessary to avoid loops)
+  useEffect(() => {
+    const serialized = JSON.stringify(files);
+    if (lastEmittedRef.current !== serialized) {
+      lastEmittedRef.current = serialized;
+      onChange(files);
+    }
+  }, [files, onChange]);
 
   const handleFileUpload = (type: string, fileList: FileList | null) => {
     console.log(`File upload handler called for ${type}`, fileList);

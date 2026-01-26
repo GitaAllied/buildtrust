@@ -88,8 +88,21 @@ const AFRICAN_CITIES = [
   { value: 'victoria', label: 'Victoria, Seychelles' },
 ];
 
+const PREFERENCES_STORAGE_KEY = 'buildtrust_build_preferences';
+
 const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPreferencesProps) => {
   const [preferences, setPreferences] = useState(() => {
+    // Try to load from localStorage first
+    const savedData = localStorage.getItem(PREFERENCES_STORAGE_KEY);
+    if (savedData) {
+      try {
+        return JSON.parse(savedData);
+      } catch (e) {
+        console.error('Failed to load preferences from localStorage', e);
+      }
+    }
+    
+    // Fallback to props data or default values
     const d = (data || {}) as Record<string, unknown>;
     return {
       projectTypes: (d['project_types'] as string[]) ?? (d['projectTypes'] as string[]) ?? [],
@@ -107,6 +120,11 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Save to localStorage whenever preferences change
+  useEffect(() => {
+    localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
+  }, [preferences]);
 
   // Sync local state with parent (emit camelCase payload to match parent's formData structure)
   useEffect(() => {

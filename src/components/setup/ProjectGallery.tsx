@@ -15,6 +15,8 @@ interface ProjectGalleryProps {
   onChange: (data: Project[]) => void;
 }
 
+const PROJECTS_STORAGE_KEY = 'buildtrust_projects_gallery';
+
 const ProjectCard = ({ 
   project, 
   onUpdate, 
@@ -174,11 +176,24 @@ const ProjectCard = ({
 );
 
 const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
-  // Initialize with provided data or a single empty project
+  // Initialize with localStorage, then props, then default
   const [projects, setProjects] = useState<Project[]>(() => {
+    // Try to load from localStorage first
+    const savedData = localStorage.getItem(PROJECTS_STORAGE_KEY);
+    if (savedData) {
+      try {
+        return JSON.parse(savedData);
+      } catch (e) {
+        console.error('Failed to load projects from localStorage', e);
+      }
+    }
+    
+    // Fallback to props data
     if (data && data.length > 0) {
       return data;
     }
+    
+    // Default: single empty project
     return [{
       id: Date.now().toString(),
       title: '',
@@ -190,11 +205,26 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
     }];
   });
   const mediaInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const lastEmittedRef = useRef<string | null>(null);
 
   // Scroll to top on component mount
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Save to localStorage whenever projects change
+  useEffect(() => {
+    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+  }, [projects]);
+
+  // Sync with parent (emit only when necessary)
+  useEffect(() => {
+    const serialized = JSON.stringify(projects);
+    if (lastEmittedRef.current !== serialized) {
+      lastEmittedRef.current = serialized;
+      onChange(projects);
+    }
+  }, [projects, onChange]);
 
   const addProject = () => {
     const newProject: Project = {
