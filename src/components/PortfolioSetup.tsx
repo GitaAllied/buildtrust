@@ -80,7 +80,8 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
   const { user, refreshUser } = useAuth();
   
   // Determine userType from authenticated user's role - MUST be before useState
-  const userType: 'client' | 'developer' | 'admin' = user?.role === 'admin' ? 'admin' : user?.role === 'client' ? 'client' : 'developer';
+  // Note: admins are treated as developers in the setup flow
+  const userType: 'client' | 'developer' = user?.role === 'client' ? 'client' : 'developer';
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isComplete, setIsComplete] = useState(false);
