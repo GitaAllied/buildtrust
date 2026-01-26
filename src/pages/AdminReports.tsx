@@ -279,7 +279,7 @@ const AdminReports = () => {
       </div>
       <div className="w-full flex-1 md:pl-64 min-h-screen bg-gray-50 flex flex-col">
         {/* Header */}
-        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
+        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
             <div className="flex items-start justify-between flex-col md:flex-row md:items-center gap-4 md:gap-0">
               <div className="flex items-center space-x-4 ">
                 <div>

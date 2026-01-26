@@ -222,7 +222,7 @@ const SuperAdminDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 md:pl-64 w-full">
         {/* Header */}
-        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-14 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
+        <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
             <div className="flex sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
                 <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">

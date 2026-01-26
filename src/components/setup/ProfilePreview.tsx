@@ -15,7 +15,7 @@ const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
 
       {/* Profile Header */}
       <div className="bg-gradient-to-r from-[#253E44]/80 to-[#253E44]/90 rounded-xl p-6 text-white">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between flex-col gap-3 md:gap-0 md:flex-row">
           <div>
             <h1 className="text-2xl font-bold">{personal.fullName || "Your Name"}</h1>
             <p className="text-white mt-1">{personal.companyType || "Developer"} • {personal.yearsExperience || "Experience Level"}</p>
@@ -36,7 +36,7 @@ const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
             </div>
           </div>
           <div className="text-right">
-            <div className="inline-flex items-center px-3 py-1 bg-[#253E44]/50 rounded-full text-sm font-medium">
+            <div className="inline-flex items-center px-3 py-2 md:py-1 bg-[#253E44]/50 rounded-full text-sm font-medium">
               ✓ Verified Developer
             </div>
           </div>
@@ -115,7 +115,7 @@ const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
       )}
 
       {/* Submit Section */}
-      <div className="bg-gradient-to-r from-gray-50 to-[#253E44]/5 border border-gray-200 rounded-lg p-6 text-center">
+      <div className="bg-gradient-to-r from-gray-50 to-[#253E44]/5 border border-gray-200 rounded-lg p-3 py-6 md:p-6 text-center">
         <div className="w-16 h-16 bg-[#253E44]/10 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg className="w-8 h-8 text-[#253E44]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -125,7 +125,7 @@ const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
         <p className="text-gray-600 mb-4">
           Your profile will be reviewed by our team within 24-48 hours. Once approved, you'll start receiving project invitations from verified clients.
         </p>
-        <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
+        <div className="flex items-center justify-center space-x-4 text-sm text-gray-500 flex-wrap">
           <div className="flex items-center space-x-1">
             <svg className="w-4 h-4 text-[#253E44]/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

@@ -39,8 +39,8 @@ import DeveloperMessages from "./pages/DeveloperMessages";
 import DeveloperPayments from "./pages/DeveloperPayments";
 import DeveloperLiscences from "./pages/DeveloperLiscences";
 // TEST
-// import ClientSetup from "./components/ClientSetup";
-// import PortfolioSetup from "./components/PortfolioSetup";
+import ClientSetup from "./components/ClientSetup";
+import PortfolioSetup from "./components/PortfolioSetup";
 
 const queryClient = new QueryClient();
 
@@ -60,7 +60,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/browse" element={<BrowseDevelopers />} />
             <Route path="/developer/:id" element={<DeveloperProfile />} />
-            <Route
+            {/* <Route
               path="/client-dashboard"
               element={
                 <ProtectedRoute requiredRole="client">
@@ -243,10 +243,10 @@ const App = () => (
                   <UploadUpdate />
                 </ProtectedRoute>
               }
-            />
+            /> */}
 
             {/* UI DESIGN */}
-            {/* <Route path="/client-dashboard" element={<ClientDashboard />} />
+            <Route path="/client-dashboard" element={<ClientDashboard />} />
             <Route
               path="/developer-dashboard"
               element={<DeveloperDashboard />}
@@ -284,7 +284,7 @@ const App = () => (
             <Route
               path="/developer-liscences"
               element={<DeveloperLiscences />}
-            /> */}
+            />
             {/* UI DESIGN */}
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

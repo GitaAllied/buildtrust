@@ -433,23 +433,23 @@ useEffect(() => {
       </header>
 
       {/* Hero Section */}
-      <div data-aos="fade-up" className="w-full lg:h-screen bg-gray-100 px-4 sm:px-6 md:px-8 pt-20 sm:pt-24 md:pt-20 lg:pt-[6rem] flex justify-between items-center flex-col-reverse lg:flex-row gap-6 md:gap-8 pb-[3rem]">
+      <div data-aos="fade-up" className="w-full lg:h-screen bg-gray-100 px-4 sm:px-6 md:px-8 pt-20 sm:pt-24 md:pt-20 lg:pt-[8rem] flex justify-between items-center flex-col-reverse lg:flex-row gap-6 md:gap-8 pb-[3rem]">
         {/* Left Hero Text */}
         <div className="w-full lg:w-[55%]">
-          <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 sm:mb-6 leading-tight min-h-[5rem] md:min-h-[6rem] lg:min-h-[7rem]">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight min-h-[6rem] md:min-h-[7rem] lg:min-h-[8rem]">
             <span className="block">{line1Typed}{showCursor && line1Typed.length < "Build Your Dream".length ? '|' : ''}</span>
             <span className="bg-gradient-to-r from-[#226F75] to-[#253E44] bg-opacity-30 bg-clip-text text-transparent block">
               {line2Typed}{showCursor && line2Typed.length < "Home in Africa".length ? '|' : ''}
             </span>
           </h1>
 
-          <p className="text-sm sm:text-base md:text-lg mb-4 sm:mb-6 max-w-4xl leading-relaxed">
+          <p className="text-sm sm:text-base md:text-lg mb-4 max-w-4xl leading-relaxed">
             Connect with verified, licensed developers all over Africa. Track
             progress in real-time , release payments securely, and build with
             complete confidence from anywhere in the world.
           </p>
 
-          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-5">
             <Button
               size="lg"
               onClick={handleClientSetup}
@@ -533,7 +533,7 @@ useEffect(() => {
             </h2>
             <p className="text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
               We're more than just a platform — we're your trusted partner in
-              building your Nigerian dream home.
+              building your African dream home.
             </p>
           </div>
 
@@ -558,7 +558,7 @@ useEffect(() => {
                 Diaspora-Focused
               </h3>
               <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
-                Purpose-built for Nigerians abroad, solving the unique trust
+                Purpose-built for Africans abroad, solving the unique trust
                 issues of remote construction.
               </p>
             </div>
@@ -567,11 +567,11 @@ useEffect(() => {
                 <MapPin className="text-blue-600 dark:text-blue-400 text-2xl sm:text-3xl" />
               </div>
               <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 dark:text-white">
-                Nigeria Coverage
+                Africa Coverage
               </h3>
               <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
                 From Lagos to Abuja, Port Harcourt to Enugu - we cover all major
-                Nigerian cities.
+                African cities.
               </p>
             </div>
             <div data-aos="fade-up" data-aos-delay="400" className="group bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:shadow-lg md:hover:shadow-2xl shadow-lg transition-all duration-300">
@@ -591,9 +591,9 @@ useEffect(() => {
       </section>
 
       {/* How It Works */}
-      <section data-aos="fade-up" className="w-[95%] sm:w-[90%] mb-12 m-auto rounded-2xl sm:rounded-3xl overflow-hidden bg-cover bg-bottom" style={{ backgroundImage: `url(${Steps})` }}>
+      <section data-aos="fade-up" className="w-[95%] sm:w-[90%] my-12 m-auto rounded-2xl sm:rounded-3xl overflow-hidden bg-cover bg-bottom" style={{ backgroundImage: `url(${Steps})` }}>
         <div className="w-full h-full p-4 sm:p-6 md:p-10 py-[3rem] text-white bg-[#253E44] bg-opacity-75 flex flex-col gap-6 md:gap-8">
-          <div className="w-full flex flex-col gap-3 sm:gap-4 md:gap-5 text-center lg:text-left">
+          <div className="w-full flex flex-col gap-3 sm:gap-4 md:gap-1 text-center lg:text-left md:w-[55%]">
             <h4 className="uppercase text-xs sm:text-sm font-bold">
               Build Smarter, Build Securely - In 3 Simple Steps
             </h4>
@@ -749,7 +749,7 @@ useEffect(() => {
 
       {/* CTA Section */}
       <section data-aos="fade-up" className="text-white overflow-hidden w-[95%] sm:w-[90%] m-auto rounded-2xl sm:rounded-3xl bg-cover bg-center my-8 sm:mb-10" style={{ backgroundImage: `url(${CTABackground})` }}>
-        <div className="w-full h-full bg-[#253E44] bg-opacity-75 text-center p-4 sm:p-6 md:p-8 py-8 sm:py-12 md:py-20">
+        <div className="w-full h-full bg-[#253E44] bg-opacity-75 text-center p-4 sm:p-6 md:p-8 py-8 sm:py-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
             Ready to Start Building?
           </h2>
