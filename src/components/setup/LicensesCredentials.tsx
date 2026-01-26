@@ -95,6 +95,11 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
   // Save metadata to localStorage whenever files change
   useEffect(() => {
     if (files.fileMetadata) {
+      console.log('💾 [LicensesCredentials] Saving to localStorage:', {
+        licenses: files.fileMetadata.licenses.map(f => ({ name: f.name, size: f.size })),
+        certifications: files.fileMetadata.certifications.map(f => ({ name: f.name, size: f.size })),
+        testimonials: files.fileMetadata.testimonials.map(f => ({ name: f.name, size: f.size }))
+      });
       localStorage.setItem(CREDENTIALS_STORAGE_KEY, JSON.stringify(files.fileMetadata));
     }
   }, [files.fileMetadata]);

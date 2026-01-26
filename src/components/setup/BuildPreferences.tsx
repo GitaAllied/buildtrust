@@ -123,7 +123,14 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
 
   // Save to localStorage whenever preferences change
   useEffect(() => {
-    console.log('💾 Saving preferences to localStorage:', preferences);
+    console.log('💾 [BuildPreferences] Saving to localStorage:', {
+      projectTypes: preferences.projectTypes,
+      preferredCities: preferences.preferredCities,
+      budgetRange: preferences.budgetRange,
+      workingStyle: preferences.workingStyle,
+      availability: preferences.availability,
+      specializations: preferences.specializations
+    });
     localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
   }, [preferences]);
 

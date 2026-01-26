@@ -250,6 +250,16 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
       description: p.description,
       mediaMetadata: p.mediaMetadata || []
     }));
+    console.log('💾 [ProjectGallery] Saving to localStorage:', {
+      projectCount: projects.length,
+      projects: dataToSave.map(p => ({
+        title: p.title,
+        type: p.type,
+        location: p.location,
+        budget: p.budget,
+        mediaCount: p.mediaMetadata?.length || 0
+      }))
+    });
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(dataToSave));
   }, [projects]);
 
