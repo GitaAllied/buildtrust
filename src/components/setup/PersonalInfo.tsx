@@ -342,11 +342,13 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
       fullName: '',
       bio: '',
       ...(userType === 'developer' ? {
+        role: 'developer',
         companyType: '',
         yearsExperience: '',
         citiesCovered: [] as string[],
         languages: [] as string[],
       } : {
+        role: 'client',
         phoneNumber: '',
         currentLocation: '',
         occupation: '',

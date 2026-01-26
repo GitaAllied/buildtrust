@@ -33,6 +33,9 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
     if (!personal?.bio?.trim()) {
       errors.personal = [...(errors.personal || []), 'Bio/description is required'];
     }
+    if (!personal?.role) {
+      errors.personal = [...(errors.personal || []), 'User role could not be determined'];
+    }
     if (!personal?.companyType) {
       errors.personal = [...(errors.personal || []), 'Company type is required'];
     }
@@ -44,9 +47,6 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
     }
     if (!personal?.languages || personal.languages.length === 0) {
       errors.personal = [...(errors.personal || []), 'At least one language must be selected'];
-    }
-    if (!personal?.role) {
-      errors.personal = [...(errors.personal || []), 'Professional role is required'];
     }
 
     // Step 2: Identity Verification validation
