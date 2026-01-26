@@ -1,9 +1,16 @@
 
+import { useEffect } from 'react';
+
 interface ProfilePreviewProps {
   formData: any;
 }
 
 const ProfilePreview = ({ formData }: ProfilePreviewProps) => {
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const { identity, personal, projects, credentials, preferences } = formData;
 
   return (

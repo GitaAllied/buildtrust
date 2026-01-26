@@ -21,6 +21,11 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
 
   const lastEmittedRef = useRef<string | null>(null);
 
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Sync local state with parent (emit camelCase payload to match parent's formData structure)
   useEffect(() => {
     const serialized = JSON.stringify(preferences);

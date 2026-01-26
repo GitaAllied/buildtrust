@@ -20,6 +20,11 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
   const [projects, setProjects] = useState<Project[]>(data);
   const mediaInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const addProject = () => {
     const newProject: Project = {
       id: Date.now().toString(),
