@@ -24,20 +24,20 @@ const NavigationButtons = ({
       return false;
     }
 
-    // For developer step 2 (LicensesCredentials), check if all credential types have files
+    // For developer step 2 (IdentityVerification), check if identity is complete
     if (userType === 'developer' && currentStep === 2) {
-      const licenses = (formData.licenses as any[]) || [];
-      const certifications = (formData.certifications as any[]) || [];
-      const testimonials = (formData.testimonials as any[]) || [];
-      return licenses.length > 0 && certifications.length > 0 && testimonials.length > 0;
-    }
-
-    // For developer step 5 (IdentityVerification), check if identity is complete
-    if (userType === 'developer' && currentStep === 5) {
       const hasId = (formData.id as any)?.file !== undefined;
       const hasCac = (formData.cac as any)?.file !== undefined;
       const hasSelfie = (formData.selfie as any)?.file !== undefined;
       return hasId && hasCac && hasSelfie;
+    }
+
+    // For developer step 3 (LicensesCredentials), check if all credential types have files
+    if (userType === 'developer' && currentStep === 3) {
+      const licenses = (formData.licenses as any[]) || [];
+      const certifications = (formData.certifications as any[]) || [];
+      const testimonials = (formData.testimonials as any[]) || [];
+      return licenses.length > 0 && certifications.length > 0 && testimonials.length > 0;
     }
 
     const fullName = (formData.fullName as string)?.trim() || '';
