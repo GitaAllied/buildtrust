@@ -418,7 +418,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
           <div>
             <ProfilePreview 
               formData={formData}
-              onStepChange={(step) => setCurrentStep(step + 1)}
+              onStepChange={(step) => setCurrentStep(step)}
             />
             <NavigationButtons 
               currentStep={currentStep}

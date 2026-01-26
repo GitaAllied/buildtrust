@@ -137,7 +137,7 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
   const goToStep = (section: string) => {
     const step = getStepNumber(section);
     if (onStepChange) {
-      onStepChange(step - 1);
+      onStepChange(step);
     }
   };
 
@@ -575,7 +575,7 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
 
         <button
           onClick={handleSubmit}
-          disabled={submitting}
+          disabled={submitting || !validation.isValid}
           className={`px-6 py-3 rounded-lg font-medium transition-all ${
             validation.isValid
               ? 'bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400'
