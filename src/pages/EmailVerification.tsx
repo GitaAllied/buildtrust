@@ -58,13 +58,8 @@ export default function EmailVerification() {
     }
   }, [user]);
 
-  // If the user is already verified, force-redirect them away from this page
-  useEffect(() => {
-    if (user?.email_verified) {
-      const role = user.role === 'developer' ? 'developer' : 'client';
-      navigate(`/?setup=${role}`, { replace: true });
-    }
-  }, [user, navigate]);
+  // If the user is already verified, they can continue to setup
+  // (removed automatic redirect to allow user choice)
 
   const handleVerification = async (verificationToken: string) => {
     setVerifying(true);
@@ -85,14 +80,12 @@ export default function EmailVerification() {
         description: 'Your email has been successfully verified.',
       });
 
-      // Redirect to setup after a short delay
+      // Give user time to see success message before redirecting
       setTimeout(() => {
-        if (user?.role === 'developer') {
-          navigate('/?setup=developer');
-        } else {
-          navigate('/?setup=client');
-        }
-      }, 2000);
+        // Check the updated user role from auth context
+        const userRole = user?.role === 'developer' ? 'developer' : 'client';
+        navigate(`/?setup=${userRole}`);
+      }, 2500);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Verification failed';
       setError(errorMessage);
@@ -181,13 +174,23 @@ export default function EmailVerification() {
       <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
 
       <div className="w-full max-w-md relative z-10">
-        <Link
-          to="/auth"
-          className="inline-flex items-center gap-2 text-sm text-[#226F75] hover:text-[#253E44] transition-colors mb-6 group font-medium"
-        >
-          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-          Back to sign in
-        </Link>
+        <div className="flex gap-3 mb-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#226F75] transition-colors group font-medium"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            Home
+          </Link>
+          <span className="text-gray-300">•</span>
+          <Link
+            to="/auth"
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#226F75] transition-colors group font-medium"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            Sign in
+          </Link>
+        </div>
 
         <Card className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/80 border-2 border-white/50 rounded-3xl shadow-2xl">
           <CardHeader className="text-center space-y-4 pb-8 bg-gradient-to-b from-[#226F75]/5 to-transparent rounded-t-3xl">
