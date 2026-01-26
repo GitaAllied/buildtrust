@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
-import { CheckCircle, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useNavigate, useLocation } from "react-router-dom";
+import { CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/lib/api";
 import PersonalInfo from "./setup/PersonalInfo";
@@ -42,6 +41,7 @@ interface FormData {
   personal: {
     fullName?: string;
     bio?: string;
+    role?: string;
     companyType?: string;
     yearsExperience?: string;
     citiesCovered?: string[];
@@ -75,15 +75,13 @@ interface FormData {
   };
 }
 
-function ProtectedRoute({ children, isAuthenticated }: { children: JSX.Element; isAuthenticated: boolean; }) {
-  const location = useLocation();
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  return children;
-}
-
 const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
+  const navigate = useNavigate();
+  const { user, refreshUser } = useAuth();
+  
+  // Determine userType from authenticated user's role - MUST be before useState
+  const userType: 'client' | 'developer' | 'admin' = user?.role === 'admin' ? 'admin' : user?.role === 'client' ? 'client' : 'developer';
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isComplete, setIsComplete] = useState(false);
   const [formData, setFormData] = useState<FormData>(() => {
@@ -105,7 +103,33 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
     
     const projectsData = (() => {
       const saved = localStorage.getItem('buildtrust_projects_gallery');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          return Array.isArray(parsed) && parsed.length > 0 ? parsed : [{
+            id: Date.now().toString(),
+            title: '',
+            type: '',
+            location: '',
+            budget: '',
+            description: '',
+            media: [],
+            mediaMetadata: []
+          }];
+        } catch (e) {
+          console.error('Failed to parse projects from localStorage');
+        }
+      }
+      return [{
+        id: Date.now().toString(),
+        title: '',
+        type: '',
+        location: '',
+        budget: '',
+        description: '',
+        media: [],
+        mediaMetadata: []
+      }];
     })();
     
     const preferencesData = (() => {
@@ -113,20 +137,25 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
       return saved ? JSON.parse(saved) : null;
     })();
 
+    // When loading from localStorage, always ensure role matches authenticated user's role
+    const finalPersonalData = personalData ? { ...personalData, role: userType } : {
+      fullName: '',
+      bio: '',
+      role: userType,
+      companyType: '',
+      yearsExperience: '',
+      citiesCovered: [],
+      languages: [],
+      phoneNumber: '',
+      currentLocation: '',
+      occupation: '',
+      adminRole: '',
+      department: '',
+      preferredContact: ''
+    };
+
     return {
-      personal: personalData || {
-        fullName: '',
-        bio: '',
-        role: 'developer',
-        companyType: '',
-        yearsExperience: '',
-        citiesCovered: [],
-        languages: [],
-        phoneNumber: '',
-        currentLocation: '',
-        occupation: '',
-        preferredContact: ''
-      },
+      personal: finalPersonalData,
       identity: identityData,
       credentials: credentialsData,
       projects: projectsData,
@@ -140,10 +169,6 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
       }
     };
   });
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, refreshUser } = useAuth();
-  const from = (location.state as any)?.from?.pathname || '/developer-dashboard';
 
   // Redirect away if setup already completed or if email is not verified
   useEffect(() => {
@@ -162,6 +187,19 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
     }
   }, [user, navigate]);
 
+  // Ensure formData.personal.role always matches the authenticated user's role
+  useEffect(() => {
+    if (formData.personal.role !== userType) {
+      setFormData(prev => ({
+        ...prev,
+        personal: {
+          ...prev.personal,
+          role: userType
+        }
+      }));
+    }
+  }, [userType, formData.personal.role]);
+
   const handleStepComplete = async () => {
     if (currentStep < 6) {
       setCurrentStep(currentStep + 1);
@@ -170,200 +208,67 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
         const userId = user?.id;
         if (!userId) throw new Error('User ID not available');
 
-        // Phase 1: Build schema-aware profile data with null handling
-        // Only include fields that have values; omit undefined/empty fields as null
-        const profileData: Record<string, any> = {
-          name: formData.personal.fullName?.trim() || null,
-          bio: formData.personal.bio?.trim() || null,
-          role: formData.personal.role || null,
-          company_type: formData.personal.companyType || null,
-          years_experience: formData.personal.yearsExperience ? parseInt(formData.personal.yearsExperience.split('-')[0]) : null,
-          
-          // Preferred cities - use personal or preferences, whichever has data
-          preferred_cities: formData.personal.citiesCovered?.length > 0 
-            ? JSON.stringify(formData.personal.citiesCovered) 
-            : formData.preferences.preferredCities?.length > 0
-            ? JSON.stringify(formData.preferences.preferredCities)
-            : null,
-          
-          // Languages - array to JSON string
-          languages: formData.personal.languages?.length > 0 
-            ? JSON.stringify(formData.personal.languages) 
-            : null,
-          
-          // Project types (preferences)
-          project_types: formData.preferences.projectTypes?.length > 0
-            ? JSON.stringify(formData.preferences.projectTypes)
-            : null,
-          
-          // Preferences fields
-          budget_range: formData.preferences.budgetRange || null,
-          working_style: formData.preferences.workingStyle || null,
-          availability: formData.preferences.availability || null,
-          specializations: formData.preferences.specializations?.length > 0
-            ? JSON.stringify(formData.preferences.specializations)
-            : null,
-          
-          // Setup status
-          setup_completed: true,
+        // Prepare form data for submission
+        // Convert File objects to serializable format for media
+        const projectsWithSerializedMedia = (formData.projects || []).map((project: any) => ({
+          ...project,
+          media: (project.media || []).map((file: File | any) => {
+            if (file instanceof File) {
+              return {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                lastModified: file.lastModified,
+                // Store as base64 or just metadata depending on file size
+                // For now, we'll just pass metadata
+              };
+            }
+            // If it's already metadata, return as-is
+            return file;
+          })
+        }));
+
+        const submitData = {
+          personal: formData.personal,
+          identity: formData.identity,
+          credentials: formData.credentials,
+          projects: projectsWithSerializedMedia,
+          preferences: formData.preferences,
         };
 
-        // Phase 2: Upload and store documents with proper categorization
-        const documentCategories: Record<string, { type: string; files: File[] }> = {
-          identity: { type: 'identity', files: [] },
-          licenses: { type: 'license', files: [] },
-          certifications: { type: 'certification', files: [] },
-          testimonials: { type: 'testimonial', files: [] },
-          projects: { type: 'project_media', files: [] },
-        };
+        // Submit to backend endpoint that handles all database inserts
+        const response = await apiClient.completePortfolioSetup(submitData);
 
-        // Collect identity documents
-        if (formData.identity?.id?.file) documentCategories.identity.files.push(formData.identity.id.file);
-        if (formData.identity?.cac?.file) documentCategories.identity.files.push(formData.identity.cac.file);
-        if (formData.identity?.selfie?.file) documentCategories.identity.files.push(formData.identity.selfie.file);
+        // Clear all setup localStorage keys on successful submission
+        localStorage.removeItem('buildtrust_personal_info');
+        localStorage.removeItem('buildtrust_identity_verification');
+        localStorage.removeItem('buildtrust_licenses_credentials');
+        localStorage.removeItem('buildtrust_projects_gallery');
+        localStorage.removeItem('buildtrust_build_preferences');
+        
+        // Refresh auth context (so Index and others pick up new status)
+        await refreshUser();
+        
+        // Navigate to developer dashboard
+        navigate('/developer-dashboard', { replace: true });
+        setIsComplete(true);
 
-        // Collect credential documents
-        if (Array.isArray(formData.credentials?.licenses)) {
-          documentCategories.licenses.files.push(...formData.credentials.licenses.filter(f => f instanceof File));
-        }
-        if (Array.isArray(formData.credentials?.certifications)) {
-          documentCategories.certifications.files.push(...formData.credentials.certifications.filter(f => f instanceof File));
-        }
-        if (Array.isArray(formData.credentials?.testimonials)) {
-          documentCategories.testimonials.files.push(...formData.credentials.testimonials.filter(f => f instanceof File));
-        }
+      } catch (error: any) {
+        console.error('Failed to save profile:', error);
 
-        // Store documents with proper user_documents table mapping
-        const uploadedDocuments: Array<{ type: string; count: number }> = [];
-        for (const [category, { type, files }] of Object.entries(documentCategories)) {
-          if (files.length > 0) {
-            for (const file of files) {
-              try {
-                await apiClient.uploadDocument(userId, type, file);
-              } catch (docErr) {
-                console.error(`Failed to upload ${type} document:`, docErr);
-              }
-            }
-            uploadedDocuments.push({ type, count: files.length });
+        // Try to parse backend validation details and show a user-friendly message
+        let message = 'An error occurred while saving your profile. Some data may have been partially saved. Please check with an admin if issues persist.';
+        if (error && typeof error === 'object') {
+          if ((error as any).body && (error as any).body.error === 'Validation error' && Array.isArray((error as any).body.details)) {
+            message = (error as any).body.details.map((d: any) => d.message).join('. ');
+          } else if (error.message) {
+            message = error.message;
           }
         }
 
-        // Phase 3: Create portfolio entry
-        const portfolioData = {
-          user_id: userId,
-          bio: formData.personal.bio?.trim() || null,
-          specializations: formData.preferences.specializations?.length > 0
-            ? formData.preferences.specializations.join(', ')
-            : null,
-          preferred_cities: formData.personal.citiesCovered?.length > 0
-            ? formData.personal.citiesCovered.join(', ')
-            : null,
-        };
-
-        try {
-          await (apiClient as any).createPortfolio?.(portfolioData);
-          console.log('Portfolio created successfully');
-        } catch (portfolioErr) {
-          console.warn('Portfolio creation optional, continuing...', portfolioErr);
-        }
-
-        // Phase 4: Create and store projects with media
-        const projectsCreated: Array<{ id: string; title: string }> = [];
-        if (Array.isArray(formData.projects) && formData.projects.length > 0) {
-          for (const project of formData.projects) {
-            try {
-              // Only create project if has required minimum data
-              if (project.title?.trim()) {
-                const projectPayload = {
-                  user_id: userId,
-                  title: project.title,
-                  description: project.description?.trim() || null,
-                  type: project.type || null,
-                  location: project.location?.trim() || null,
-                  budget: project.budget || null,
-                };
-
-                const projectResponse = await (apiClient as any).createProject?.(projectPayload);
-                const projectId = projectResponse?.id || projectResponse?.project?.id;
-
-                if (projectId) {
-                  projectsCreated.push({ id: projectId, title: project.title });
-
-                  // Upload project media files to user_documents
-                  if (Array.isArray(project.media) && project.media.length > 0) {
-                    for (const mediaFile of project.media) {
-                      if (mediaFile instanceof File) {
-                        try {
-                          await apiClient.uploadDocument(userId, 'project_media', mediaFile);
-                        } catch (mediaErr) {
-                          console.error('Failed to upload project media:', mediaErr);
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            } catch (projectErr) {
-              console.error('Failed to create project:', projectErr);
-            }
-          }
-        }
-
-        // Phase 5: Update user profile with all collected data
-        try {
-          const updated = await apiClient.updateProfile(profileData);
-
-          console.log('Profile updated successfully. Data stored:', {
-            profileData,
-            documentsUploaded: uploadedDocuments,
-            projectsCreated,
-          });
-
-          // If server confirms setup_completed, navigate to developer dashboard
-          if (updated && updated.user && updated.user.setup_completed === 1) {
-            // Clear all setup localStorage keys on successful submission
-            localStorage.removeItem('buildtrust_personal_info');
-            localStorage.removeItem('buildtrust_identity_verification');
-            localStorage.removeItem('buildtrust_licenses_credentials');
-            localStorage.removeItem('buildtrust_projects_gallery');
-            localStorage.removeItem('buildtrust_build_preferences');
-            
-            // Refresh auth context (so Index and others pick up new status)
-            await refreshUser();
-            navigate('/developer-dashboard', { replace: true });
-            return;
-          }
-
-          await refreshUser();
-          
-          // Clear all setup localStorage keys on successful completion
-          localStorage.removeItem('buildtrust_personal_info');
-          localStorage.removeItem('buildtrust_identity_verification');
-          localStorage.removeItem('buildtrust_licenses_credentials');
-          localStorage.removeItem('buildtrust_projects_gallery');
-          localStorage.removeItem('buildtrust_build_preferences');
-          
-          setIsComplete(true);
-        } catch (error: any) {
-          console.error('Failed to save profile:', error);
-
-          // Try to parse backend validation details and show a user-friendly message
-          let message = 'An error occurred while saving your profile. Some data may have been partially saved. Please check with an admin if issues persist.';
-          if (error && typeof error === 'object') {
-            if ((error as any).body && (error as any).body.error === 'Validation error' && Array.isArray((error as any).body.details)) {
-              message = (error as any).body.details.map((d: any) => d.message).join('. ');
-            } else if (error.message) {
-              message = error.message;
-            }
-          }
-
-          // Show an in-component alert
-          setIsComplete(false);
-          alert(message);
-        }
-      } catch (err) {
-        console.error('Error completing setup:', err);
-        alert('An unexpected error occurred while saving your profile. Please try again later.');
+        // Show an in-component alert
+        setIsComplete(false);
+        alert(message);
       }
     }
   };
@@ -393,7 +298,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             <PersonalInfo 
               data={formData.personal} 
               onChange={(data) => updateFormData('personal', data)}
-              userType="developer"
+              userType={userType}
             />
             <NavigationButtons 
               currentStep={currentStep}
@@ -402,25 +307,25 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onPrev={handleStepBack}
               canContinue={true}
               formData={formData.personal}
-              userType="developer"
+              userType={userType}
             />
           </div>
         );
       case 2:
         return (
           <div>
-            <IdentityVerification 
-              data={formData.identity} 
-              onChange={(data) => updateFormData('identity', data)} 
+            <IdentityVerification
+              data={formData.identity}
+              onChange={(data) => updateFormData('identity', data)}
             />
-            <NavigationButtons 
+            <NavigationButtons
               currentStep={currentStep}
               totalSteps={6}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
               formData={formData.identity}
-              userType="developer"
+              userType={userType}
             />
           </div>
         );
@@ -436,13 +341,26 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               totalSteps={6}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
-              canContinue={true}
+              canContinue={formData.credentials?.licenses?.length > 0 && formData.credentials?.certifications?.length > 0 && formData.credentials?.testimonials?.length > 0}
               formData={formData.credentials}
-              userType="developer"
+              userType={userType}
             />
           </div>
         );
       case 4:
+        const projects = Array.isArray(formData.projects) ? formData.projects : [];
+        const hasCompleteProject = projects.length > 0 && projects.some(project => {
+          const hasTitle = project.title && String(project.title).trim().length > 0;
+          const hasType = project.type && String(project.type).length > 0;
+          const hasLocation = project.location && String(project.location).trim().length > 0;
+          const hasBudget = project.budget && String(project.budget).length > 0;
+          const hasDescription = project.description && String(project.description).trim().length > 0;
+          const hasMedia = project.media && Array.isArray(project.media) && project.media.length > 0;
+          
+          // ALL fields must be complete AND at least one file must be uploaded
+          return hasTitle && hasType && hasLocation && hasBudget && hasDescription && hasMedia;
+        });
+        
         return (
           <div>
             <ProjectGallery 
@@ -454,9 +372,9 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               totalSteps={6}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
-              canContinue={true}
-              formData={formData.projects}
-              userType="developer"
+              canContinue={!!hasCompleteProject}
+              formData={formData.personal}
+              userType={userType}
             />
           </div>
         );
@@ -474,7 +392,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onPrev={handleStepBack}
               canContinue={true}
               formData={formData.personal}
-              userType="developer"
+              userType={userType}
             />
           </div>
         );
@@ -491,8 +409,8 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
-              formData={formData.personal}
-              userType="developer"
+              formData={formData as any}
+              userType={userType}
             />
           </div>
         );
@@ -502,7 +420,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             <PersonalInfo 
               data={formData.personal} 
               onChange={(data) => updateFormData('personal', data)}
-              userType="developer"
+              userType={userType}
             />
             <NavigationButtons 
               currentStep={currentStep}
@@ -511,7 +429,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onPrev={handleStepBack}
               canContinue={true}
               formData={formData.personal}
-              userType="developer"
+              userType={userType}
             />
           </div>
         );

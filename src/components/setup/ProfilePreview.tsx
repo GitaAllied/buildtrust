@@ -13,11 +13,12 @@ interface ValidationResult {
 
 const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
-  const [submitting, setSubmitting] = useState(false);
 
   // Scroll to top on component mount
   useEffect(() => {
     window.scrollTo(0, 0);
+    console.log('ProfilePreview formData:', formData);
+    console.log('PersonalInfo role:', formData.personal?.role);
   }, []);
 
   const { identity, personal, projects, credentials, preferences } = formData;
@@ -50,13 +51,13 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
     }
 
     // Step 2: Identity Verification validation
-    if (!identity?.hasId) {
+    if (!identity?.id?.file && !identity?.id?.name) {
       errors.identity = [...(errors.identity || []), 'Government ID is required'];
     }
-    if (!identity?.hasCac) {
+    if (!identity?.cac?.file && !identity?.cac?.name) {
       errors.identity = [...(errors.identity || []), 'CAC document is required'];
     }
-    if (!identity?.hasSelfie) {
+    if (!identity?.selfie?.file && !identity?.selfie?.name) {
       errors.identity = [...(errors.identity || []), 'Selfie verification is required'];
     }
 
@@ -76,10 +77,10 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
       errors.projects = ['At least one project must be added'];
     } else {
       const invalidProjects = projects.filter(
-        (p: any) => !p.title?.trim() || !p.type || !p.location?.trim() || !p.budget || !p.description?.trim()
+        (p: any) => !p.title?.trim() || !p.type || !p.location?.trim() || !p.budget || !p.description?.trim() || !p.media?.length
       );
       if (invalidProjects.length > 0) {
-        errors.projects = [`${invalidProjects.length} project(s) have incomplete information`];
+        errors.projects = [`${invalidProjects.length} project(s) have incomplete information (missing title, type, location, budget, description, or media)`];
       }
     }
 
@@ -107,20 +108,6 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
       isValid: Object.keys(errors).length === 0,
       errors,
     };
-  };
-
-  const handleSubmit = () => {
-    const validation = validateAllData();
-    setValidationErrors(validation.errors);
-
-    if (!validation.isValid) {
-      window.scrollTo(0, 0);
-      return;
-    }
-
-    setSubmitting(true);
-    // TODO: Submit profile data to backend
-    console.log('Profile submission:', formData);
   };
 
   const getStepNumber = (section: string): number => {
@@ -204,8 +191,14 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold">{personal?.fullName || "Your Name"}</h1>
-            <p className="text-white mt-1">{personal?.companyType || "Company Type"} • {personal?.yearsExperience || "Experience"} years</p>
-            <p className="text-white/80 text-sm mt-1">Role: {personal?.role || "Not specified"}</p>
+            {personal?.role === 'developer' ? (
+              <p className="text-white mt-1">{personal?.companyType || "Company Type"} • {personal?.yearsExperience || "Experience"}</p>
+            ) : personal?.role === 'admin' ? (
+              <p className="text-white mt-1">{personal?.adminRole || "Admin Role"} • {personal?.department || "Department"}</p>
+            ) : (
+              <p className="text-white mt-1">{personal?.occupation || "Occupation"}</p>
+            )}
+            <p className="text-white/80 text-sm mt-1">Profile Type: {personal?.role === 'developer' ? 'Developer' : personal?.role === 'admin' ? 'Administrator' : 'Client'}</p>
             <div className="flex items-center space-x-4 mt-3 flex-wrap gap-2">
               <div className="flex items-center space-x-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,48 +248,92 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
               <p className="text-xs text-gray-500 uppercase tracking-wide">Full Name</p>
               <p className="text-gray-900 font-medium mt-1">{personal.fullName || '—'}</p>
             </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Company Type</p>
-              <p className="text-gray-900 font-medium mt-1">{personal.companyType || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Years of Experience</p>
-              <p className="text-gray-900 font-medium mt-1">{personal.yearsExperience || '—'} years</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Professional Role</p>
-              <p className="text-gray-900 font-medium mt-1">{personal.role || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Cities Covered</p>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {personal.citiesCovered?.slice(0, 3).map((city: string) => (
-                  <span key={city} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
-                    {city}
-                  </span>
-                ))}
-                {personal.citiesCovered?.length > 3 && (
-                  <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium">
-                    +{personal.citiesCovered.length - 3}
-                  </span>
-                )}
+            {personal.role === 'developer' ? (
+              <>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Company Type</p>
+                  <p className="text-gray-900 font-medium mt-1">{personal.companyType || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Years of Experience</p>
+                  <p className="text-gray-900 font-medium mt-1">{personal.yearsExperience || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Profile Type</p>
+                  <p className="text-gray-900 font-medium mt-1">Developer</p>
+                </div>
+              </>
+            ) : personal.role === 'admin' ? (
+              <>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Admin Role</p>
+                  <p className="text-gray-900 font-medium mt-1">{personal.adminRole || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Department</p>
+                  <p className="text-gray-900 font-medium mt-1">{personal.department || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Profile Type</p>
+                  <p className="text-gray-900 font-medium mt-1">Administrator</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Occupation</p>
+                  <p className="text-gray-900 font-medium mt-1">{personal.occupation || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Current Location</p>
+                  <p className="text-gray-900 font-medium mt-1">{personal.currentLocation || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Profile Type</p>
+                  <p className="text-gray-900 font-medium mt-1">Client</p>
+                </div>
+              </>
+            )}
+            {personal.role === 'developer' && (
+              <>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Cities Covered</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {personal.citiesCovered?.slice(0, 3).map((city: string) => (
+                      <span key={city} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                        {city}
+                      </span>
+                    ))}
+                    {personal.citiesCovered?.length > 3 && (
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium">
+                        +{personal.citiesCovered.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Languages</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {personal.languages?.slice(0, 3).map((lang: string) => (
+                      <span key={lang} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                        {lang}
+                      </span>
+                    ))}
+                    {personal.languages?.length > 3 && (
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium">
+                        +{personal.languages.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+            {personal.role === 'client' && personal.phoneNumber && (
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Phone Number</p>
+                <p className="text-gray-900 font-medium mt-1">{personal.phoneNumber}</p>
               </div>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Languages</p>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {personal.languages?.slice(0, 3).map((lang: string) => (
-                  <span key={lang} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                    {lang}
-                  </span>
-                ))}
-                {personal.languages?.length > 3 && (
-                  <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium">
-                    +{personal.languages.length - 3}
-                  </span>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -311,8 +348,8 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
         </div>
         <div className="grid md:grid-cols-3 gap-4">
           <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${identity?.hasId ? 'bg-green-100' : 'bg-red-100'}`}>
-              {identity?.hasId ? (
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${identity?.id?.file || identity?.id?.name ? 'bg-green-100' : 'bg-red-100'}`}>
+              {identity?.id?.file || identity?.id?.name ? (
                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -324,12 +361,12 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-900">Government ID</p>
-              <p className="text-xs text-gray-500">{identity?.hasId ? 'Uploaded' : 'Not uploaded'}</p>
+              <p className="text-xs text-gray-500">{identity?.id?.file || identity?.id?.name ? 'Uploaded' : 'Not uploaded'}</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${identity?.hasCac ? 'bg-green-100' : 'bg-red-100'}`}>
-              {identity?.hasCac ? (
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${identity?.cac?.file || identity?.cac?.name ? 'bg-green-100' : 'bg-red-100'}`}>
+              {identity?.cac?.file || identity?.cac?.name ? (
                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -341,12 +378,12 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-900">CAC Document</p>
-              <p className="text-xs text-gray-500">{identity?.hasCac ? 'Uploaded' : 'Not uploaded'}</p>
+              <p className="text-xs text-gray-500">{identity?.cac?.file || identity?.cac?.name ? 'Uploaded' : 'Not uploaded'}</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${identity?.hasSelfie ? 'bg-green-100' : 'bg-red-100'}`}>
-              {identity?.hasSelfie ? (
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${identity?.selfie?.file || identity?.selfie?.name ? 'bg-green-100' : 'bg-red-100'}`}>
+              {identity?.selfie?.file || identity?.selfie?.name ? (
                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -358,7 +395,7 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-900">Selfie</p>
-              <p className="text-xs text-gray-500">{identity?.hasSelfie ? 'Uploaded' : 'Not uploaded'}</p>
+              <p className="text-xs text-gray-500">{identity?.selfie?.file || identity?.selfie?.name ? 'Uploaded' : 'Not uploaded'}</p>
             </div>
           </div>
         </div>
@@ -572,18 +609,6 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
             </div>
           </div>
         )}
-
-        <button
-          onClick={handleSubmit}
-          disabled={submitting || !validation.isValid}
-          className={`px-6 py-3 rounded-lg font-medium transition-all ${
-            validation.isValid
-              ? 'bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400'
-              : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-          }`}
-        >
-          {submitting ? 'Submitting...' : validation.isValid ? 'Submit Profile' : 'Fix Issues to Continue'}
-        </button>
 
         {!validation.isValid && (
           <p className="text-xs text-red-600 mt-3">

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 
 interface NavigationButtonsProps {
   currentStep: number;
@@ -7,7 +8,7 @@ interface NavigationButtonsProps {
   onNext: () => void;
   canContinue: boolean;
   formData?: Record<string, unknown>;
-  userType?: 'client' | 'developer';
+  userType?: 'client' | 'developer' | 'admin';
 }
 
 const NavigationButtons = ({ 
@@ -19,6 +20,115 @@ const NavigationButtons = ({
   formData = {},
   userType
 }: NavigationButtonsProps) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [isProfileComplete, setIsProfileComplete] = useState(false);
+
+  // Comprehensive profile validation function
+  const validateAllProfileData = (): boolean => {
+    const formDataObj = formData as any;
+    
+    // Step 1: Personal Info validation
+    const personal = formDataObj.personal || {};
+    if (!personal?.fullName?.trim()) {
+      return false;
+    }
+    if (!personal?.bio?.trim()) {
+      return false;
+    }
+    if (!personal?.role) {
+      return false;
+    }
+    
+    if (personal.role === 'developer') {
+      if (!personal?.companyType) return false;
+      if (!personal?.yearsExperience) return false;
+      if (!personal?.citiesCovered || personal.citiesCovered.length === 0) return false;
+      if (!personal?.languages || personal.languages.length === 0) return false;
+    } else if (personal.role === 'admin') {
+      if (!personal?.adminRole) return false;
+      if (!personal?.department) return false;
+    } else if (personal.role === 'client') {
+      if (!personal?.phoneNumber?.trim()) return false;
+      if (!personal?.currentLocation?.trim()) return false;
+      if (!personal?.occupation?.trim()) return false;
+    }
+
+    // Step 2: Identity Verification validation
+    const identity = formDataObj.identity || {};
+    if ((!identity?.id?.file && !identity?.id?.name)) {
+      console.log('Missing ID document');
+      return false;
+    }
+    if ((!identity?.cac?.file && !identity?.cac?.name)) {
+      console.log('Missing CAC document');
+      return false;
+    }
+    if ((!identity?.selfie?.file && !identity?.selfie?.name)) {
+      console.log('Missing selfie document');
+      return false;
+    }
+
+    // Step 3: Licenses & Credentials validation
+    const credentials = formDataObj.credentials || {};
+    const licenses = credentials?.licenses || [];
+    const certifications = credentials?.certifications || [];
+    const testimonials = credentials?.testimonials || [];
+    if (licenses.length === 0) return false;
+    if (certifications.length === 0) return false;
+    if (testimonials.length === 0) return false;
+
+    // Step 4: Project Gallery validation
+    const projects = formDataObj.projects || [];
+    if (projects.length === 0) {
+      console.log('No projects');
+      return false;
+    }
+    const invalidProjects = projects.filter((p: any) => 
+      !p.title?.trim() || !p.type || !p.location?.trim() || !p.budget || 
+      !p.description?.trim() || !p.media?.length
+    );
+    if (invalidProjects.length > 0) return false;
+
+    // Step 5: Build Preferences validation
+    const preferences = formDataObj.preferences || {};
+    if (!preferences?.projectTypes || preferences.projectTypes.length === 0) return false;
+    if (!preferences?.preferredCities || preferences.preferredCities.length === 0) return false;
+    if (!preferences?.budgetRange) return false;
+    if (!preferences?.workingStyle) return false;
+    if (!preferences?.availability) return false;
+    if (!preferences?.specializations || preferences.specializations.length === 0) return false;
+
+    return true;
+  };
+
+  // Track profile validation state whenever formData changes
+  useEffect(() => {
+    if (currentStep === totalSteps) {
+      const isComplete = validateAllProfileData();
+      setIsProfileComplete(isComplete);
+    }
+  }, [formData, currentStep, totalSteps]);
+
+  const handleSubmit = () => {
+    if (!isProfileComplete) {
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    setSubmitting(true);
+    // Call the parent's handleStepComplete which will handle the actual submission
+    // The submission is already implemented in PortfolioSetup
+    onNext();
+  };
+
+  const handleButtonClick = () => {
+    if (currentStep === totalSteps) {
+      handleSubmit();
+    } else {
+      onNext();
+    }
+  };
+
   const validateFormIsComplete = (): boolean => {
     if (!formData || typeof formData !== 'object') {
       return false;
@@ -40,21 +150,9 @@ const NavigationButtons = ({
       return licenses.length > 0 && certifications.length > 0 && testimonials.length > 0;
     }
 
-    // For developer step 4 (ProjectGallery), check if at least one project is complete
+    // For developer step 4 (ProjectGallery), use canContinue prop from parent
     if (userType === 'developer' && currentStep === 4) {
-      const projects = (formData as any[]) || [];
-      if (!Array.isArray(projects) || projects.length === 0) {
-        return false;
-      }
-      // Check if at least the first project has required fields filled
-      const firstProject = projects[0];
-      if (!firstProject) return false;
-      const title = (firstProject.title as string)?.trim() || '';
-      const type = (firstProject.type as string)?.trim() || '';
-      const location = (firstProject.location as string)?.trim() || '';
-      const budget = (firstProject.budget as string)?.trim() || '';
-      const description = (firstProject.description as string)?.trim() || '';
-      return title && type && location && budget && description;
+      return false; // Will use canContinue prop instead
     }
 
     const fullName = (formData.fullName as string)?.trim() || '';
@@ -83,6 +181,16 @@ const NavigationButtons = ({
   };
 
   const isFormComplete = validateFormIsComplete();
+  
+  // For step 4 (ProjectGallery), use the canContinue prop instead of validateFormIsComplete
+  const continueDisabled = userType === 'developer' && currentStep === 4 
+    ? !canContinue 
+    : !isFormComplete;
+
+  // For final step (ProfilePreview/Step 6), use isProfileComplete state
+  const buttonDisabled = currentStep === totalSteps 
+    ? submitting || !isProfileComplete
+    : continueDisabled;
 
   return (
     <div className="flex flex-col gap-4">
@@ -104,17 +212,19 @@ const NavigationButtons = ({
         </Button>
         
         <Button
-          onClick={onNext}
-          disabled={!isFormComplete}
+          onClick={handleButtonClick}
+          disabled={buttonDisabled}
           className={`
             px-6 py-3 rounded-lg font-medium transition-colors
-            ${!isFormComplete
+            ${buttonDisabled
               ? 'cursor-not-allowed opacity-50 bg-gray-400'
               : 'bg-[#253E44] text-white hover:bg-[#253E44]/90 active:bg-[#253E44]/80'
             }
           `}
         >
-          {currentStep === totalSteps ? 'Submit Profile' : 'Continue'}
+          {currentStep === totalSteps 
+            ? (submitting ? 'Submitting...' : isProfileComplete ? 'Submit Profile' : 'Fix Issues to Continue')
+            : 'Continue'}
         </Button>
       </div>
     </div>

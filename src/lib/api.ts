@@ -263,6 +263,87 @@ class ApiClient {
 
     return response.json();
   }
+
+  async completePortfolioSetup(formData: Record<string, unknown>) {
+    // Convert to FormData to support file uploads
+    const fd = new FormData();
+    
+    // Add personal and preferences data as JSON
+    fd.append('personal', JSON.stringify(formData.personal || {}));
+    fd.append('preferences', JSON.stringify(formData.preferences || {}));
+    
+    // Handle identity documents (government_id, business_registration, selfie)
+    const identity = formData.identity as any || {};
+    const identityData: Record<string, unknown> = {};
+    
+    const identityFields = ['id', 'cac', 'selfie'];
+    identityFields.forEach(field => {
+      if (identity[field]) {
+        const doc = identity[field];
+        if (doc instanceof File) {
+          fd.append(`identity_${field}`, doc);
+        } else if (doc && doc.file instanceof File) {
+          fd.append(`identity_${field}`, doc.file);
+        } else if (doc) {
+          identityData[field] = doc;
+        }
+      }
+    });
+    if (Object.keys(identityData).length > 0) {
+      fd.append('identity_metadata', JSON.stringify(identityData));
+    }
+    
+    // Handle credentials (licenses, certifications, testimonials)
+    const credentials = formData.credentials as any || {};
+    const credentialsData: Record<string, unknown> = {};
+    
+    ['licenses', 'certifications', 'testimonials'].forEach(credType => {
+      if (credentials[credType]) {
+        const items = Array.isArray(credentials[credType]) ? credentials[credType] : [];
+        items.forEach((item: any, idx: number) => {
+          if (item instanceof File) {
+            fd.append(`credential_${credType}_${idx}`, item);
+          } else if (item && item.file instanceof File) {
+            fd.append(`credential_${credType}_${idx}`, item.file);
+          } else if (item) {
+            if (!credentialsData[credType]) credentialsData[credType] = [];
+            (credentialsData[credType] as any[]).push(item);
+          }
+        });
+      }
+    });
+    if (Object.keys(credentialsData).length > 0) {
+      fd.append('credentials_metadata', JSON.stringify(credentialsData));
+    }
+    
+    // Add actual files from projects
+    const projects = formData.projects as any[] || [];
+    if (projects.length > 0) {
+      projects.forEach((project, idx) => {
+        // Add project data
+        fd.append(`project_${idx}_title`, project.title || '');
+        fd.append(`project_${idx}_type`, project.type || '');
+        fd.append(`project_${idx}_location`, project.location || '');
+        fd.append(`project_${idx}_budget`, project.budget || '');
+        fd.append(`project_${idx}_description`, project.description || '');
+        
+        // Add actual files from media array
+        if (project.media && Array.isArray(project.media)) {
+          project.media.forEach((file, fileIdx) => {
+            if (file instanceof File) {
+              fd.append(`project_${idx}_media_${fileIdx}`, file);
+            }
+          });
+        }
+      });
+    }
+    
+    return this.request('/portfolio/setup', {
+      method: 'POST',
+      body: fd,
+      // Don't set Content-Type header - FormData will set it automatically with boundary
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
