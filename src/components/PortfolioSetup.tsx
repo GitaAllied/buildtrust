@@ -416,7 +416,10 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
       case 6:
         return (
           <div>
-            <ProfilePreview formData={formData} />
+            <ProfilePreview 
+              formData={formData}
+              onStepChange={(step) => setCurrentStep(step + 1)}
+            />
             <NavigationButtons 
               currentStep={currentStep}
               totalSteps={6}
