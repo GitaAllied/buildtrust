@@ -419,7 +419,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
-              formData={formData.personal}
+              formData={formData.projects}
               userType="developer"
             />
           </div>

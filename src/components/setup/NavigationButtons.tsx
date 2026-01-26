@@ -40,6 +40,23 @@ const NavigationButtons = ({
       return licenses.length > 0 && certifications.length > 0 && testimonials.length > 0;
     }
 
+    // For developer step 4 (ProjectGallery), check if at least one project is complete
+    if (userType === 'developer' && currentStep === 4) {
+      const projects = (formData as any[]) || [];
+      if (!Array.isArray(projects) || projects.length === 0) {
+        return false;
+      }
+      // Check if at least the first project has required fields filled
+      const firstProject = projects[0];
+      if (!firstProject) return false;
+      const title = (firstProject.title as string)?.trim() || '';
+      const type = (firstProject.type as string)?.trim() || '';
+      const location = (firstProject.location as string)?.trim() || '';
+      const budget = (firstProject.budget as string)?.trim() || '';
+      const description = (firstProject.description as string)?.trim() || '';
+      return title && type && location && budget && description;
+    }
+
     const fullName = (formData.fullName as string)?.trim() || '';
     const bio = (formData.bio as string)?.trim() || '';
     
