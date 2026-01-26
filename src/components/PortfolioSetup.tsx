@@ -86,30 +86,59 @@ function ProtectedRoute({ children, isAuthenticated }: { children: JSX.Element; 
 const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isComplete, setIsComplete] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
-    personal: {
-      fullName: '',
-      bio: '',
-      companyType: '',
-      yearsExperience: '',
-      citiesCovered: [],
-      languages: [],
-      phoneNumber: '',
-      currentLocation: '',
-      occupation: '',
-      preferredContact: ''
-    },
-    identity: {},
-    credentials: {},
-    projects: [],
-    preferences: {
-      projectTypes: [],
-      preferredCities: [],
-      budgetRange: '',
-      workingStyle: '',
-      availability: '',
-      specializations: []
-    }
+  const [formData, setFormData] = useState<FormData>(() => {
+    // Try to load from localStorage keys
+    const personalData = (() => {
+      const saved = localStorage.getItem('buildtrust_personal_info');
+      return saved ? JSON.parse(saved) : null;
+    })();
+    
+    const identityData = (() => {
+      const saved = localStorage.getItem('buildtrust_identity_verification');
+      return saved ? JSON.parse(saved) : {};
+    })();
+    
+    const credentialsData = (() => {
+      const saved = localStorage.getItem('buildtrust_licenses_credentials');
+      return saved ? JSON.parse(saved) : {};
+    })();
+    
+    const projectsData = (() => {
+      const saved = localStorage.getItem('buildtrust_projects_gallery');
+      return saved ? JSON.parse(saved) : [];
+    })();
+    
+    const preferencesData = (() => {
+      const saved = localStorage.getItem('buildtrust_build_preferences');
+      return saved ? JSON.parse(saved) : null;
+    })();
+
+    return {
+      personal: personalData || {
+        fullName: '',
+        bio: '',
+        role: 'developer',
+        companyType: '',
+        yearsExperience: '',
+        citiesCovered: [],
+        languages: [],
+        phoneNumber: '',
+        currentLocation: '',
+        occupation: '',
+        preferredContact: ''
+      },
+      identity: identityData,
+      credentials: credentialsData,
+      projects: projectsData,
+      preferences: preferencesData || {
+        projectTypes: [],
+        preferredCities: [],
+        budgetRange: '',
+        workingStyle: '',
+        availability: '',
+        specializations: []
+      }
+    };
   });
   const navigate = useNavigate();
   const location = useLocation();
