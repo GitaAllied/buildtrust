@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiClient } from "@/lib/api";
 import Logo from '../assets/Logo.png'
 
 const BrowseDevelopers = () => {
@@ -13,58 +14,27 @@ const BrowseDevelopers = () => {
   const [selectedProjectType, setSelectedProjectType] = useState("all");
   const [minTransparency, setMinTransparency] = useState(70);
   const [budgetRange, setBudgetRange] = useState("all");
+  const [developers, setDevelopers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data for developers
-  const developers = [
-    {
-      id: 1,
-      name: "Adebayo Construction Ltd",
-      developer: "Eng. Adebayo Okonkwo",
-      verified: true,
-      location: "Lagos, Nigeria",
-      experience: 8,
-      transparencyScore: 95,
-      bio: "Specialized in luxury residential properties with sustainable building practices.",
-      projects: [
-        { image: "/placeholder.svg", title: "Modern Villa in Lekki" },
-        { image: "/placeholder.svg", title: "Duplex in Victoria Island" }
-      ],
-      rating: 4.9,
-      completedProjects: 47
-    },
-    {
-      id: 2,
-      name: "Sterling Homes",
-      developer: "Arch. Funmi Sterling",
-      verified: true,
-      location: "Abuja, Nigeria",
-      experience: 12,
-      transparencyScore: 92,
-      bio: "Award-winning architect focusing on contemporary African design.",
-      projects: [
-        { image: "/placeholder.svg", title: "Commercial Complex Abuja" },
-        { image: "/placeholder.svg", title: "Residential Estate Gwarinpa" }
-      ],
-      rating: 4.8,
-      completedProjects: 73
-    },
-    {
-      id: 3,
-      name: "Royal Build Concept",
-      developer: "Engr. Chukwuma Royal",
-      verified: true,
-      location: "Port Harcourt, Nigeria",
-      experience: 6,
-      transparencyScore: 88,
-      bio: "Delivering quality homes with innovative designs and timely completion.",
-      projects: [
-        { image: "/placeholder.svg", title: "Waterfront Bungalow" },
-        { image: "/placeholder.svg", title: "Twin Duplex Estate" }
-      ],
-      rating: 4.7,
-      completedProjects: 29
-    }
-  ];
+  useEffect(() => {
+    const fetchDevelopers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await apiClient.getDevelopers();
+        setDevelopers(response.developers || response || []);
+      } catch (err: any) {
+        setError(err.message || "Failed to load developers");
+        setDevelopers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDevelopers();
+  }, []);
 
   const filteredDevelopers = developers.filter(dev => {
     if (searchQuery && !dev.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
@@ -177,7 +147,7 @@ const BrowseDevelopers = () => {
         {/* Results Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">
-            {filteredDevelopers.length} Developer{filteredDevelopers.length !== 1 ? 's' : ''} Found
+            {!loading && filteredDevelopers.length} Developer{!loading && filteredDevelopers.length !== 1 ? 's' : ''} Found
           </h2>
           <div className="flex items-center space-x-2 text-sm text-gray-500">
             <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -187,77 +157,97 @@ const BrowseDevelopers = () => {
           </div>
         </div>
 
-        {/* Developer Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredDevelopers.map((dev) => (
-            <Card key={dev.id} className="hover:shadow-lg transition-all duration-300 cursor-pointer" onClick={() => navigate(`/developer/${dev.id}`)}>
-              <CardContent className="p-0">
-                <div className="p-6">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{dev.name}</h3>
-                        {dev.verified && (
-                          <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600">{dev.developer}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-gray-900">{dev.transparencyScore}%</div>
-                      <div className="text-xs text-gray-500">Trust Score</div>
-                    </div>
-                  </div>
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="inline-flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#226F75]"></div>
+              <span className="text-gray-600">Loading developers...</span>
+            </div>
+          </div>
+        )}
 
-                  {/* Project Thumbnails */}
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    {dev.projects.slice(0, 2).map((project, idx) => (
-                      <div key={idx} className="relative">
-                        <img 
-                          src={project.image} 
-                          alt={project.title}
-                          className="w-full h-20 object-cover rounded-lg"
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg flex items-end">
-                          <span className="text-white text-xs p-2 truncate">{project.title}</span>
+        {/* Error State */}
+        {error && !loading && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
+
+        {/* Developer Cards */}
+        {!loading && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredDevelopers.map((dev) => (
+              <Card key={dev.id} className="hover:shadow-lg transition-all duration-300 cursor-pointer" onClick={() => navigate(`/developer/${dev.id}`)}>
+                <CardContent className="p-0">
+                  <div className="p-6">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="font-semibold text-gray-900">{dev.name}</h3>
+                          {dev.verified && (
+                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Details */}
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      {dev.location} • {dev.experience} years experience
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-gray-900">{Math.round(dev.transparencyScore)}%</div>
+                        <div className="text-xs text-gray-500">Trust Score</div>
+                      </div>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <svg className="w-4 h-4 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      {dev.rating} rating • {dev.completedProjects} projects completed
+
+                    {/* Project Thumbnails */}
+                    {dev.projects && dev.projects.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2 mb-4">
+                        {dev.projects.slice(0, 2).map((project: any, idx: number) => (
+                          <div key={idx} className="relative">
+                            <img 
+                              src={project.image || project.media?.[0]?.url || "/placeholder.svg"} 
+                              alt={project.title}
+                              className="w-full h-20 object-cover rounded-lg bg-gray-200"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg flex items-end">
+                              <span className="text-white text-xs p-2 truncate">{project.title || "Project"}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {/* Details */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {dev.location} • {dev.experience} years experience
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <svg className="w-4 h-4 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        {dev.rating || "N/A"} rating • {dev.completedProjects || 0} projects completed
+                      </div>
                     </div>
+
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{dev.bio || "No bio available"}</p>
+
+                    <Button className="w-full bg-[#253E44] hover:bg-[#253E44]/90">
+                      View Profile
+                    </Button>
                   </div>
-
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{dev.bio}</p>
-
-                  <Button className="w-full bg-[#253E44] hover:bg-[#253E44]/90">
-                    View Profile
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Empty State */}
-        {filteredDevelopers.length === 0 && (
+        {!loading && filteredDevelopers.length === 0 && (
           <div className="text-center py-12">
             <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
