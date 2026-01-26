@@ -1,10 +1,92 @@
 import { useState, useEffect, useRef } from "react";
+import Select from "react-select";
 
 interface BuildPreferencesProps {
   data: Record<string, unknown>;
   onChange: (data: Record<string, unknown>) => void;
   userType?: 'client' | 'developer';
 }
+
+// Comprehensive list of major African cities
+const AFRICAN_CITIES = [
+  // North Africa
+  { value: 'cairo', label: 'Cairo, Egypt' },
+  { value: 'alexandria', label: 'Alexandria, Egypt' },
+  { value: 'casablanca', label: 'Casablanca, Morocco' },
+  { value: 'marrakech', label: 'Marrakech, Morocco' },
+  { value: 'rabat', label: 'Rabat, Morocco' },
+  { value: 'tunis', label: 'Tunis, Tunisia' },
+  { value: 'sousse', label: 'Sousse, Tunisia' },
+  { value: 'algiers', label: 'Algiers, Algeria' },
+  { value: 'constantine', label: 'Constantine, Algeria' },
+  { value: 'tripoli', label: 'Tripoli, Libya' },
+  
+  // West Africa
+  { value: 'lagos', label: 'Lagos, Nigeria' },
+  { value: 'abuja', label: 'Abuja, Nigeria' },
+  { value: 'port-harcourt', label: 'Port Harcourt, Nigeria' },
+  { value: 'kano', label: 'Kano, Nigeria' },
+  { value: 'ibadan', label: 'Ibadan, Nigeria' },
+  { value: 'benin-city', label: 'Benin City, Nigeria' },
+  { value: 'enugu', label: 'Enugu, Nigeria' },
+  { value: 'kaduna', label: 'Kaduna, Nigeria' },
+  { value: 'owerri', label: 'Owerri, Nigeria' },
+  { value: 'abeokuta', label: 'Abeokuta, Nigeria' },
+  { value: 'accra', label: 'Accra, Ghana' },
+  { value: 'kumasi', label: 'Kumasi, Ghana' },
+  { value: 'dakar', label: 'Dakar, Senegal' },
+  { value: 'freetown', label: 'Freetown, Sierra Leone' },
+  { value: 'conakry', label: 'Conakry, Guinea' },
+  { value: 'monrovia', label: 'Monrovia, Liberia' },
+  { value: 'bamako', label: 'Bamako, Mali' },
+  { value: 'ouagadougou', label: 'Ouagadougou, Burkina Faso' },
+  { value: 'lome', label: 'Lomé, Togo' },
+  { value: 'cotonou', label: 'Cotonou, Benin' },
+  
+  // Central Africa
+  { value: 'kinshasa', label: 'Kinshasa, Democratic Republic of Congo' },
+  { value: 'lubumbashi', label: 'Lubumbashi, Democratic Republic of Congo' },
+  { value: 'brazzaville', label: 'Brazzaville, Republic of Congo' },
+  { value: 'libreville', label: 'Libreville, Gabon' },
+  { value: 'bangui', label: 'Bangui, Central African Republic' },
+  { value: 'yaounde', label: 'Yaoundé, Cameroon' },
+  { value: 'douala', label: 'Douala, Cameroon' },
+  { value: 'ndjamena', label: 'N\'Djamena, Chad' },
+  
+  // East Africa
+  { value: 'nairobi', label: 'Nairobi, Kenya' },
+  { value: 'mombasa', label: 'Mombasa, Kenya' },
+  { value: 'dar-es-salaam', label: 'Dar es Salaam, Tanzania' },
+  { value: 'dodoma', label: 'Dodoma, Tanzania' },
+  { value: 'kampala', label: 'Kampala, Uganda' },
+  { value: 'juba', label: 'Juba, South Sudan' },
+  { value: 'addis-ababa', label: 'Addis Ababa, Ethiopia' },
+  { value: 'dire-dawa', label: 'Dire Dawa, Ethiopia' },
+  { value: 'kigali', label: 'Kigali, Rwanda' },
+  { value: 'bujumbura', label: 'Bujumbura, Burundi' },
+  { value: 'djibouti-city', label: 'Djibouti City, Djibouti' },
+  { value: 'mogadishu', label: 'Mogadishu, Somalia' },
+  
+  // Southern Africa
+  { value: 'johannesburg', label: 'Johannesburg, South Africa' },
+  { value: 'cape-town', label: 'Cape Town, South Africa' },
+  { value: 'durban', label: 'Durban, South Africa' },
+  { value: 'pretoria', label: 'Pretoria, South Africa' },
+  { value: 'gaborone', label: 'Gaborone, Botswana' },
+  { value: 'harare', label: 'Harare, Zimbabwe' },
+  { value: 'bulawayo', label: 'Bulawayo, Zimbabwe' },
+  { value: 'lusaka', label: 'Lusaka, Zambia' },
+  { value: 'lilongwe', label: 'Lilongwe, Malawi' },
+  { value: 'blantyre', label: 'Blantyre, Malawi' },
+  { value: 'maputo', label: 'Maputo, Mozambique' },
+  { value: 'windhoek', label: 'Windhoek, Namibia' },
+  { value: 'maseru', label: 'Maseru, Lesotho' },
+  { value: 'mbabane', label: 'Mbabane, Eswatini' },
+  
+  // Indian Ocean
+  { value: 'port-louis', label: 'Port Louis, Mauritius' },
+  { value: 'victoria', label: 'Victoria, Seychelles' },
+];
 
 const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPreferencesProps) => {
   const [preferences, setPreferences] = useState(() => {
@@ -107,20 +189,64 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
         ]}
       />
 
-      <CheckboxGroup
-        title="Preferred Cities"
-        field="preferredCities"
-        options={[
-          "Lagos",
-          "Abuja",
-          "Port Harcourt",
-          "Kano",
-          "Ibadan",
-          "Benin City",
-          "Enugu",
-          "Kaduna"
-        ]}
-      />
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">Preferred Cities</label>
+        <Select
+          isMulti
+          options={AFRICAN_CITIES}
+          value={AFRICAN_CITIES.filter(city => (preferences.preferredCities as string[]).includes(city.value))}
+          onChange={(selected) => {
+            updatePreferences('preferredCities', selected ? selected.map(s => s.value) : []);
+          }}
+          className="react-select-container"
+          classNamePrefix="react-select"
+          placeholder="Search and select preferred cities..."
+          noOptionsMessage={() => "No cities found"}
+          styles={{
+            control: (base) => ({
+              ...base,
+              borderColor: '#e5e7eb',
+              borderWidth: 2,
+              borderRadius: '0.75rem',
+              backgroundColor: '#f9fafb',
+              '&:hover': {
+                borderColor: '#e5e7eb',
+              },
+              '&:focus': {
+                borderColor: '#16a34a',
+                outline: 'none',
+              },
+            }),
+            option: (base, { isFocused, isSelected }) => ({
+              ...base,
+              backgroundColor: isSelected ? '#16a34a' : isFocused ? '#f0fdf4' : 'white',
+              color: isSelected ? 'white' : '#1f2937',
+              cursor: 'pointer',
+              padding: '10px 12px',
+            }),
+            multiValue: (base) => ({
+              ...base,
+              backgroundColor: '#dcfce7',
+              borderRadius: '0.5rem',
+            }),
+            multiValueLabel: (base) => ({
+              ...base,
+              color: '#16a34a',
+              fontWeight: '500',
+            }),
+            multiValueRemove: (base) => ({
+              ...base,
+              color: '#16a34a',
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: '#bbf7d0',
+                color: '#15803d',
+              },
+            }),
+          }}
+        />
+        <p className="text-xs text-gray-500 mt-2">Select all cities where you prefer to work</p>
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Average Budget Range</label>
