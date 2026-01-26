@@ -14,7 +14,7 @@ const ProgressTracker = ({ currentStep, totalSteps }: ProgressTrackerProps) => {
           const isCurrent = stepNumber === currentStep;
           
           return (
-            <div key={stepNumber} className="flex items-center flex-1 min-w-0">
+            <div key={stepNumber} className="flex items-center justify-center flex-1 min-w-0">
               <div className={`
                 flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-colors
                 ${isCompleted ? 'bg-[#226F75] text-white' : ''}
