@@ -321,6 +321,11 @@ const AFRICAN_LANGUAGES = [
 ].sort((a, b) => a.label.localeCompare(b.label));
 
 const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [formData, setFormData] = useState<Record<string, unknown>>(() => {
     // Try to load from localStorage first
     const savedData = localStorage.getItem(PERSONAL_INFO_STORAGE_KEY);
@@ -337,11 +342,13 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
       fullName: '',
       bio: '',
       ...(userType === 'developer' ? {
+        role: 'developer',
         companyType: '',
         yearsExperience: '',
         citiesCovered: [] as string[],
         languages: [] as string[],
       } : {
+        role: 'client',
         phoneNumber: '',
         currentLocation: '',
         occupation: '',
