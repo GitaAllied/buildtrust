@@ -123,6 +123,7 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
 
   // Save to localStorage whenever preferences change
   useEffect(() => {
+    console.log('💾 Saving preferences to localStorage:', preferences);
     localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
   }, [preferences]);
 
@@ -137,6 +138,7 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
 
   const updatePreferences = (field: string, value: unknown) => {
     const newPreferences = { ...preferences, [field]: value };
+    console.log(`📝 Updating preference field "${field}":`, value);
     setPreferences(newPreferences);
   };
 
