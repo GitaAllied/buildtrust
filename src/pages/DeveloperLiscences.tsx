@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -20,6 +20,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
+import { apiClient } from "@/lib/api";
 import {
   FaBriefcase,
   FaDownload,
@@ -35,6 +36,48 @@ const DeveloperLiscences = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("profile");
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Account information state
+  const [accountInfo, setAccountInfo] = useState({
+    accountId: "",
+    memberSince: "",
+    accountType: "",
+  });
+  const [accountLoading, setAccountLoading] = useState(true);
+
+  // Load account data on mount
+  useEffect(() => {
+    const loadAccountData = async () => {
+      if (user) {
+        try {
+          const response = await apiClient.getCurrentUser();
+          const fullUserData = response.user || response;
+
+          // Generate Account ID from user ID and role
+          const accountId = fullUserData.id ? `BT-${fullUserData.role?.charAt(0).toUpperCase() || 'U'}-${String(fullUserData.id).padStart(6, '0')}` : "";
+          
+          // Format member since date
+          const memberSince = fullUserData.created_at ? new Date(fullUserData.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "";
+          
+          // Format account type from role
+          const accountType = fullUserData.role ? `${fullUserData.role.charAt(0).toUpperCase()}${fullUserData.role.slice(1)}` : "";
+
+          setAccountInfo({
+            accountId,
+            memberSince,
+            accountType,
+          });
+        } catch (error) {
+          console.error('Failed to load account data:', error);
+        } finally {
+          setAccountLoading(false);
+        }
+      }
+    };
+
+    loadAccountData();
+  }, [user]);
 
   const sidebarItems = [
     {
@@ -406,9 +449,9 @@ const DeveloperLiscences = () => {
                     <div className="border-t pt-6">
                       <h4 className="font-medium mb-2">Account Information</h4>
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p>Account ID: BT-DN-001234</p>
-                        <p>Member since: October 2024</p>
-                        <p>Account type: Premium Client</p>
+                        <p>Account ID: {accountLoading ? 'Loading...' : accountInfo.accountId || 'N/A'}</p>
+                        <p>Member since: {accountLoading ? 'Loading...' : accountInfo.memberSince || 'N/A'}</p>
+                        <p>Account type: {accountLoading ? 'Loading...' : accountInfo.accountType || 'N/A'}</p>
                       </div>
                     </div>
                   </CardContent>

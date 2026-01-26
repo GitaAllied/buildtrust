@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface Project {
   id: string;
@@ -18,6 +18,7 @@ interface ProjectGalleryProps {
 
 const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
   const [projects, setProjects] = useState<Project[]>(data);
+  const mediaInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   const addProject = () => {
     const newProject: Project = {
@@ -133,17 +134,22 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
         <label className="block text-sm font-medium text-gray-700 mb-2">Media Upload</label>
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#253E44]/50 transition-colors">
           <input
+            ref={(el) => {
+              if (el) mediaInputRefs.current[project.id] = el;
+            }}
             type="file"
             multiple
             accept="image/*,video/*"
             onChange={(e) => {
+              console.log(`Media files selected for project ${project.id}:`, e.target.files);
               const files = Array.from(e.target.files || []);
               updateProject(project.id, 'media', files);
             }}
             className="hidden"
             id={`media-${project.id}`}
+            aria-label="Upload media files"
           />
-          <label htmlFor={`media-${project.id}`} className="cursor-pointer">
+          <label htmlFor={`media-${project.id}`} className="cursor-pointer block">
             <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -153,9 +159,18 @@ const ProjectGallery = ({ data, onChange }: ProjectGalleryProps) => {
             <div className="text-xs text-gray-400">JPG, PNG, MP4 up to 10MB each</div>
           </label>
         </div>
-        {project.media.length > 0 && (
-          <div className="mt-2 text-sm text-[#253E44]/60">
-            {project.media.length} file(s) selected
+        {project.media && project.media.length > 0 && (
+          <div className="mt-2">
+            <div className="text-sm text-[#253E44]/60">
+              {project.media.length} file(s) selected
+            </div>
+            <div className="mt-2 space-y-1">
+              {project.media.map((file: any, idx: number) => (
+                <div key={idx} className="text-xs text-gray-600">
+                  {file instanceof File ? file.name : 'File'}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

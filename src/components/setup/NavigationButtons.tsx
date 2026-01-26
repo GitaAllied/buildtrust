@@ -24,10 +24,12 @@ const NavigationButtons = ({
       return false;
     }
 
-    // For developer step 2 (IdentityVerification), check if identity is complete
-    if (userType === 'developer' && currentStep === 2) {
-      const isIdentityComplete = (formData.isIdentityComplete as boolean) || false;
-      return isIdentityComplete;
+    // For developer step 5 (IdentityVerification), check if identity is complete
+    if (userType === 'developer' && currentStep === 5) {
+      const hasId = (formData.id as any)?.file !== undefined;
+      const hasCac = (formData.cac as any)?.file !== undefined;
+      const hasSelfie = (formData.selfie as any)?.file !== undefined;
+      return hasId && hasCac && hasSelfie;
     }
 
     const fullName = (formData.fullName as string)?.trim() || '';

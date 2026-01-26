@@ -344,24 +344,6 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
       case 2:
         return (
           <div>
-            <IdentityVerification 
-              data={formData.identity} 
-              onChange={(data) => updateFormData('identity', data)} 
-            />
-            <NavigationButtons 
-              currentStep={currentStep}
-              totalSteps={6}
-              onNext={handleStepComplete}
-              onPrev={handleStepBack}
-              canContinue={true}
-              formData={formData.identity}
-              userType="developer"
-            />
-          </div>
-        );
-      case 3:
-        return (
-          <div>
             <LicensesCredentials
               data={formData.credentials}
               onChange={(data) => updateFormData('credentials', data)}
@@ -377,7 +359,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             />
           </div>
         );
-      case 4:
+      case 3:
         return (
           <div>
             <ProjectGallery 
@@ -395,7 +377,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             />
           </div>
         );
-      case 5:
+      case 4:
         return (
           <div>
             <BuildPreferences 
@@ -409,6 +391,24 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
               onPrev={handleStepBack}
               canContinue={true}
               formData={formData.personal}
+              userType="developer"
+            />
+          </div>
+        );
+      case 5:
+        return (
+          <div>
+            <IdentityVerification 
+              data={formData.identity} 
+              onChange={(data) => updateFormData('identity', data)} 
+            />
+            <NavigationButtons 
+              currentStep={currentStep}
+              totalSteps={6}
+              onNext={handleStepComplete}
+              onPrev={handleStepBack}
+              canContinue={true}
+              formData={formData.identity}
               userType="developer"
             />
           </div>
