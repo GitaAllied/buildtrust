@@ -167,133 +167,166 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
       setCurrentStep(currentStep + 1);
     } else {
       try {
-        // Build and clean profile data (omit empty/blank fields; send arrays as arrays)
-        const rawProfileData: Record<string, any> = {
-          name: formData.personal.fullName,
-          bio: formData.personal.bio,
-          company_type: formData.personal.companyType,
-          years_experience: formData.personal.yearsExperience ? (Number(formData.personal.yearsExperience) || undefined) : undefined,
-          project_types: (formData.preferences.projectTypes && formData.preferences.projectTypes.length > 0) ? formData.preferences.projectTypes : undefined,
-          preferred_cities: (formData.personal.citiesCovered && formData.personal.citiesCovered.length > 0) ? formData.personal.citiesCovered : (formData.preferences.preferredCities && formData.preferences.preferredCities.length > 0) ? formData.preferences.preferredCities : undefined,
-          languages: (formData.personal.languages && formData.personal.languages.length > 0) ? formData.personal.languages : undefined,
-          budget_range: formData.preferences.budgetRange || undefined,
-          working_style: formData.preferences.workingStyle || undefined,
-          availability: formData.preferences.availability || undefined,
-          specializations: (formData.preferences.specializations && formData.preferences.specializations.length > 0) ? formData.preferences.specializations : undefined,
-          setup_completed: true, // mark setup complete on final submit
+        const userId = user?.id;
+        if (!userId) throw new Error('User ID not available');
+
+        // Phase 1: Build schema-aware profile data with null handling
+        // Only include fields that have values; omit undefined/empty fields as null
+        const profileData: Record<string, any> = {
+          name: formData.personal.fullName?.trim() || null,
+          bio: formData.personal.bio?.trim() || null,
+          role: formData.personal.role || null,
+          company_type: formData.personal.companyType || null,
+          years_experience: formData.personal.yearsExperience ? parseInt(formData.personal.yearsExperience.split('-')[0]) : null,
+          
+          // Preferred cities - use personal or preferences, whichever has data
+          preferred_cities: formData.personal.citiesCovered?.length > 0 
+            ? JSON.stringify(formData.personal.citiesCovered) 
+            : formData.preferences.preferredCities?.length > 0
+            ? JSON.stringify(formData.preferences.preferredCities)
+            : null,
+          
+          // Languages - array to JSON string
+          languages: formData.personal.languages?.length > 0 
+            ? JSON.stringify(formData.personal.languages) 
+            : null,
+          
+          // Project types (preferences)
+          project_types: formData.preferences.projectTypes?.length > 0
+            ? JSON.stringify(formData.preferences.projectTypes)
+            : null,
+          
+          // Preferences fields
+          budget_range: formData.preferences.budgetRange || null,
+          working_style: formData.preferences.workingStyle || null,
+          availability: formData.preferences.availability || null,
+          specializations: formData.preferences.specializations?.length > 0
+            ? JSON.stringify(formData.preferences.specializations)
+            : null,
+          
+          // Setup status
+          setup_completed: true,
         };
 
-        // Remove undefined or empty string values
-        const profileData: Record<string, any> = {};
-        Object.entries(rawProfileData).forEach(([k, v]) => {
-          if (v === undefined || v === null) return;
-          if (typeof v === 'string' && v.trim() === '') return;
-          profileData[k] = v;
-        });
+        // Phase 2: Upload and store documents with proper categorization
+        const documentCategories: Record<string, { type: string; files: File[] }> = {
+          identity: { type: 'identity', files: [] },
+          licenses: { type: 'license', files: [] },
+          certifications: { type: 'certification', files: [] },
+          testimonials: { type: 'testimonial', files: [] },
+          projects: { type: 'project_media', files: [] },
+        };
 
-        // Upload any credentials / license files first
-        const userId = user?.id;
-        
-        try {
-          let uploadedCount = 0;
-          if (userId && formData.credentials) {
-            const creds = formData.credentials as any;
-            // Licenses
-            if (Array.isArray(creds.licenses)) {
-              for (const f of creds.licenses) {
-                if (f instanceof File) {
-                  await apiClient.uploadDocument(userId, 'license', f);
-                  uploadedCount++;
-                }
-              }
-            }
-            // Certifications
-            if (Array.isArray(creds.certifications)) {
-              for (const f of creds.certifications) {
-                if (f instanceof File) {
-                  await apiClient.uploadDocument(userId, 'certification', f);
-                  uploadedCount++;
-                }
-              }
-            }
-            // Testimonials
-            if (Array.isArray(creds.testimonials)) {
-              for (const f of creds.testimonials) {
-                if (f instanceof File) {
-                  await apiClient.uploadDocument(userId, 'testimonial', f);
-                  uploadedCount++;
-                }
-              }
-            }
-          }
+        // Collect identity documents
+        if (formData.identity?.id?.file) documentCategories.identity.files.push(formData.identity.id.file);
+        if (formData.identity?.cac?.file) documentCategories.identity.files.push(formData.identity.cac.file);
+        if (formData.identity?.selfie?.file) documentCategories.identity.files.push(formData.identity.selfie.file);
 
-          // Upload identity docs
-          if (userId && formData.identity) {
-            const identityFiles = [formData.identity.id?.file, formData.identity.cac?.file, formData.identity.selfie?.file].filter(Boolean);
-            for (const f of identityFiles) {
-              if (f instanceof File) {
-                await apiClient.uploadDocument(userId, 'identity', f);
-                uploadedCount++;
-              }
-            }
-          }
-
-        } catch (uploadErr) {
-          console.error('Document upload failed:', uploadErr);
-          // Continue saving profile even if upload fails; optionally notify user
+        // Collect credential documents
+        if (Array.isArray(formData.credentials?.licenses)) {
+          documentCategories.licenses.files.push(...formData.credentials.licenses.filter(f => f instanceof File));
+        }
+        if (Array.isArray(formData.credentials?.certifications)) {
+          documentCategories.certifications.files.push(...formData.credentials.certifications.filter(f => f instanceof File));
+        }
+        if (Array.isArray(formData.credentials?.testimonials)) {
+          documentCategories.testimonials.files.push(...formData.credentials.testimonials.filter(f => f instanceof File));
         }
 
-        // Save projects BEFORE updating profile (so they're ready before setup completion)
-        let savedProjectsCount = 0;
-        if (formData.projects && formData.projects.length > 0) {
-          
+        // Store documents with proper user_documents table mapping
+        const uploadedDocuments: Array<{ type: string; count: number }> = [];
+        for (const [category, { type, files }] of Object.entries(documentCategories)) {
+          if (files.length > 0) {
+            for (const file of files) {
+              try {
+                await apiClient.uploadDocument(userId, type, file);
+              } catch (docErr) {
+                console.error(`Failed to upload ${type} document:`, docErr);
+              }
+            }
+            uploadedDocuments.push({ type, count: files.length });
+          }
+        }
+
+        // Phase 3: Create portfolio entry
+        const portfolioData = {
+          user_id: userId,
+          bio: formData.personal.bio?.trim() || null,
+          specializations: formData.preferences.specializations?.length > 0
+            ? formData.preferences.specializations.join(', ')
+            : null,
+          preferred_cities: formData.personal.citiesCovered?.length > 0
+            ? formData.personal.citiesCovered.join(', ')
+            : null,
+        };
+
+        try {
+          await (apiClient as any).createPortfolio?.(portfolioData);
+          console.log('Portfolio created successfully');
+        } catch (portfolioErr) {
+          console.warn('Portfolio creation optional, continuing...', portfolioErr);
+        }
+
+        // Phase 4: Create and store projects with media
+        const projectsCreated: Array<{ id: string; title: string }> = [];
+        if (Array.isArray(formData.projects) && formData.projects.length > 0) {
           for (const project of formData.projects) {
             try {
-              // Only save if project has title and description
-              if (project.title && project.description) {
-                const projectData = {
+              // Only create project if has required minimum data
+              if (project.title?.trim()) {
+                const projectPayload = {
+                  user_id: userId,
                   title: project.title,
-                  type: project.type || '',
-                  location: project.location || '',
-                  budget: project.budget || '',
-                  description: project.description,
-                  client_id: userId,
+                  description: project.description?.trim() || null,
+                  type: project.type || null,
+                  location: project.location?.trim() || null,
+                  budget: project.budget || null,
                 };
-                
-                const projectResponse = await (apiClient as any).createProject(projectData);
+
+                const projectResponse = await (apiClient as any).createProject?.(projectPayload);
                 const projectId = projectResponse?.id || projectResponse?.project?.id;
 
-                // Upload project media if any
-                if (projectId && project.media && project.media.length > 0) {
-                  for (const mediaFile of project.media) {
-                    if (mediaFile instanceof File) {
-                      try {
-                        await (apiClient as any).uploadProjectMedia(projectId, mediaFile);
-                      } catch (mediaErr) {
-                        console.error('Failed to upload media:', mediaErr);
-                        // Continue even if media upload fails
+                if (projectId) {
+                  projectsCreated.push({ id: projectId, title: project.title });
+
+                  // Upload project media files to user_documents
+                  if (Array.isArray(project.media) && project.media.length > 0) {
+                    for (const mediaFile of project.media) {
+                      if (mediaFile instanceof File) {
+                        try {
+                          await apiClient.uploadDocument(userId, 'project_media', mediaFile);
+                        } catch (mediaErr) {
+                          console.error('Failed to upload project media:', mediaErr);
+                        }
                       }
                     }
                   }
                 }
-                
-                savedProjectsCount++;
               }
             } catch (projectErr) {
-              console.error('Failed to save project:', projectErr);
-              // Continue to next project even if one fails
+              console.error('Failed to create project:', projectErr);
             }
           }
         }
 
+        // Phase 5: Update user profile with all collected data
         try {
           const updated = await apiClient.updateProfile(profileData);
 
+          console.log('Profile updated successfully. Data stored:', {
+            profileData,
+            documentsUploaded: uploadedDocuments,
+            projectsCreated,
+          });
+
           // If server confirms setup_completed, navigate to developer dashboard
           if (updated && updated.user && updated.user.setup_completed === 1) {
-            // Clear localStorage on successful submission
+            // Clear all setup localStorage keys on successful submission
             localStorage.removeItem('buildtrust_personal_info');
-            localStorage.removeItem('buildtrust_identity_data');
+            localStorage.removeItem('buildtrust_identity_verification');
+            localStorage.removeItem('buildtrust_licenses_credentials');
+            localStorage.removeItem('buildtrust_projects_gallery');
+            localStorage.removeItem('buildtrust_build_preferences');
             
             // Refresh auth context (so Index and others pick up new status)
             await refreshUser();
@@ -303,16 +336,19 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
 
           await refreshUser();
           
-          // Clear localStorage on successful completion
+          // Clear all setup localStorage keys on successful completion
           localStorage.removeItem('buildtrust_personal_info');
-          localStorage.removeItem('buildtrust_identity_data');
+          localStorage.removeItem('buildtrust_identity_verification');
+          localStorage.removeItem('buildtrust_licenses_credentials');
+          localStorage.removeItem('buildtrust_projects_gallery');
+          localStorage.removeItem('buildtrust_build_preferences');
           
           setIsComplete(true);
         } catch (error: any) {
           console.error('Failed to save profile:', error);
 
           // Try to parse backend validation details and show a user-friendly message
-          let message = 'An error occurred while saving your profile.';
+          let message = 'An error occurred while saving your profile. Some data may have been partially saved. Please check with an admin if issues persist.';
           if (error && typeof error === 'object') {
             if ((error as any).body && (error as any).body.error === 'Validation error' && Array.isArray((error as any).body.details)) {
               message = (error as any).body.details.map((d: any) => d.message).join('. ');
