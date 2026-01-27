@@ -156,7 +156,7 @@ const Support = () => {
                 handleNavigation(item.id);
                 setSidebarOpen(false);
               }}
-              className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl mb-1 transition-all text-xs sm:text-sm font-medium flex gap-2 items-center ${
+              className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
                 activeTab === item.id
                   ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
                   : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
@@ -174,7 +174,7 @@ const Support = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="md:text-2xl font-bold text-gray-900">
                   Support Center
                 </h1>
                 <p className="text-gray-500">

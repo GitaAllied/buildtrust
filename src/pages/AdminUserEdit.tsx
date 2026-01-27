@@ -252,8 +252,8 @@ const AdminUserEdit = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Edit User</h1>
-                <p className="text-sm text-gray-500">Update user information and settings</p>
+                <h1 className="md:text-2xl font-bold text-gray-900">Edit User</h1>
+                <p className="text-sm text-gray-500">Update user information</p>
               </div>
             </div>
             <div className="flex gap-2 md:gap-0 md:space-x-3">

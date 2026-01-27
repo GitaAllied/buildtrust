@@ -168,7 +168,7 @@ const AdminSupportTicketDetail = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Support Ticket #{ticket.id}</h1>
+                <h1 className="md:text-2xl font-bold text-gray-900">Support Ticket #{ticket.id}</h1>
                 <p className="text-sm text-gray-500">{ticket.subject}</p>
               </div>
             </div>
