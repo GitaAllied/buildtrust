@@ -15,6 +15,7 @@ import {
 import Logo from "../assets/Logo.png";
 import {
   FaBriefcase,
+  FaDoorOpen,
   FaFileContract,
   FaGear,
   FaMessage,
@@ -22,6 +23,8 @@ import {
   FaUser,
   FaUserGear,
 } from "react-icons/fa6";
+import { useAuth } from "@/hooks/useAuth";
+import { Link } from "react-router-dom";
 
 const Payments = () => {
   const [activeTab, setActiveTab] = useState("payments");
@@ -29,6 +32,16 @@ const Payments = () => {
   const navigate = useNavigate();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", icon: <FaUser /> },
@@ -38,6 +51,7 @@ const Payments = () => {
     { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
     { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
     { id: "settings", label: "Settings", icon: <FaGear /> },
+    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
   ];
 
   const handleNavigation = (itemId: string) => {
@@ -63,6 +77,9 @@ const Payments = () => {
         break;
       case "settings":
         navigate("/settings");
+        break;
+        case "logout":
+        handleLogout();
         break;
       default:
         navigate("/browse");
@@ -172,7 +189,7 @@ const Payments = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center space-x-2 w-[20%]">
-          <img src={Logo} alt="Build Trust Africa Logo" />
+          <Link to={'/'}><img src={Logo} alt="Build Trust Africa Logo" /></Link>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -197,7 +214,7 @@ const Payments = () => {
             onClick={() => navigate("/")}
             className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
           >
-            <img src={Logo} alt="" className="w-[55%]" />
+            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
           </button>
         </div>
         <nav className="p-3 sm:p-4 space-y-1">

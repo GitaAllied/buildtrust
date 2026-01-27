@@ -23,6 +23,7 @@ import Logo from "../assets/Logo.png";
 import { apiClient } from "@/lib/api";
 import {
   FaBriefcase,
+  FaDoorOpen,
   FaDownload,
   FaGear,
   FaMessage,
@@ -30,6 +31,7 @@ import {
   FaUpload,
   FaUser,
 } from "react-icons/fa6";
+import { Link } from "react-router-dom";
 
 const DeveloperLiscences = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -37,6 +39,7 @@ const DeveloperLiscences = () => {
   const [activeSection, setActiveSection] = useState("profile");
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { signOut } = useAuth();
 
   // Account information state
   const [accountInfo, setAccountInfo] = useState({
@@ -79,6 +82,15 @@ const DeveloperLiscences = () => {
     loadAccountData();
   }, [user]);
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   const sidebarItems = [
     {
       id: "dashboard",
@@ -93,6 +105,7 @@ const DeveloperLiscences = () => {
     { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
     { id: "profile", label: "Licenses & Profile", icon: <FaUser /> },
     { id: "support", label: "Support", icon: <FaGear /> },
+    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
   ];
 
   const settingSections = [
@@ -130,6 +143,9 @@ const DeveloperLiscences = () => {
       case "support":
         navigate("/support");
         break;
+        case "logout":
+        handleLogout();
+        break;
       default:
         navigate("/browse");
     }
@@ -140,7 +156,7 @@ const DeveloperLiscences = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
-          <img src={Logo} alt="" />
+          <Link to={'/'}><img src={Logo} alt="" /></Link>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -165,7 +181,7 @@ const DeveloperLiscences = () => {
             onClick={() => navigate("/")}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full"
           >
-            <img src={Logo} alt="" className="w-[55%]" />
+            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
           </button>
         </div>
         <nav className="p-3 sm:p-4 space-y-1">

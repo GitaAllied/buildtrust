@@ -21,6 +21,7 @@ import { Camera } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Settings, TestTube, ArrowLeft, Eye, EyeOff, Database, MessageSquare, Smartphone, Shield, Mail, Bell, Lock, Globe, X, Menu, AlertTriangle, CreditCard, DollarSign, Key} from "lucide-react";
+import { Link } from "react-router-dom";
 
 
 const AdminSettings = () => {
@@ -43,7 +44,7 @@ const AdminSettings = () => {
     { id: "reports", label: "Reports", icon: <FaBook /> },
     {
       id: "settings",
-      label: "System Settings",
+      label: "Settings",
       icon: <FaGear />,
       active: true,
     },
@@ -477,7 +478,7 @@ const AdminSettings = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
-          <img src={Logo} alt="" />
+          <Link to={'/'}><img src={Logo} alt="" /></Link>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -502,7 +503,7 @@ const AdminSettings = () => {
             onClick={() => navigate("/")}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full"
           >
-            <img src={Logo} alt="" className="w-[55%]" />
+            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
           </button>
         </div>
         <nav className="p-3 sm:p-4 space-y-1">
