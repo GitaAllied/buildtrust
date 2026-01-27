@@ -47,251 +47,217 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <EmailVerificationGuard>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            {/* <Route path="/test" element={<PortfolioSetup onExit={() => console.log("")}/>} /> */}
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/verify-email" element={<EmailVerification />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/browse" element={<BrowseDevelopers />} />
-            <Route path="/developer/:id" element={<DeveloperProfile />} />
-            {/* <Route
-              path="/client-dashboard"
-              element={
-                <ProtectedRoute requiredRole="client">
-                  <ClientDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/developer-dashboard"
-              element={
-                <ProtectedRoute requiredRole="developer">
-                  <DeveloperDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/super-admin-dashboard"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <SuperAdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminUsers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users/:userId"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminUserView />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users/:userId/edit"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminUserEdit />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/reports"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminReports />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/settings"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSettings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/support"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSupport />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/support/ticket/:ticketId"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSupportTicketDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/messages"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminMessages />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/messages"
-              element={
-                <ProtectedRoute>
-                  <Messages />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/payments"
-              element={
-                <ProtectedRoute>
-                  <Payments />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/projects"
-              element={
-                <ProtectedRoute>
-                  <Projects />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/contracts"
-              element={
-                <ProtectedRoute>
-                  <Contracts />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/saved-developers"
-              element={
-                <ProtectedRoute requiredRole="client">
-                  <SavedDevelopers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/active-projects"
-              element={
-                <ProtectedRoute requiredRole="developer">
-                  <ActiveProjects />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/developer-messages"
-              element={
-                <ProtectedRoute requiredRole="developer">
-                  <DeveloperMessages />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/developer-payments"
-              element={
-                <ProtectedRoute requiredRole="developer">
-                  <DeveloperPayments />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/developer-liscences"
-              element={
-                <ProtectedRoute requiredRole="developer">
-                  <DeveloperLiscences />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/project-requests"
-              element={
-                <ProtectedRoute requiredRole="developer">
-                  <ProjectRequests />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/upload-update"
-              element={
-                <ProtectedRoute requiredRole="developer">
-                  <UploadUpdate />
-                </ProtectedRoute>
-              }
-            /> */}
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Routes>
+          {/* Public Routes - accessible before email verification */}
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/verify-email" element={<EmailVerification />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/browse" element={<BrowseDevelopers />} />
+          <Route path="/developer/:id" element={<DeveloperProfile />} />
 
-            {/* UI DESIGN */}
-            <Route path="/client-dashboard" element={<ClientDashboard />} />
-            <Route
-              path="/developer-dashboard"
-              element={<DeveloperDashboard />}
-            />
-            <Route
-              path="/super-admin-dashboard"
-              element={<SuperAdminDashboard />}
-            />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/users/:userId" element={<AdminUserView />} />
-            <Route
-              path="/admin/users/:userId/edit"
-              element={<AdminUserEdit />}
-            />
-            <Route path="/admin/reports" element={<AdminReports />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-            <Route path="/admin/support" element={<AdminSupport />} />
-            <Route
-              path="/admin/support/ticket/:ticketId"
-              element={<AdminSupportTicketDetail />}
-            />
-            <Route path="/admin/messages" element={<AdminMessages />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/contracts" element={<Contracts />} />
-            <Route path="/saved-developers" element={<SavedDevelopers />} />
-            <Route path="/project-requests" element={<ProjectRequests />} />
-            <Route path="/upload-update" element={<UploadUpdate />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/active-projects" element={<ActiveProjects />} />
-            <Route path="/developer-messages" element={<DeveloperMessages />} />
-            <Route path="/developer-payments" element={<DeveloperPayments />} />
-            <Route
-              path="/developer-liscences"
-              element={<DeveloperLiscences />}
-            />
-            {/* UI DESIGN */}
+          {/* Protected Routes - require email verification */}
+          <Route
+            path="/client-dashboard"
+            element={
+              <EmailVerificationGuard>
+                <ClientDashboard />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/developer-dashboard"
+            element={
+              <EmailVerificationGuard>
+                <DeveloperDashboard />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/super-admin-dashboard"
+            element={
+              <EmailVerificationGuard>
+                <SuperAdminDashboard />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <EmailVerificationGuard>
+                <AdminUsers />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/admin/users/:userId"
+            element={
+              <EmailVerificationGuard>
+                <AdminUserView />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/admin/users/:userId/edit"
+            element={
+              <EmailVerificationGuard>
+                <AdminUserEdit />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/admin/reports"
+            element={
+              <EmailVerificationGuard>
+                <AdminReports />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <EmailVerificationGuard>
+                <AdminSettings />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/admin/support"
+            element={
+              <EmailVerificationGuard>
+                <AdminSupport />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/admin/support/ticket/:ticketId"
+            element={
+              <EmailVerificationGuard>
+                <AdminSupportTicketDetail />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/admin/messages"
+            element={
+              <EmailVerificationGuard>
+                <AdminMessages />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/messages"
+            element={
+              <EmailVerificationGuard>
+                <Messages />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <EmailVerificationGuard>
+                <Payments />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <EmailVerificationGuard>
+                <Projects />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <EmailVerificationGuard>
+                <Settings />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/contracts"
+            element={
+              <EmailVerificationGuard>
+                <Contracts />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/saved-developers"
+            element={
+              <EmailVerificationGuard>
+                <SavedDevelopers />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/project-requests"
+            element={
+              <EmailVerificationGuard>
+                <ProjectRequests />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/upload-update"
+            element={
+              <EmailVerificationGuard>
+                <UploadUpdate />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/support"
+            element={
+              <EmailVerificationGuard>
+                <Support />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/active-projects"
+            element={
+              <EmailVerificationGuard>
+                <ActiveProjects />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/developer-messages"
+            element={
+              <EmailVerificationGuard>
+                <DeveloperMessages />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/developer-payments"
+            element={
+              <EmailVerificationGuard>
+                <DeveloperPayments />
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/developer-liscences"
+            element={
+              <EmailVerificationGuard>
+                <DeveloperLiscences />
+              </EmailVerificationGuard>
+            }
+          />
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
-      </EmailVerificationGuard>
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
