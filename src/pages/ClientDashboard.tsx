@@ -21,6 +21,7 @@ import { apiClient } from "@/lib/api";
 import Logo from "../assets/Logo.png";
 import {
   FaBriefcase,
+  FaDoorOpen,
   FaFileContract,
   FaGear,
   FaMessage,
@@ -28,6 +29,7 @@ import {
   FaUser,
   FaUserGear,
 } from "react-icons/fa6";
+import { Link } from "react-router-dom";
 
 const ClientDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -52,10 +54,10 @@ const ClientDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch current user data to ensure it's fresh
         const currentUser = await apiClient.getCurrentUser();
-        
+
         // Since we don't have dedicated endpoints yet, we'll use mock data
         // that would be replaced with actual API calls
         setActiveProjects([
@@ -151,11 +153,20 @@ const ClientDashboard = () => {
     }
   }, [user]);
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   const handleNavigation = (itemId: string) => {
     switch (itemId) {
       case "dashboard":
         setActiveTab(itemId);
-        navigate("/client-dashboard")
+        navigate("/client-dashboard");
         break;
       case "projects":
         navigate("/projects");
@@ -175,8 +186,8 @@ const ClientDashboard = () => {
       case "settings":
         navigate("/settings");
         break;
-      case "signout":
-        signOut();
+      case "logout":
+        handleLogout();
         break;
       default:
         navigate("/browse");
@@ -191,7 +202,7 @@ const ClientDashboard = () => {
     { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
     { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
     { id: "settings", label: "Settings", icon: <FaGear /> },
-    { id: "signout", label: "Sign Out", icon: <LogOut />, isDanger: true },
+    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
   ];
 
   return (
@@ -199,7 +210,7 @@ const ClientDashboard = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center space-x-2 w-[20%]">
-          <img src={Logo} alt="Build Trust Africa Logo" />
+          <Link to={'/'}><img src={Logo} alt="Build Trust Africa Logo" /></Link>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -224,7 +235,7 @@ const ClientDashboard = () => {
             onClick={() => navigate("/")}
             className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
           >
-            <img src={Logo} alt="" className="w-[55%]" />
+            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
           </button>
         </div>
         <nav className="p-3 sm:p-4 space-y-1">
@@ -236,9 +247,7 @@ const ClientDashboard = () => {
                 setSidebarOpen(false);
               }}
               className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl mb-1 transition-all text-xs sm:text-sm font-medium flex gap-2 items-center ${
-                item.isDanger
-                  ? "text-red-600 hover:bg-red-50 hover:text-red-700"
-                  : activeTab === item.id
+                activeTab === item.id
                   ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
                   : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
               }`}
@@ -254,42 +263,42 @@ const ClientDashboard = () => {
       <div className="flex-1 md:pl-64 w-full">
         {/* Header */}
         <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
-            <div className="flex flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-              <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
-                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20 hidden md:flex">
-                  <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" />
-                  <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
-                    DN
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <h1 className="text-base sm:text-lg md:text-2xl font-bold text-[#253E44] truncate">
-                    Welcome, {user?.name || "Client"}
-                  </h1>
-                  <p className="text-xs sm:text-sm text-gray-500 truncate">
-                    Managing 2 active projects
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 hover:bg-[#226F75]/10"
-                >
-                  <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
-                    3
-                  </Badge>
-                </Button>
-                <Button
-                  onClick={() => navigate("/browse")}
-                  className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-xs sm:text-sm shadow-md hover:shadow-lg transition-all"
-                >
-                  Browse Developers
-                </Button>
+          <div className="flex flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20 hidden md:flex">
+                <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" />
+                <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
+                  DN
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg md:text-2xl font-bold text-[#253E44] truncate">
+                  Welcome, {user?.name || "Client"}
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 truncate">
+                  Managing 2 active projects
+                </p>
               </div>
             </div>
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 hover:bg-[#226F75]/10"
+              >
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
+                  3
+                </Badge>
+              </Button>
+              <Button
+                onClick={() => navigate("/browse")}
+                className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-xs sm:text-sm shadow-md hover:shadow-lg transition-all"
+              >
+                Browse Developers
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="p-3 sm:p-4 md:p-6 bg-[#226F75]/3">
@@ -502,15 +511,21 @@ const ClientDashboard = () => {
                   </div>
                   <div className="flex justify-between text-xs sm:text-sm border-t border-white/50 pt-3">
                     <span className="text-gray-600">Projects Completed</span>
-                    <span className="font-bold text-[#253E44]">{stats.completedProjects}</span>
+                    <span className="font-bold text-[#253E44]">
+                      {stats.completedProjects}
+                    </span>
                   </div>
                   <div className="flex justify-between text-xs sm:text-sm border-t border-white/50 pt-3">
                     <span className="text-gray-600">Active Projects</span>
-                    <span className="font-bold text-[#253E44]">{stats.activeProjectsCount}</span>
+                    <span className="font-bold text-[#253E44]">
+                      {stats.activeProjectsCount}
+                    </span>
                   </div>
                   <div className="flex justify-between text-xs sm:text-sm border-t border-white/50 pt-3">
                     <span className="text-gray-600">Avg. Rating Given</span>
-                    <span className="font-bold text-[#226F75]">{stats.avgRating}/5</span>
+                    <span className="font-bold text-[#226F75]">
+                      {stats.avgRating}/5
+                    </span>
                   </div>
                 </CardContent>
               </Card>

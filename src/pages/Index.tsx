@@ -261,7 +261,7 @@ useEffect(() => {
       <header className="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-white/20 z-50 shadow-sm">
         <div className="container mx-auto px-10 py-4 flex items-center justify-between">
           <div className=" w-[20%] md:w-[10%]">
-            <img src={Logo} alt="Build Trust Logo" />
+            <Link to={'/'}><img src={Logo} alt="Build Trust Logo" /></Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -504,19 +504,19 @@ useEffect(() => {
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 sm:gap-6 md:gap-8 p-3 sm:p-4 border-t border-slate-100 dark:border-neutral-900 mt-6 sm:mt-8">
-            <div>
+            <div className=" text-center md:text-left">
               <div className="text-xl sm:text-2xl font-bold tracking-tight">500+</div>
               <div className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Happy Clients
               </div>
             </div>
-            <div>
+            <div className=" text-center md:text-left">
               <div className="text-xl sm:text-2xl font-bold tracking-tight">50+</div>
               <div className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Developers
               </div>
             </div>
-            <div>
+            <div className=" text-center md:text-left">
               <div className="text-xl sm:text-2xl font-bold tracking-tight">₦2B+</div>
               <div className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Project Value

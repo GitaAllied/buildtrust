@@ -22,7 +22,10 @@ import {
   FaUpload,
   FaUser,
   FaDownload,
+  FaDoorOpen,
 } from "react-icons/fa6";
+import { useAuth } from "@/hooks/useAuth";
+import { Link } from "react-router-dom";
 
 const UploadUpdate = () => {
   const [activeTab, setActiveTab] = useState("upload");
@@ -31,11 +34,21 @@ const UploadUpdate = () => {
   const [milestone, setMilestone] = useState("");
   const [description, setDescription] = useState("");
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   // File states
   const [photos, setPhotos] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
   const [documents, setDocuments] = useState<File[]>([]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   const sidebarItems = [
     {
@@ -51,6 +64,7 @@ const UploadUpdate = () => {
     { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
     { id: "profile", label: "Licenses & Profile", icon: <FaUser /> },
     { id: "support", label: "Support", icon: <FaGear /> },
+    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
   ];
 
   const handleNavigation = (itemId: string) => {
@@ -79,6 +93,9 @@ const UploadUpdate = () => {
         break;
       case "support":
         navigate("/support");
+        break;
+        case "logout":
+        handleLogout();
         break;
       default:
         navigate("/browse");
@@ -138,7 +155,7 @@ const UploadUpdate = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
-          <img src={Logo} alt="" />
+          <Link to={'/'}><img src={Logo} alt="" /></Link>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -163,7 +180,7 @@ const UploadUpdate = () => {
             onClick={() => navigate("/")}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full"
           >
-            <img src={Logo} alt="" className="w-[55%]" />
+            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
           </button>
         </div>
         <nav className="p-3 sm:p-4 space-y-1">

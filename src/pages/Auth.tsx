@@ -1,47 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { apiClient } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  AlertCircle, 
-  Loader2, 
-  Mail, 
-  Lock, 
-  UserPlus, 
-  LogIn, 
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertCircle,
+  Loader2,
+  Mail,
+  Lock,
+  UserPlus,
+  LogIn,
   ArrowLeft,
   Sparkles,
   Eye,
-  EyeOff
-} from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import Logo from '../assets/Logo.png';
+  EyeOff,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import Logo from "../assets/Logo.png";
+import Logomark from "../assets/Logomark.png";
+import AuthImage from "../assets/Auth.png";
 
 const signInSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
-const signUpSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string()
-    .min(6, 'Password must be at least 6 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one capital letter')
-    .regex(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>?/]/, 'Password must contain at least one special character'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const signUpSchema = z
+  .object({
+    email: z.string().email("Please enter a valid email address"),
+    password: z
+      .string()
+      .min(6, "Password must be at least 6 characters")
+      .regex(/[A-Z]/, "Password must contain at least one capital letter")
+      .regex(
+        /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>?/]/,
+        "Password must contain at least one special character",
+      ),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type SignInFormData = z.infer<typeof signInSchema>;
 type SignUpFormData = z.infer<typeof signUpSchema>;
@@ -51,7 +65,7 @@ export default function Auth() {
   const [signUpLoading, setSignUpLoading] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
   const [signUpError, setSignUpError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('signin');
+  const [activeTab, setActiveTab] = useState("signin");
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -61,29 +75,29 @@ export default function Auth() {
 
   // Check for developer setup intent
   const searchParams = new URLSearchParams(window.location.search);
-  const setupIntent = searchParams.get('intent');
+  const setupIntent = searchParams.get("intent");
 
   const signInForm = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
   });
 
   const signUpForm = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
+      email: "",
+      password: "",
+      confirmPassword: "",
     },
   });
 
   // Check if user is already logged in
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate("/");
     }
   }, [user, navigate]);
 
@@ -109,47 +123,53 @@ export default function Auth() {
         password: data.password,
       });
 
-      localStorage.setItem('auth_token', response.token);
+      localStorage.setItem("auth_token", response.token);
       await refreshUser();
-      
+
       toast({
-        title: 'Welcome back!',
-        description: 'You have successfully signed in.',
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
       });
 
       // Redirect based on user role and setup intent
       const userFromResponse = response.user;
-      
+
       // Admin users go to admin dashboard
-      if (userFromResponse && userFromResponse.role === 'admin') {
-        navigate('/super-admin-dashboard');
+      if (userFromResponse && userFromResponse.role === "admin") {
+        navigate("/super-admin-dashboard");
         return;
       }
-      
+
       // Developer setup flow
-      if (setupIntent === 'developer-setup') {
+      if (setupIntent === "developer-setup") {
         if (userFromResponse && userFromResponse.setup_completed === true) {
-          navigate('/');
+          navigate("/");
         } else {
-          navigate('/?setup=developer');
+          navigate("/?setup=developer");
         }
-      } 
+      }
       // Client setup flow
-      else if (setupIntent === 'client-setup') {
+      else if (setupIntent === "client-setup") {
         if (userFromResponse && userFromResponse.setup_completed === true) {
-          navigate('/');
+          navigate("/");
         } else {
-          navigate('/?setup=client');
+          navigate("/?setup=client");
         }
-      } 
+      }
       // Default redirect
       else {
-        navigate('/');
+        navigate("/");
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
-      if (errorMessage.includes('Invalid') || errorMessage.includes('password')) {
-        setSignInError('Invalid email or password. Please try again.');
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred. Please try again.";
+      if (
+        errorMessage.includes("Invalid") ||
+        errorMessage.includes("password")
+      ) {
+        setSignInError("Invalid email or password. Please try again.");
       } else {
         setSignInError(errorMessage);
       }
@@ -163,84 +183,102 @@ export default function Auth() {
     setSignUpError(null);
 
     try {
-      console.log('📝 SIGNUP FORM SUBMITTED:', {
+      console.log("📝 SIGNUP FORM SUBMITTED:", {
         timestamp: new Date().toISOString(),
         email: data.email,
         passwordLength: data.password.length,
-        setupIntent
+        setupIntent,
       });
 
       const payload: any = { email: data.email, password: data.password };
       if (setupIntent) {
         payload.intent = setupIntent;
-        console.log('🎯 SETUP INTENT DETECTED:', setupIntent);
+        console.log("🎯 SETUP INTENT DETECTED:", setupIntent);
       }
 
-      console.log('📤 SENDING SIGNUP REQUEST TO API:', {
+      console.log("📤 SENDING SIGNUP REQUEST TO API:", {
         payloadKeys: Object.keys(payload),
-        email: payload.email
+        email: payload.email,
       });
 
       const response = await (apiClient as any).signup(payload);
 
-      console.log('✅ SIGNUP RESPONSE RECEIVED:', {
+      console.log("✅ SIGNUP RESPONSE RECEIVED:", {
         userId: response.user?.id,
         email: response.user?.email,
         role: response.user?.role,
         tokenLength: response.token?.length,
         setupCompleted: response.user?.setup_completed,
-        emailVerified: response.user?.email_verified
+        emailVerified: response.user?.email_verified,
       });
 
       // Store token for email verification page
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('pending_verification_email', data.email);
+      localStorage.setItem("auth_token", response.token);
+      localStorage.setItem("pending_verification_email", data.email);
       await refreshUser();
 
-      console.log('💾 TOKENS STORED & USER REFRESHED');
+      console.log("💾 TOKENS STORED & USER REFRESHED");
 
       toast({
-        title: 'Account created!',
-        description: 'Please check your email to verify your account.',
+        title: "Account created!",
+        description: "Please check your email to verify your account.",
       });
 
       // Redirect to email verification page
-      navigate('/verify-email');
+      navigate("/verify-email");
     } catch (error: unknown) {
-      let errorMessage = 'An unexpected error occurred. Please try again.';
+      let errorMessage = "An unexpected error occurred. Please try again.";
 
-      if (error && typeof error === 'object' && 'response' in error) {
+      if (error && typeof error === "object" && "response" in error) {
         const axiosError = error as { response?: { data?: unknown } };
         const errorData = axiosError.response?.data;
 
-        if (errorData && typeof errorData === 'object' && 'error' in errorData && 'details' in errorData) {
+        if (
+          errorData &&
+          typeof errorData === "object" &&
+          "error" in errorData &&
+          "details" in errorData
+        ) {
           const errorObj = errorData as { error: string; details: unknown };
-          if (errorObj.error === 'Validation error' && Array.isArray(errorObj.details)) {
+          if (
+            errorObj.error === "Validation error" &&
+            Array.isArray(errorObj.details)
+          ) {
             // Handle detailed validation errors from backend
             errorMessage = errorObj.details
-              .map((err: unknown) => (err && typeof err === 'object' && 'message' in err ? String((err as { message: unknown }).message) : ''))
+              .map((err: unknown) =>
+                err && typeof err === "object" && "message" in err
+                  ? String((err as { message: unknown }).message)
+                  : "",
+              )
               .filter(Boolean)
-              .join('. ');
+              .join(". ");
           }
-        } else if (errorData && typeof errorData === 'object' && 'error' in errorData) {
+        } else if (
+          errorData &&
+          typeof errorData === "object" &&
+          "error" in errorData
+        ) {
           errorMessage = String((errorData as { error: unknown }).error);
         }
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
 
-      console.error('❌ SIGNUP ERROR:', {
+      console.error("❌ SIGNUP ERROR:", {
         timestamp: new Date().toISOString(),
         error: errorMessage,
         email: data.email,
-        fullError: error
+        fullError: error,
       });
 
-      if (errorMessage.includes('already exists')) {
-        setSignUpError('An account with this email already exists. Please sign in instead.');
+      if (errorMessage.includes("already exists")) {
+        setSignUpError(
+          "An account with this email already exists. Please sign in instead.",
+        );
         // Optionally switch to sign in tab after a delay
         setTimeout(() => {
-          handleTabChange('signin');
+          handleTabChange("signin");
         }, 2000);
       } else {
         setSignUpError(errorMessage);
@@ -259,81 +297,115 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative px-4 py-12 overflow-hidden">
-      {/* Animated Background Gradient */}
-      <div className="absolute inset-0 bg-[#226F75]/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 -z-10" />
-      
-      {/* Decorative Elements */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-[#226F75]/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
-      <div className="absolute top-0 right-0 w-72 h-72 bg-[#253E44]/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
-      <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
+    <div className="h-screen flex items-center justify-between relative overflow-hidden">
+      <div className=" relative w-[55%] hidden md:block">
+        <img
+          src={AuthImage}
+          alt="Image to left on authentication page"
+          className="w-full"
+        />
+        <div className="absolute bottom-10 left-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent w-full h-full"></div>
+        <div className=" absolute bottom-16 left-0 z-10 p-12 py-16 flex flex-col gap-2">
+          <div className=" flex items-center gap-2">
+            <div className="flex items-center h-10 w-10 p-2 rounded-full bg-[#EBE1D3]">
+              <Link to={"/"} className=" flex justify-center">
+                <img src={Logomark} alt="Build Trust Logo" className="" />
+              </Link>
+            </div>
+          </div>
 
-      <div className="w-full max-w-md relative z-10">
+          <h2 className="text-3xl font-bold text-white tracking-tight leading-tight">
+             Welcome to Build Trust Africa.
+          </h2>
+          <p className=" text-gray-300 text-sm">
+            Build your dream home, back home. Connect with trusted developers for your real estate projects and secure your legacy in Nigeria
+            with complete transparency.
+          </p>
+        </div>
+      </div>
 
+      {/* Form area */}
+      <div className="w-full md:w-[45%] flex flex-col items-start py-16 md:py-0 md:justify-center relative z-10 px-[8%] h-full space-y-14 md:space-y-5 bg-[#226F75]/5">
         {/* Back Button */}
-        <Link 
-          to="/" 
-          className="inline-flex items-center gap-2 text-sm text-[#226F75] hover:text-[#253E44] transition-colors mb-6 group font-medium"
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm transition-colors group font-medium"
         >
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           Back to home
         </Link>
 
-        <Card className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/80 border-2 border-white/50 shadow-2xl rounded-3xl">
-          <CardHeader className="text-center space-y-4 pb-8 bg-gradient-to-b from-[#226F75]/5 to-transparent rounded-t-3xl">
-            <div className="flex justify-center">
-              <img src={Logo} alt="Build Trust Logo" className="h-16 w-auto" />
-            </div>
-            <div>
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-[#226F75] to-[#253E44] bg-clip-text text-transparent">
-                Welcome to BuildTrust
-              </CardTitle>
-              <CardDescription className="text-base mt-2 text-gray-600">
-                Connect with trusted developers for your real estate projects
-              </CardDescription>
-            </div>
-          </CardHeader>
-          
+        <div className=" md:hidden z-10 flex items-center text-center flex-col gap-2">
+          <div className=" flex items-center gap-2 w-[35%]">
+              <Link to={"/"} className=" flex justify-center w-full">
+                <img src={Logo} alt="Build Trust Logo" className="" />
+              </Link>
+          </div>
+
+          <h2 className="text-2xl font-bold tracking-tight leading-tight">
+             Welcome to Build Trust Africa.
+          </h2>
+          <p className=" text-sm">
+            Build your dream home, back home. Connect with trusted developers for your real estate projects.
+          </p>
+        </div>
+
+        <div className=" w-full">
           <CardContent className="space-y-6">
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-12 bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 p-1 rounded-lg">
-                <TabsTrigger 
-                  value="signin" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#226F75] data-[state=active]:to-[#253E44] data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium"
+            <Tabs
+              value={activeTab}
+              onValueChange={handleTabChange}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2 h-10 bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 p-1 rounded-lg">
+                <TabsTrigger
+                  value="signin"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#226F75] data-[state=active]:to-[#253E44] data-[state=active]:text-white data-[state=active]:shadow-md transition-all text-sm"
                 >
                   <LogIn className="h-4 w-4 mr-2" />
                   Sign In
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="signup"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#226F75] data-[state=active]:to-[#253E44] data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#226F75] data-[state=active]:to-[#253E44] data-[state=active]:text-white data-[state=active]:shadow-md transition-all text-sm"
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   Sign Up
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="signin" className="space-y-5 mt-6">
-                <form onSubmit={signInForm.handleSubmit(onSignInSubmit)} className="space-y-5">
+              <TabsContent value="signin" className="">
+                <form
+                  onSubmit={signInForm.handleSubmit(onSignInSubmit)}
+                  className=" space-y-5"
+                >
                   {signInError && (
-                    <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-950/50">
+                    <Alert
+                      variant="destructive"
+                      className="border-red-200 bg-red-50 dark:bg-red-950/50"
+                    >
                       <AlertCircle className="h-4 w-4" />
-                      <AlertDescription className="font-medium">{signInError}</AlertDescription>
+                      <AlertDescription className="font-medium">
+                        {signInError}
+                      </AlertDescription>
                     </Alert>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <div className="">
+                    <Label
+                      htmlFor="signin-email"
+                      className="text-xs font-semibold"
+                    >
                       Email Address
                     </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <div className="relative border border-[#253E44]/50 rounded-md">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="signin-email"
                         type="email"
                         placeholder="you@example.com"
-                        className="pl-10 h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
-                        {...signInForm.register('email')}
+                        className="pl-10 h-12 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                        {...signInForm.register("email")}
                         disabled={signInLoading}
                       />
                     </div>
@@ -345,26 +417,33 @@ export default function Auth() {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <div className="">
+                    <Label
+                      htmlFor="signin-password"
+                      className="text-xs font-semibold"
+                    >
                       Password
                     </Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                    <div className="relative border border-[#253E44]/50 rounded-md">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                       <Input
                         id="signin-password"
                         type={showSignInPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        className="pl-10 pr-10 h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
-                        {...signInForm.register('password')}
+                        className="pl-10 pr-10 h-12 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                        {...signInForm.register("password")}
                         disabled={signInLoading}
                       />
                       <button
                         type="button"
-                        onClick={() => setShowSignInPassword(!showSignInPassword)}
+                        onClick={() =>
+                          setShowSignInPassword(!showSignInPassword)
+                        }
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
                         disabled={signInLoading}
-                        aria-label={showSignInPassword ? "Hide password" : "Show password"}
+                        aria-label={
+                          showSignInPassword ? "Hide password" : "Show password"
+                        }
                       >
                         {showSignInPassword ? (
                           <EyeOff className="h-5 w-5" />
@@ -383,7 +462,7 @@ export default function Auth() {
 
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+                    className="w-full h-10 bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
                     disabled={signInLoading}
                   >
                     {signInLoading ? (
@@ -399,10 +478,10 @@ export default function Auth() {
                     )}
                   </Button>
 
-                  <div className="text-center pt-4">
+                  <div className="text-center">
                     <Link
                       to="/forgot-password"
-                      className="text-sm text-[#226F75] hover:text-[#253E44] font-medium underline"
+                      className="text-sm text-white hover:text-[#253E44] font-medium underline"
                     >
                       Forgot Password?
                     </Link>
@@ -410,27 +489,38 @@ export default function Auth() {
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup" className="space-y-5 mt-6">
-                <form onSubmit={signUpForm.handleSubmit(onSignUpSubmit)} className="space-y-5">
+              <TabsContent value="signup" className="">
+                <form
+                  onSubmit={signUpForm.handleSubmit(onSignUpSubmit)}
+                  className=" space-y-5"
+                >
                   {signUpError && (
-                    <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-950/50">
+                    <Alert
+                      variant="destructive"
+                      className="border-red-200 bg-red-50 dark:bg-red-950/50"
+                    >
                       <AlertCircle className="h-4 w-4" />
-                      <AlertDescription className="font-medium">{signUpError}</AlertDescription>
+                      <AlertDescription className="font-medium">
+                        {signUpError}
+                      </AlertDescription>
                     </Alert>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <div className="">
+                    <Label
+                      htmlFor="signup-email"
+                      className="text-xs font-semibold "
+                    >
                       Email Address
                     </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <div className="relative border border-[#253E44]/50 rounded-md">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="signup-email"
                         type="email"
                         placeholder="you@example.com"
-                        className="pl-10 h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
-                        {...signUpForm.register('email')}
+                        className="pl-10 h-12 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                        {...signUpForm.register("email")}
                         disabled={signUpLoading}
                       />
                     </div>
@@ -442,26 +532,33 @@ export default function Auth() {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <div className="">
+                    <Label
+                      htmlFor="signup-password"
+                      className="text-xs font-semibold "
+                    >
                       Password
                     </Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                    <div className="relative border border-[#253E44]/50 rounded-md">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                       <Input
                         id="signup-password"
                         type={showSignUpPassword ? "text" : "password"}
                         placeholder="Create a strong password"
-                        className="pl-10 pr-10 h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
-                        {...signUpForm.register('password')}
+                        className="pl-10 pr-10 h-12 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                        {...signUpForm.register("password")}
                         disabled={signUpLoading}
                       />
                       <button
                         type="button"
-                        onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                        onClick={() =>
+                          setShowSignUpPassword(!showSignUpPassword)
+                        }
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
                         disabled={signUpLoading}
-                        aria-label={showSignUpPassword ? "Hide password" : "Show password"}
+                        aria-label={
+                          showSignUpPassword ? "Hide password" : "Show password"
+                        }
                       >
                         {showSignUpPassword ? (
                           <EyeOff className="h-5 w-5" />
@@ -476,31 +573,41 @@ export default function Auth() {
                         {signUpForm.formState.errors.password.message}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground">
-                      Must be at least 6 characters, include 1 capital letter and 1 special character
+                    <p className="text-xs pt-2 text-muted-foreground">
+                      Must be at least 6 characters, include 1 capital letter
+                      and 1 special character
                     </p>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <div className="">
+                    <Label
+                      htmlFor="confirm-password"
+                      className="text-xs font-semibold"
+                    >
                       Confirm Password
                     </Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                    <div className="relative border border-[#253E44]/50 rounded-md">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                       <Input
                         id="confirm-password"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
-                        className="pl-10 pr-10 h-12 border-2 focus:border-[#226F75] focus:ring-[#226F75]/20 transition-all"
-                        {...signUpForm.register('confirmPassword')}
+                        className="pl-10 pr-10 h-12 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                        {...signUpForm.register("confirmPassword")}
                         disabled={signUpLoading}
                       />
                       <button
                         type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
                         disabled={signUpLoading}
-                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                        aria-label={
+                          showConfirmPassword
+                            ? "Hide password"
+                            : "Show password"
+                        }
                       >
                         {showConfirmPassword ? (
                           <EyeOff className="h-5 w-5" />
@@ -517,9 +624,9 @@ export default function Auth() {
                     )}
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50" 
+                  <Button
+                    type="submit"
+                    className="w-full h-10 bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
                     disabled={signUpLoading}
                   >
                     {signUpLoading ? (
@@ -535,14 +642,20 @@ export default function Auth() {
                     )}
                   </Button>
 
-                  <div className="text-center pt-4 border-t">
-                    <p className="text-sm text-muted-foreground">
-                      By signing up, you agree to our{' '}
-                      <Link to="/terms" className="text-[#226F75] hover:text-[#253E44] font-medium underline">
+                  <div className="text-center">
+                    <p className="text-xs">
+                      By signing up, you agree to our{" "}
+                      <Link
+                        to="/terms"
+                        className="text-[#226F75] hover:text-[#253E44] font-medium underline"
+                      >
                         Terms of Service
-                      </Link>
-                      {' '}and{' '}
-                      <Link to="/privacy" className="text-[#226F75] hover:text-[#253E44] font-medium underline">
+                      </Link>{" "}
+                      and{" "}
+                      <Link
+                        to="/privacy"
+                        className="text-[#226F75] hover:text-[#253E44] font-medium underline"
+                      >
                         Privacy Policy
                       </Link>
                     </p>
@@ -551,16 +664,15 @@ export default function Auth() {
               </TabsContent>
             </Tabs>
           </CardContent>
-        </Card>
+        </div>
 
         {/* Additional Info */}
-        <div className="mt-6 text-center">
+        {/* <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             Trusted by diaspora Africas worldwide
           </p>
-        </div>
+        </div> */}
       </div>
-
     </div>
   );
 }
