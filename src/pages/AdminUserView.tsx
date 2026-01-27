@@ -194,7 +194,7 @@ const AdminUserView = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">User Profile</h1>
+                <h1 className="md:text-2xl font-bold text-gray-900">User Profile</h1>
                 <p className="text-sm text-gray-500">View user details and information</p>
               </div>
             </div>
@@ -222,10 +222,10 @@ const AdminUserView = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 justify-center md:justify-start">
                       <CardTitle className="text-2xl">{user.name}</CardTitle>
                       {getStatusIcon(user.status)}
-                      {getStatusBadge(user.status)}
+                      {/* {getStatusBadge(user.status)} */}
                     </div>
                     <p className="text-gray-600 mt-1 text-center md:text-left">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
                     <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
