@@ -231,11 +231,11 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
               </div>
             </div>
           </div>
-          <div className="text-right">
+          {/* <div className="text-right">
             <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${validation.errors.identity ? 'bg-red-500/30 text-red-100' : 'bg-[#253E44]/50 text-white'}`}>
               {validation.errors.identity ? '⚠ Verify' : '✓ Verified'}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 

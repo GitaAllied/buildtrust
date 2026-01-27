@@ -481,7 +481,7 @@ const UploadUpdate = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs sm:text-sm w-full sm:w-auto h-full"
+                    className="text-xs sm:text-sm w-full sm:w-auto"
                   >
                     Save as Draft
                   </Button>
