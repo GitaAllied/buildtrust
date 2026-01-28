@@ -508,19 +508,21 @@ export default function Auth() {
 
                   
 
-                  <div className="">
-                    <Label
-                      htmlFor="signupOption"
-                      className="text-xs font-semibold "
-                    >
-                      I am signing up as a
-                    </Label>
-                      <select name="signupOption" id="signupOption" className=" w-full relative border border-[#253E44]/50 rounded-md pl-4 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all placeholder:text-muted-foreground">
-                        <option value="">Select an option</option>
-                        <option value="client">Client</option>
-                        <option value="developer">Developer</option>
-                      </select>
-                  </div>
+                  {!setupIntent && (
+                    <div className="">
+                      <Label
+                        htmlFor="signupOption"
+                        className="text-xs font-semibold "
+                      >
+                        I am signing up as a
+                      </Label>
+                        <select name="signupOption" id="signupOption" className=" w-full relative border border-[#253E44]/50 rounded-md pl-4 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all placeholder:text-muted-foreground">
+                          <option value="">Select an option</option>
+                          <option value="client">Client</option>
+                          <option value="developer">Developer</option>
+                        </select>
+                    </div>
+                  )}
 
                   <div className="">
                     <Label
