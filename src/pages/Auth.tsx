@@ -377,7 +377,7 @@ export default function Auth() {
               <TabsContent value="signin" className="">
                 <form
                   onSubmit={signInForm.handleSubmit(onSignInSubmit)}
-                  className=" space-y-5"
+                  className=" space-y-3"
                 >
                   {signInError && (
                     <Alert
@@ -404,7 +404,7 @@ export default function Auth() {
                         id="signin-email"
                         type="email"
                         placeholder="you@example.com"
-                        className="pl-10 h-12 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                        className="pl-10 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
                         {...signInForm.register("email")}
                         disabled={signInLoading}
                       />
@@ -430,7 +430,7 @@ export default function Auth() {
                         id="signin-password"
                         type={showSignInPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        className="pl-10 pr-10 h-12 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                        className="pl-10 pr-10 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
                         {...signInForm.register("password")}
                         disabled={signInLoading}
                       />
@@ -492,7 +492,7 @@ export default function Auth() {
               <TabsContent value="signup" className="">
                 <form
                   onSubmit={signUpForm.handleSubmit(onSignUpSubmit)}
-                  className=" space-y-5"
+                  className=" space-y-3"
                 >
                   {signUpError && (
                     <Alert
@@ -505,6 +505,22 @@ export default function Auth() {
                       </AlertDescription>
                     </Alert>
                   )}
+
+                  
+
+                  <div className="">
+                    <Label
+                      htmlFor="signupOption"
+                      className="text-xs font-semibold "
+                    >
+                      I am signing up as a
+                    </Label>
+                      <select name="signupOption" id="signupOption" className=" w-full relative border border-[#253E44]/50 rounded-md pl-4 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all placeholder:text-muted-foreground">
+                        <option value="">Select an option</option>
+                        <option value="client">Client</option>
+                        <option value="developer">Developer</option>
+                      </select>
+                  </div>
 
                   <div className="">
                     <Label
@@ -519,7 +535,7 @@ export default function Auth() {
                         id="signup-email"
                         type="email"
                         placeholder="you@example.com"
-                        className="pl-10 h-12 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                        className="pl-10 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
                         {...signUpForm.register("email")}
                         disabled={signUpLoading}
                       />
@@ -545,7 +561,7 @@ export default function Auth() {
                         id="signup-password"
                         type={showSignUpPassword ? "text" : "password"}
                         placeholder="Create a strong password"
-                        className="pl-10 pr-10 h-12 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                        className="pl-10 pr-10 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
                         {...signUpForm.register("password")}
                         disabled={signUpLoading}
                       />
@@ -574,8 +590,7 @@ export default function Auth() {
                       </p>
                     )}
                     <p className="text-xs pt-2 text-muted-foreground">
-                      Must be at least 6 characters, include 1 capital letter
-                      and 1 special character
+                      Use 6+ characters with at least 1 capital letter and 1 symbol.
                     </p>
                   </div>
 
@@ -592,7 +607,7 @@ export default function Auth() {
                         id="confirm-password"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
-                        className="pl-10 pr-10 h-12 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                        className="pl-10 pr-10 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
                         {...signUpForm.register("confirmPassword")}
                         disabled={signUpLoading}
                       />
