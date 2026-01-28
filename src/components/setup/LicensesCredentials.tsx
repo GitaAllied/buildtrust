@@ -210,20 +210,20 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
     };
 
     return (
-      <div key={type} className="space-y-4">
+      <div key={type} className="flex flex-col h-full gap-4">
         <div>
           <div className="flex items-center mb-2">
-            <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+            <h3 className="text-sm font-medium text-gray-900">{title}</h3>
             <span className="text-red-500 ml-1">*</span>
           </div>
-          <p className="text-gray-600 text-sm mb-3">{description}</p>
-          <div className="text-xs text-gray-500">
+          <p className="text-gray-600 text-xs mt-1">{description}</p>
+          {/* <div className="text-xs text-gray-500 mt-1">
             Examples: {examples.join(", ")}
-          </div>
+          </div> */}
         </div>
 
-        <div 
-          className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/60 transition-colors cursor-pointer"
+        <div
+          className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/60 transition-colors cursor-pointer flex-1"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -297,26 +297,28 @@ const LicensesCredentials = ({ data, onChange }: LicensesCredentialsProps) => {
         </div>
       )}
 
-      {renderUploadSection(
-        "Professional Licenses",
-        "Upload your development licenses, permits, and regulatory certifications",
-        "licenses",
-        ["Building permits", "Development licenses", "Professional registrations"]
-      )}
+      <div className="grid md:grid-cols-3 gap-6">
+        {renderUploadSection(
+          "Professional Licenses",
+          "Upload your development licenses, permits, and regulatory certifications",
+          "licenses",
+          ["Building permits", "Development licenses", "Professional registrations"]
+        )}
 
-      {renderUploadSection(
-        "Certifications & Awards",
-        "Showcase your professional certifications, industry awards, and achievements",
-        "certifications",
-        ["Project management certifications", "Industry awards", "Training certificates"]
-      )}
+        {renderUploadSection(
+          "Certifications & Awards",
+          "Showcase your professional certifications, industry awards, and achievements",
+          "certifications",
+          ["Project management certifications", "Industry awards", "Training certificates"]
+        )}
 
-      {renderUploadSection(
-        "Client Testimonials & Letters",
-        "Share testimonials, recommendation letters, and positive feedback from previous clients",
-        "testimonials",
-        ["Client recommendation letters", "Project completion certificates", "Testimonial documents"]
-      )}
+        {renderUploadSection(
+          "Client Testimonials & Letters",
+          "Share testimonials, recommendation letters, and positive feedback from previous clients",
+          "testimonials",
+          ["Client recommendation letters", "Project completion certificates", "Testimonial documents"]
+        )}
+      </div>
 
       <div className="bg-[#253E44]/5 border border-[#253E44]/20 rounded-lg p-4">
         <div className="flex items-start space-x-3">
