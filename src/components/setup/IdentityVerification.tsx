@@ -164,17 +164,17 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
     };
 
     return (
-      <div key={type} className="space-y-3">
+      <div key={type} className="flex flex-col h-full gap-4">
         <div>
           <div className="flex items-center mb-2">
             <label className="text-sm font-semibold text-gray-900">{label}</label>
             <span className="text-red-500 ml-1">*</span>
           </div>
-          <p className="text-xs text-gray-600">{description}</p>
+          <p className="text-xs text-gray-600 mt-1">{description}</p>
         </div>
 
         <div
-          className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/60 transition-colors cursor-pointer"
+          className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/60 transition-colors cursor-pointer flex-1"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -193,7 +193,7 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
               </div>
             </label>
           ) : (
-            <div className="py-4">
+            <div className="flex-1 flex flex-col justify-center py-4">
               <div className="flex items-center justify-center mb-3">
                 <svg className="w-10 h-10 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -270,7 +270,7 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
           "CAC Certificate",
           "cac",
           "image/*,.pdf,.doc,.docx",
-          "Upload your Corporate Affairs Commission certificate or equivalent business registration"
+          "Upload your CAC certificate or equivalent business registration"
         )}
 
         {renderUploadSection(
