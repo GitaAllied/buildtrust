@@ -211,38 +211,20 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
         const userId = user?.id;
         if (!userId) throw new Error('User ID not available');
 
-        // Prepare form data for submission
-        // Convert File objects to serializable format for media
-        const projectsWithSerializedMedia = (formData.projects || []).map((project: any) => ({
-          ...project,
-          media: (project.media || []).map((file: File | any) => {
-            if (file instanceof File) {
-              return {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                lastModified: file.lastModified,
-                // Store as base64 or just metadata depending on file size
-                // For now, we'll just pass metadata
-              };
-            }
-            // If it's already metadata, return as-is
-            return file;
-          })
-        }));
-
+        // Prepare form data for submission — keep File objects intact so
+        // apiClient.completePortfolioSetup can append them to FormData.
         const submitData = {
           personal: formData.personal,
           identity: formData.identity,
           credentials: formData.credentials,
-          projects: projectsWithSerializedMedia,
+          projects: formData.projects,
           preferences: formData.preferences,
         };
 
         console.log('📤 Submitting form data with preferences:', {
           personalFields: Object.keys(formData.personal || {}),
           preferencesData: formData.preferences,
-          projectCount: projectsWithSerializedMedia.length,
+          projectCount: formData.projects.length,
           identityDocs: Object.keys(formData.identity || {}).length
         });
 
