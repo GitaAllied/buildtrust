@@ -286,7 +286,7 @@ useEffect(() => {
             </a>
             {user ? (
               <div className="flex items-center space-x-3">
-                {user.role === 'client' && (
+                {user.role === 'client' && user.is_active === 1 && (
                   <Button
                     variant="outline"
                     onClick={() => navigate("/client-dashboard")}
@@ -295,7 +295,7 @@ useEffect(() => {
                     Client Dashboard
                   </Button>
                 )}
-                {user.role === 'developer' && (
+                {user.role === 'developer' && user.is_active === 1 && (
                   <Button
                     variant="outline"
                     onClick={() => navigate("/developer-dashboard")}
@@ -387,7 +387,7 @@ useEffect(() => {
               <div className="border-t border-gray-200 pt-4 space-y-3">
                 {user ? (
                   <>
-                    {user.role === 'client' && (
+                    {user.role === 'client' && user.is_active === 1 && (
                       <Button
                         variant="outline"
                         onClick={() => {
@@ -399,7 +399,7 @@ useEffect(() => {
                         Client Dashboard
                       </Button>
                     )}
-                    {user.role === 'developer' && (
+                    {user.role === 'developer' && user.is_active === 1 && (
                       <Button
                         variant="outline"
                         onClick={() => {
@@ -481,26 +481,28 @@ useEffect(() => {
             complete confidence from anywhere in the world.
           </p>
 
-          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-5">
-            <Button
-              size="lg"
-              onClick={handleClientSetup}
-              className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-60 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 animate-pulse-scale w-full lg:w-auto"
-            >
-              <User className="w-4 sm:w-5 h-4 sm:h-5 mr-1 sm:mr-2" />
-              Join as Client
-              <ArrowRight className="w-4 sm:w-5 h-4 sm:h-5 ml-1 sm:ml-2" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={handleDeveloperSetup}
-              className="bg-white/10 backdrop-blur-sm border border-black/10 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl hover:bg-[#226F75] hover:bg-opacity-25 transition-all duration-300 w-full lg:w-auto"
-            >
-              <Heart className="w-5 h-5 mr-2" />
-              Join as Developer
-            </Button>
-          </div>
+          {!(user && user.setup_completed === true) && (
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-5">
+              <Button
+                size="lg"
+                onClick={handleClientSetup}
+                className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-60 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 animate-pulse-scale w-full lg:w-auto"
+              >
+                <User className="w-4 sm:w-5 h-4 sm:h-5 mr-1 sm:mr-2" />
+                Join as Client
+                <ArrowRight className="w-4 sm:w-5 h-4 sm:h-5 ml-1 sm:ml-2" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleDeveloperSetup}
+                className="bg-white/10 backdrop-blur-sm border border-black/10 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl hover:bg-[#226F75] hover:bg-opacity-25 transition-all duration-300 w-full lg:w-auto"
+              >
+                <Heart className="w-5 h-5 mr-2" />
+                Join as Developer
+              </Button>
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 sm:gap-6 md:gap-8 p-3 sm:p-4 border-t border-slate-100 dark:border-neutral-900 mt-6 sm:mt-8">

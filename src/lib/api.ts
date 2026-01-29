@@ -6,6 +6,7 @@ export interface User {
   id: number;
   email: string;
   name: string | null;
+  is_active?: number;
   role: 'client' | 'developer' | 'admin';
   bio?: string | null;
   phone?: string | null;

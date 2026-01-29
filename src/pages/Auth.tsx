@@ -51,6 +51,7 @@ const signUpSchema = z
         "Password must contain at least one special character",
       ),
     confirmPassword: z.string(),
+    role: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -161,10 +162,24 @@ export default function Auth() {
         navigate("/");
       }
     } catch (error) {
+      // Handle structured API errors from apiClient (it attaches `status` and `body` to Error)
+      const errAny = error as any;
+      const serverBody = errAny && errAny.body ? errAny.body : null;
+
+      // If backend indicates email not verified, redirect to verification flow
+      if (errAny && errAny.status === 403 && serverBody && serverBody.error === 'Email not verified') {
+        try {
+          localStorage.setItem('pending_verification_email', data.email);
+        } catch {}
+        navigate('/verify-email');
+        return;
+      }
+
       const errorMessage =
         error instanceof Error
           ? error.message
           : "An unexpected error occurred. Please try again.";
+
       if (
         errorMessage.includes("Invalid") ||
         errorMessage.includes("password")
@@ -191,10 +206,23 @@ export default function Auth() {
       });
 
       const payload: any = { email: data.email, password: data.password };
+
+      // Determine role: prefer explicit form value, fallback to setupIntent mapping
+      const roleFromForm = (data as any).role;
+      if (roleFromForm && roleFromForm !== "") {
+        payload.role = roleFromForm;
+      } else if (setupIntent === "developer-setup") {
+        payload.role = "developer";
+      } else if (setupIntent === "client-setup") {
+        payload.role = "client";
+      }
+
       if (setupIntent) {
         payload.intent = setupIntent;
         console.log("🎯 SETUP INTENT DETECTED:", setupIntent);
       }
+
+      console.log("🔖 ROLE INCLUDED IN PAYLOAD:", payload.role);
 
       console.log("📤 SENDING SIGNUP REQUEST TO API:", {
         payloadKeys: Object.keys(payload),
@@ -516,7 +544,11 @@ export default function Auth() {
                       >
                         I am signing up as a
                       </Label>
-                        <select name="signupOption" id="signupOption" className=" w-full relative border border-[#253E44]/50 rounded-md pl-4 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all placeholder:text-muted-foreground">
+                        <select
+                          id="signup-role"
+                          {...signUpForm.register("role")}
+                          className=" w-full relative border border-[#253E44]/50 rounded-md pl-4 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all placeholder:text-muted-foreground"
+                        >
                           <option value="">Select an option</option>
                           <option value="client">Client</option>
                           <option value="developer">Developer</option>
