@@ -202,18 +202,26 @@ const BrowseDevelopers = () => {
                     {/* Project Thumbnails */}
                     {dev.projects && dev.projects.length > 0 ? (
                       <div className="grid grid-cols-2 gap-2 mb-4">
-                        {dev.projects.slice(0, 2).map((project: any, idx: number) => (
-                          <div key={idx} className="relative">
-                            <img 
-                              src={project.image || project.media?.[0]?.url || "/placeholder.svg"} 
-                              alt={project.title}
-                              className="w-full h-20 object-cover rounded-lg bg-gray-200"
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg flex items-end">
-                              <span className="text-white text-xs p-2 truncate">{project.title || "Project"}</span>
+                        {dev.projects.slice(0, 2).map((project: any, idx: number) => {
+                          // Handle both direct image property and media array
+                          const imageUrl = project.image || project.media?.url || project.media?.[0]?.url || "/placeholder.svg";
+                          return (
+                            <div key={idx} className="relative">
+                              <img 
+                                src={imageUrl}
+                                alt={project.title || "Project"}
+                                className="w-full h-20 object-cover rounded-lg bg-gray-200"
+                                onError={(e) => {
+                                  // Fallback to placeholder if image fails to load
+                                  (e.target as HTMLImageElement).src = "/placeholder.svg";
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg flex items-end">
+                                <span className="text-white text-xs p-2 truncate">{project.title || "Project"}</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : null}
 
@@ -224,7 +232,7 @@ const BrowseDevelopers = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        {dev.location} • {dev.experience} years experience
+                        {dev.location || 'Nigeria'} • {dev.experience || 0} years experience
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <svg className="w-4 h-4 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
