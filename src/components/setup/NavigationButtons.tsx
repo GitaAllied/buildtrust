@@ -114,8 +114,10 @@ const NavigationButtons = ({
 
   // Track profile validation state whenever formData changes
   useEffect(() => {
+    console.log('📋 FORM DATA UPDATED:', { formData, currentStep, totalSteps, userType });
     if (currentStep === totalSteps) {
       const isComplete = validateAllProfileData();
+      console.log('✅ VALIDATION RESULT:', isComplete);
       console.log('🔍 PROFILE VALIDATION CHECK:', {
         currentStep,
         totalSteps,
@@ -126,7 +128,7 @@ const NavigationButtons = ({
       });
       setIsProfileComplete(isComplete);
     }
-  }, [formData, currentStep, totalSteps]);
+  }, [formData, currentStep, totalSteps, userType]);
 
   const handleSubmit = () => {
     if (!isProfileComplete) {
