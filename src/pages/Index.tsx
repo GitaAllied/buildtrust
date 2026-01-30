@@ -54,17 +54,40 @@ useEffect(() => {
   });
 }, []);
 
-  // Check if user came from email verification setup flow
+  // Check if user came from email verification or sign-in setup flow
   useEffect(() => {
     if (user && !loading) {
-      // Check if setup was triggered by email verification
+      // Check if setup was triggered by email verification or sign-in
       const setupRole = localStorage.getItem('setup_after_verification');
+      
+      console.log('🔍 SETUP REDIRECT CHECK:', {
+        setupRole,
+        userRole: user.role,
+        emailVerified: user.email_verified,
+        setupCompleted: user.setup_completed,
+        timestamp: new Date().toISOString()
+      });
+
       if (setupRole) {
         localStorage.removeItem('setup_after_verification');
-        if (setupRole === 'developer' && user.role === 'developer' && user.email_verified && !user.setup_completed) {
+        
+        // Validate role matches and setup is needed
+        const setupNeeded = !user.setup_completed && user.email_verified;
+        
+        if (setupRole === 'developer' && user.role === 'developer' && setupNeeded) {
+          console.log('✅ OPENING DEVELOPER SETUP MODAL');
           setShowSetup(true);
-        } else if (setupRole === 'client' && user.role === 'client' && user.email_verified && !user.setup_completed) {
+        } else if (setupRole === 'client' && user.role === 'client' && setupNeeded) {
+          console.log('✅ OPENING CLIENT SETUP MODAL');
           setShowClientSetup(true);
+        } else {
+          console.warn('⚠️ SETUP ROLE MISMATCH OR CONDITIONS NOT MET:', {
+            setupRole,
+            userRole: user.role,
+            setupNeeded,
+            emailVerified: user.email_verified,
+            setupCompleted: user.setup_completed
+          });
         }
       }
       
