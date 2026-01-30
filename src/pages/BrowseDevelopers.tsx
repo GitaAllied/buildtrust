@@ -95,7 +95,9 @@ const BrowseDevelopers = () => {
     }
     if (selectedCity !== "all" && !dev.location.includes(selectedCity))
       return false;
-    if (dev.transparencyScore < minTransparency) return false;
+    // Use trust_score from DB or transparencyScore fallback
+    const trustScoreValue = dev.trust_score !== null && dev.trust_score !== undefined ? dev.trust_score : dev.transparencyScore || 0;
+    if (trustScoreValue < minTransparency) return false;
     return true;
   });
 
@@ -351,7 +353,7 @@ const BrowseDevelopers = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredDevelopers.map((dev) => (
               <Card
-                key={"sample-card"}
+                key={dev.id}
                 className="hover:shadow-lg transition-all duration-300 cursor-pointer"
                 onClick={() => navigate(`/developer/${dev.id}`)}
               >
@@ -360,14 +362,20 @@ const BrowseDevelopers = () => {
                   <div className=" flex justify-between items-center">
                     {/* Images */}
                     <div className=" flex items-center gap-3">
-                      <div className=" h-[4rem] w-[4rem] rounded-full border-2 border-gray-300 flex items-center justify-center">
-                        <img src="" alt="" />
+                      <div className=" h-[4rem] w-[4rem] rounded-full border-2 border-gray-300 flex items-center justify-center bg-gray-100">
+                        {dev.profile_image ? (
+                          <img src={dev.profile_image} alt={dev.name || 'Developer'} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600 rounded-full text-white font-bold text-lg">
+                            {(dev.name || 'D').charAt(0).toUpperCase()}
+                          </div>
+                        )}
                       </div>
 
                       <div className=" space-y-1">
                         <div className=" flex items-center gap-1">
-                          <h1 className=" font-bold text-xl">John Doe</h1>
-                          {dev.verified && (
+                          <h1 className=" font-bold text-xl">{dev.name || 'Developer'}</h1>
+                          {dev.is_verified && (
                             <svg
                               className="w-5 h-5 text-green-600"
                               fill="currentColor"
@@ -381,15 +389,40 @@ const BrowseDevelopers = () => {
                             </svg>
                           )}
                         </div>
-                        <div className=" flex ml-2">
-                          {[...Array(5)].map((_, idx) => (
-                            <div
-                              className=" h-[1.5rem] w-[1.5rem] rounded-full border-2 border-gray-300 -ml-2 flex items-center justify-center bg-white"
-                              key={idx}
-                            >
-                              <img src="" alt="" />
-                            </div>
-                          ))}
+                        {/* Projects count badges */}
+                        <div className="flex ml-2 items-center">
+                          <div className="flex -ml-2">
+                            {dev.projects && dev.projects.slice(0, 5).map((project: any, idx: number) => {
+                              const mediaUrl = project.media && project.media.length > 0 
+                                ? (project.media[0].url || project.media[0])
+                                : null;
+                              const displayUrl = mediaUrl ? (
+                                mediaUrl.startsWith('http') ? mediaUrl : `${BACKEND_ORIGIN}${mediaUrl}`
+                              ) : null;
+                              return (
+                                <div
+                                  className=" h-[1.5rem] w-[1.5rem] rounded-full border-2 border-gray-300 -ml-2 flex items-center justify-center bg-white overflow-hidden"
+                                  key={idx}
+                                  title={project.title || `Project ${idx + 1}`}
+                                >
+                                  {displayUrl ? (
+                                    <img src={displayUrl} alt={project.title || 'Project'} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400" />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Project count badge: prefer completed_projects (DB) then projects array length */}
+                          <div className="ml-3">
+                            <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                              {(dev.completed_projects !== null && dev.completed_projects !== undefined)
+                                ? dev.completed_projects
+                                : (dev.projects ? dev.projects.length : 0)} projects
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -398,8 +431,7 @@ const BrowseDevelopers = () => {
                     <div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-gray-900">
-                          {/* {Math.round(dev.transparencyScore)}% */}
-                          30%
+                            {dev.trust_score !== null && dev.trust_score !== undefined ? dev.trust_score : dev.transparencyScore || 0}%
                         </div>
                         <p className="text-[10px] text-gray-500">Trust Score</p>
                       </div>
@@ -428,7 +460,7 @@ const BrowseDevelopers = () => {
                           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                         />
                       </svg>
-                      Nigeria • 0 years experience
+                      {dev.location || 'Nigeria'} • {dev.years_experience || 0} years experience
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <svg
@@ -438,15 +470,14 @@ const BrowseDevelopers = () => {
                       >
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
-                      3 rating • 2 projects completed
+                      {Number(dev.rating || 0).toFixed(1)} rating • {dev.completed_projects || 0} projects completed
                     </div>
                   </div>
 
                   {/* Bottom section */}
                   <div className=" space-y-1.5">
                     <p className="text-sm text-gray-600 truncate">
-                      Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                      Quod, ratione.{" "}
+                      {dev.bio || 'No description provided'}
                     </p>
                     <Button className="w-full bg-[#253E44] hover:bg-[#253E44]/90">
                       View Profile
