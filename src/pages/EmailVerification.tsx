@@ -82,15 +82,10 @@ export default function EmailVerification() {
 
       // Give user time to see success message before redirecting
       setTimeout(() => {
-        // Redirect directly to the appropriate setup page based on user role
-        if (user?.role === 'developer') {
-          navigate('/developer-setup', { replace: true });
-        } else if (user?.role === 'client') {
-          navigate('/client-setup', { replace: true });
-        } else {
-          // Fallback to home
-          navigate('/', { replace: true });
-        }
+        // Set flag so Index.tsx knows to auto-open setup after email verification
+        const userRole = user?.role === 'developer' ? 'developer' : 'client';
+        localStorage.setItem('setup_after_verification', userRole);
+        navigate('/', { replace: true });
       }, 2500);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Verification failed';
