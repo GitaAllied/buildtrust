@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface ProfilePreviewProps {
   formData: any;
@@ -38,6 +38,43 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
   }, []);
 
   const { identity, personal, projects, credentials, preferences } = formData;
+
+  // Preview URLs for project media (keyed by project index)
+  const objectUrlsRef = useRef<string[]>([]);
+  const [previews, setPreviews] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    // Revoke previously created object URLs
+    objectUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+    objectUrlsRef.current = [];
+
+    const next: Record<number, string> = {};
+    if (Array.isArray(projects)) {
+      projects.forEach((project: any, idx: number) => {
+        const first = project?.media && project.media.length > 0 ? project.media[0] : null;
+        if (!first) return;
+
+        if (typeof first === 'string') {
+          next[idx] = first;
+        } else if (first instanceof File) {
+          const url = URL.createObjectURL(first);
+          objectUrlsRef.current.push(url);
+          next[idx] = url;
+        } else if (first && typeof first === 'object' && (first.url || first.name)) {
+          // metadata object possibly saved in localStorage
+          if (first.url) next[idx] = first.url;
+          else next[idx] = '';
+        }
+      });
+    }
+
+    setPreviews(next);
+
+    return () => {
+      objectUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+      objectUrlsRef.current = [];
+    };
+  }, [projects]);
 
   // Comprehensive validation function
   const validateAllData = (): ValidationResult => {
@@ -465,10 +502,14 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
             <div className="grid md:grid-cols-2 gap-4">
               {projects.map((project: any, index: number) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="aspect-video bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                  <div className="aspect-video bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                    {previews[index] ? (
+                      <img src={previews[index]} alt={project.title || 'project image'} className="w-full h-full object-cover rounded-lg" />
+                    ) : (
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    )}
                   </div>
                   <h4 className="font-medium text-gray-900">{project.title || 'Untitled'}</h4>
                   <div className="flex items-center justify-between text-sm text-gray-500 mt-2 flex-wrap gap-1">
@@ -627,9 +668,51 @@ const ProfilePreview = ({ formData, onStepChange }: ProfilePreviewProps) => {
         )}
 
         {!validation.isValid && (
-          <p className="text-xs text-red-600 mt-3">
-            ⚠ Click on the red sections above to navigate to pages that need fixes
-          </p>
+          <div className="text-xs text-red-600 mt-3 space-y-2">
+            <p className="font-medium">⚠ Please fix the following to complete your profile:</p>
+            <ul className="list-disc list-inside space-y-1">
+              {validation.errors.personal && (
+                <li>
+                  <button onClick={() => goToStep('personal')} className="underline hover:no-underline">
+                    Step 1 (Personal Info)
+                  </button>
+                  : {validation.errors.personal[0]}
+                </li>
+              )}
+              {validation.errors.identity && (
+                <li>
+                  <button onClick={() => goToStep('identity')} className="underline hover:no-underline">
+                    Step 2 (Identity Verification)
+                  </button>
+                  : {validation.errors.identity[0]}
+                </li>
+              )}
+              {validation.errors.credentials && (
+                <li>
+                  <button onClick={() => goToStep('credentials')} className="underline hover:no-underline">
+                    Step 3 (Licenses & Credentials)
+                  </button>
+                  : {validation.errors.credentials[0]}
+                </li>
+              )}
+              {validation.errors.projects && (
+                <li>
+                  <button onClick={() => goToStep('projects')} className="underline hover:no-underline">
+                    Step 4 (Projects)
+                  </button>
+                  : {validation.errors.projects[0]}
+                </li>
+              )}
+              {validation.errors.preferences && (
+                <li>
+                  <button onClick={() => goToStep('preferences')} className="underline hover:no-underline">
+                    Step 5 (Preferences)
+                  </button>
+                  : {validation.errors.preferences[0]}
+                </li>
+              )}
+            </ul>
+          </div>
         )}
       </div>
     </div>

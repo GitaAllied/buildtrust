@@ -27,8 +27,23 @@ const NavigationButtons = ({
   const validateAllProfileData = (): boolean => {
     const formDataObj = formData as any;
     
-    // Step 1: Personal Info validation
-    const personal = formDataObj.personal || {};
+    // For clients, formData is passed directly as personal info (not nested)
+    if (userType === 'client') {
+      console.log('🔍 VALIDATING CLIENT DATA:', formDataObj);
+      // Client validation - just needs personal info
+      const fullName = (formDataObj?.fullName as string)?.trim() || '';
+      const bio = (formDataObj?.bio as string)?.trim() || '';
+      const phoneNumber = (formDataObj?.phoneNumber as string)?.trim() || '';
+      const currentLocation = (formDataObj?.currentLocation as string)?.trim() || '';
+      const occupation = (formDataObj?.occupation as string)?.trim() || '';
+      
+      const isValid = !!(fullName && bio && phoneNumber && currentLocation && occupation);
+      console.log('✅ CLIENT VALIDATION RESULT:', { fullName, bio, phoneNumber, currentLocation, occupation, isValid });
+      return isValid;
+    }
+
+    // For developers, formData is nested under personal property
+    const personal = formDataObj.personal || formDataObj;
     if (!personal?.fullName?.trim()) {
       return false;
     }
@@ -47,13 +62,9 @@ const NavigationButtons = ({
     } else if (personal.role === 'admin') {
       if (!personal?.adminRole) return false;
       if (!personal?.department) return false;
-    } else if (personal.role === 'client') {
-      if (!personal?.phoneNumber?.trim()) return false;
-      if (!personal?.currentLocation?.trim()) return false;
-      if (!personal?.occupation?.trim()) return false;
     }
 
-    // Step 2: Identity Verification validation
+    // Step 2: Identity Verification validation (developers only)
     const identity = formDataObj.identity || {};
     if ((!identity?.id?.file && !identity?.id?.name)) {
       console.log('Missing ID document');
@@ -68,7 +79,7 @@ const NavigationButtons = ({
       return false;
     }
 
-    // Step 3: Licenses & Credentials validation
+    // Step 3: Licenses & Credentials validation (developers only)
     const credentials = formDataObj.credentials || {};
     const licenses = credentials?.licenses || [];
     const certifications = credentials?.certifications || [];
@@ -77,7 +88,7 @@ const NavigationButtons = ({
     if (certifications.length === 0) return false;
     if (testimonials.length === 0) return false;
 
-    // Step 4: Project Gallery validation
+    // Step 4: Project Gallery validation (developers only)
     const projects = formDataObj.projects || [];
     if (projects.length === 0) {
       console.log('No projects');
@@ -89,7 +100,7 @@ const NavigationButtons = ({
     );
     if (invalidProjects.length > 0) return false;
 
-    // Step 5: Build Preferences validation
+    // Step 5: Build Preferences validation (developers only)
     const preferences = formDataObj.preferences || {};
     if (!preferences?.projectTypes || preferences.projectTypes.length === 0) return false;
     if (!preferences?.preferredCities || preferences.preferredCities.length === 0) return false;
@@ -103,11 +114,21 @@ const NavigationButtons = ({
 
   // Track profile validation state whenever formData changes
   useEffect(() => {
+    console.log('📋 FORM DATA UPDATED:', { formData, currentStep, totalSteps, userType });
     if (currentStep === totalSteps) {
       const isComplete = validateAllProfileData();
+      console.log('✅ VALIDATION RESULT:', isComplete);
+      console.log('🔍 PROFILE VALIDATION CHECK:', {
+        currentStep,
+        totalSteps,
+        isComplete,
+        formData,
+        personal: (formData as any)?.personal,
+        timestamp: new Date().toISOString()
+      });
       setIsProfileComplete(isComplete);
     }
-  }, [formData, currentStep, totalSteps]);
+  }, [formData, currentStep, totalSteps, userType]);
 
   const handleSubmit = () => {
     if (!isProfileComplete) {
