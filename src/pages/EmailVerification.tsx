@@ -183,14 +183,6 @@ export default function EmailVerification() {
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
             Home
           </Link>
-          <span className="text-gray-300">•</span>
-          <Link
-            to="/auth"
-            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#226F75] transition-colors group font-medium"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            Sign in
-          </Link>
         </div>
 
         <Card className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/80 border-2 border-white/50 rounded-3xl shadow-2xl">
