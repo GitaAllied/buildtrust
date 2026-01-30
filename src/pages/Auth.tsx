@@ -298,14 +298,14 @@ export default function Auth() {
 
   return (
     <div className="h-screen flex items-center justify-between relative overflow-hidden">
-      <div className=" relative w-[55%] hidden md:block">
+      <div className=" relative w-[55%] h-screen hidden md:block">
         <img
           src={AuthImage}
           alt="Image to left on authentication page"
-          className="w-full"
+          className="w-full h-full object-cover object-center"
         />
-        <div className="absolute bottom-10 left-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent w-full h-full"></div>
-        <div className=" absolute bottom-16 left-0 z-10 p-12 py-16 flex flex-col gap-2">
+        <div className="absolute left-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent w-full h-full z-10"></div>
+        <div className=" absolute bottom-5 left-0 z-10 p-12 py-16 flex flex-col gap-2">
           <div className=" flex items-center gap-2">
             <div className="flex items-center h-10 w-10 p-2 rounded-full bg-[#EBE1D3]">
               <Link to={"/"} className=" flex justify-center">
@@ -314,7 +314,7 @@ export default function Auth() {
             </div>
           </div>
 
-          <h2 className="text-3xl font-bold text-white tracking-tight leading-tight">
+          <h2 className="text-3xl lg:text-4xl font-bold text-white tracking-tight leading-tight">
              Welcome to Build Trust Africa.
           </h2>
           <p className=" text-gray-300 text-sm">
