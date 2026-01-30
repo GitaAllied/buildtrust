@@ -56,43 +56,11 @@ useEffect(() => {
 
   // Check if user came from setup flow
   useEffect(() => {
+    // Do not auto-open setup flows — only react to explicit button clicks.
+    // If a `setup` URL param exists, just clean it from the URL when we have user state.
     if (user && !loading) {
-      // Admin users don't need setup - they go straight to dashboard
-      if (user.role === 'admin') {
-        return;
-      }
-      
-      // Only force setup redirect if email is verified AND setup is NOT completed
-      if (user.email_verified && !user.setup_completed) {
-        if (user.role === "developer") {
-          setShowSetup(true);
-        } else if (user.role === "client") {
-          setShowClientSetup(true);
-        }
-        return;
-      }
-      
-      // If setup is completed, allow user to stay on homepage
-      if (user.setup_completed) {
-        return;
-      }
-    }
-
-    const setupParam = searchParams.get('setup');
-    if (setupParam === 'developer' && user && !loading) {
-      if (user.email_verified && !user.setup_completed) {
-        setShowSetup(true);
-        // Clean up the URL
-        navigate('/', { replace: true });
-      } else {
-        // Already completed or not verified — just clean the URL
-        navigate('/', { replace: true });
-      }
-    } else if (setupParam === 'client' && user && !loading) {
-      if (user.email_verified && !user.setup_completed) {
-        setShowClientSetup(true);
-        navigate('/', { replace: true });
-      } else {
+      const setupParam = searchParams.get('setup');
+      if (setupParam) {
         navigate('/', { replace: true });
       }
     }
@@ -149,12 +117,20 @@ useEffect(() => {
     }
     
     if (user) {
-      // Check if email is verified
+      // If the current user is a client, sending them to client setup
+      if (user.role === 'client') {
+        if (user.email_verified) {
+          setShowClientSetup(true);
+        } else {
+          navigate("/verify-email");
+        }
+        return;
+      }
+
+      // Otherwise (developer or other non-admin), go to developer setup when verified
       if (user.email_verified) {
-        // User is authenticated and verified, show setup
         setShowSetup(true);
       } else {
-        // User is authenticated but not verified, redirect to verification
         navigate("/verify-email");
       }
     } else {
@@ -172,12 +148,20 @@ useEffect(() => {
     }
     
     if (user) {
-      // Check if email is verified
+      // If the current user is a developer, send them to developer setup when verified
+      if (user.role === 'developer') {
+        if (user.email_verified) {
+          setShowSetup(true);
+        } else {
+          navigate("/verify-email");
+        }
+        return;
+      }
+
+      // Otherwise (client or other non-admin), go to client setup when verified
       if (user.email_verified) {
-        // User is authenticated and verified, show client setup
         setShowClientSetup(true);
       } else {
-        // User is authenticated but not verified, redirect to verification
         navigate("/verify-email");
       }
     } else {
