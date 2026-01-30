@@ -143,22 +143,31 @@ export default function Auth() {
 
       // Developer setup flow
       if (setupIntent === "developer-setup") {
-        if (userFromResponse && userFromResponse.setup_completed === true) {
+        if (userFromResponse?.setup_completed) {
           navigate("/");
         } else {
-          navigate("/?setup=developer");
+          localStorage.setItem('setup_after_verification', 'developer');
+          navigate("/");
         }
       }
       // Client setup flow
       else if (setupIntent === "client-setup") {
-        if (userFromResponse && userFromResponse.setup_completed === true) {
+        if (userFromResponse?.setup_completed) {
           navigate("/");
         } else {
-          navigate("/?setup=client");
+          localStorage.setItem('setup_after_verification', 'client');
+          navigate("/");
         }
       }
-      // Default redirect
+      // Default redirect - check if setup is needed
       else {
+        // If user hasn't completed setup, set flag to auto-open setup modal
+        // Check if setup_completed is 0, false, null, or undefined (not completed)
+        const setupNotCompleted = !userFromResponse?.setup_completed;
+        if (setupNotCompleted) {
+          const setupRole = userFromResponse?.role === 'developer' ? 'developer' : 'client';
+          localStorage.setItem('setup_after_verification', setupRole);
+        }
         navigate("/");
       }
     } catch (error) {

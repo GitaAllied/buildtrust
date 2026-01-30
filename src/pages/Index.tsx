@@ -54,17 +54,27 @@ useEffect(() => {
   });
 }, []);
 
-  // Check if user came from setup flow
+  // Check if user came from email verification setup flow
   useEffect(() => {
-    // Do not auto-open setup flows — only react to explicit button clicks.
-    // If a `setup` URL param exists, just clean it from the URL when we have user state.
     if (user && !loading) {
-      const setupParam = searchParams.get('setup');
+      // Check if setup was triggered by email verification
+      const setupRole = localStorage.getItem('setup_after_verification');
+      if (setupRole) {
+        localStorage.removeItem('setup_after_verification');
+        if (setupRole === 'developer' && user.role === 'developer' && user.email_verified && !user.setup_completed) {
+          setShowSetup(true);
+        } else if (setupRole === 'client' && user.role === 'client' && user.email_verified && !user.setup_completed) {
+          setShowClientSetup(true);
+        }
+      }
+      
+      // Clean up any stray URL params
+      const setupParam = new URLSearchParams(window.location.search).get('setup');
       if (setupParam) {
         navigate('/', { replace: true });
       }
     }
-  }, [searchParams, user, loading, navigate]);
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     const line1 = "Build Your Dream";
