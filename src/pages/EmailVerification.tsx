@@ -82,9 +82,15 @@ export default function EmailVerification() {
 
       // Give user time to see success message before redirecting
       setTimeout(() => {
-        // Check the updated user role from auth context
-        const userRole = user?.role === 'developer' ? 'developer' : 'client';
-        navigate(`/?setup=${userRole}`);
+        // Redirect directly to the appropriate setup page based on user role
+        if (user?.role === 'developer') {
+          navigate('/developer-setup', { replace: true });
+        } else if (user?.role === 'client') {
+          navigate('/client-setup', { replace: true });
+        } else {
+          // Fallback to home
+          navigate('/', { replace: true });
+        }
       }, 2500);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Verification failed';
