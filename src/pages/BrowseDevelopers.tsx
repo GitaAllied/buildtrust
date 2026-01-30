@@ -352,7 +352,7 @@ const BrowseDevelopers = () => {
             {filteredDevelopers.map((dev) => (
               <Card
                 key={"sample-card"}
-                className="hover:shadow-lg transition-all duration-300 cursor-pointer w-[33%]"
+                className="hover:shadow-lg transition-all duration-300 cursor-pointer"
                 onClick={() => navigate(`/developer/${dev.id}`)}
               >
                 <CardContent className="p-5 space-y-5">
