@@ -346,6 +346,16 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
     return {
       ...loadedData,
       role: roleValue,
+       bio: loadedData.bio || '',  // CRITICAL: Always ensure bio is a string, not undefined
+       fullName: loadedData.fullName || '',
+       phoneNumber: loadedData.phoneNumber || '',
+       currentLocation: loadedData.currentLocation || '',
+       occupation: loadedData.occupation || '',
+       preferredContact: loadedData.preferredContact || '',
+       companyType: loadedData.companyType || '',
+       yearsExperience: loadedData.yearsExperience || '',
+       citiesCovered: (loadedData.citiesCovered as string[]) || [],
+       languages: (loadedData.languages as string[]) || [],
       ...(userType === 'developer' && !loadedData.companyType ? {
         companyType: '',
         yearsExperience: '',
