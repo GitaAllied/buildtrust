@@ -303,7 +303,7 @@ useEffect(() => {
             </a>
             {user ? (
               <div className="flex items-center space-x-3">
-                {user.role === 'client' && user.is_active === 1 && (
+                {user.role === 'client' && user.is_active === 1 && user.setup_completed && (
                   <Button
                     variant="outline"
                     onClick={() => navigate("/client-dashboard")}
@@ -312,7 +312,7 @@ useEffect(() => {
                     Client Dashboard
                   </Button>
                 )}
-                {user.role === 'developer' && user.is_active === 1 && (
+                {user.role === 'developer' && user.is_active === 1 && user.setup_completed && (
                   <Button
                     variant="outline"
                     onClick={() => navigate("/developer-dashboard")}
@@ -404,7 +404,7 @@ useEffect(() => {
               <div className="border-t border-gray-200 pt-4 space-y-3">
                 {user ? (
                   <>
-                    {user.role === 'client' && user.is_active === 1 && (
+                    {user.role === 'client' && user.is_active === 1 && user.setup_completed && (
                       <Button
                         variant="outline"
                         onClick={() => {
@@ -416,7 +416,7 @@ useEffect(() => {
                         Client Dashboard
                       </Button>
                     )}
-                    {user.role === 'developer' && user.is_active === 1 && (
+                    {user.role === 'developer' && user.is_active === 1 && user.setup_completed && (
                       <Button
                         variant="outline"
                         onClick={() => {
