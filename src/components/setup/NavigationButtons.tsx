@@ -39,6 +39,15 @@ const NavigationButtons = ({
       return false;
     }
     
+    // For clients, only personal info is required
+    if (userType === 'client' || personal.role === 'client') {
+      if (!personal?.phoneNumber?.trim()) return false;
+      if (!personal?.currentLocation?.trim()) return false;
+      if (!personal?.occupation?.trim()) return false;
+      // Clients can submit after personal info is complete
+      return true;
+    }
+    
     if (personal.role === 'developer') {
       if (!personal?.companyType) return false;
       if (!personal?.yearsExperience) return false;
@@ -47,13 +56,9 @@ const NavigationButtons = ({
     } else if (personal.role === 'admin') {
       if (!personal?.adminRole) return false;
       if (!personal?.department) return false;
-    } else if (personal.role === 'client') {
-      if (!personal?.phoneNumber?.trim()) return false;
-      if (!personal?.currentLocation?.trim()) return false;
-      if (!personal?.occupation?.trim()) return false;
     }
 
-    // Step 2: Identity Verification validation
+    // Step 2: Identity Verification validation (developers only)
     const identity = formDataObj.identity || {};
     if ((!identity?.id?.file && !identity?.id?.name)) {
       console.log('Missing ID document');
@@ -68,7 +73,7 @@ const NavigationButtons = ({
       return false;
     }
 
-    // Step 3: Licenses & Credentials validation
+    // Step 3: Licenses & Credentials validation (developers only)
     const credentials = formDataObj.credentials || {};
     const licenses = credentials?.licenses || [];
     const certifications = credentials?.certifications || [];
@@ -77,7 +82,7 @@ const NavigationButtons = ({
     if (certifications.length === 0) return false;
     if (testimonials.length === 0) return false;
 
-    // Step 4: Project Gallery validation
+    // Step 4: Project Gallery validation (developers only)
     const projects = formDataObj.projects || [];
     if (projects.length === 0) {
       console.log('No projects');
@@ -89,7 +94,7 @@ const NavigationButtons = ({
     );
     if (invalidProjects.length > 0) return false;
 
-    // Step 5: Build Preferences validation
+    // Step 5: Build Preferences validation (developers only)
     const preferences = formDataObj.preferences || {};
     if (!preferences?.projectTypes || preferences.projectTypes.length === 0) return false;
     if (!preferences?.preferredCities || preferences.preferredCities.length === 0) return false;

@@ -135,8 +135,17 @@ export default function Auth() {
       // Redirect based on user role and setup intent
       const userFromResponse = response.user;
 
+      console.log('📊 SIGN-IN REDIRECT LOGIC:', {
+        userRole: userFromResponse?.role,
+        setupCompleted: userFromResponse?.setup_completed,
+        emailVerified: userFromResponse?.email_verified,
+        setupIntent,
+        timestamp: new Date().toISOString()
+      });
+
       // Admin users go to admin dashboard
       if (userFromResponse && userFromResponse.role === "admin") {
+        console.log('👨‍💼 REDIRECTING ADMIN TO DASHBOARD');
         navigate("/super-admin-dashboard");
         return;
       }
@@ -144,8 +153,10 @@ export default function Auth() {
       // Developer setup flow
       if (setupIntent === "developer-setup") {
         if (userFromResponse?.setup_completed) {
+          console.log('✅ DEVELOPER SETUP ALREADY COMPLETED, REDIRECTING TO HOME');
           navigate("/");
         } else {
+          console.log('🔧 DEVELOPER SETUP NOT COMPLETED, SETTING FLAG FOR SETUP');
           localStorage.setItem('setup_after_verification', 'developer');
           navigate("/");
         }
@@ -153,8 +164,10 @@ export default function Auth() {
       // Client setup flow
       else if (setupIntent === "client-setup") {
         if (userFromResponse?.setup_completed) {
+          console.log('✅ CLIENT SETUP ALREADY COMPLETED, REDIRECTING TO HOME');
           navigate("/");
         } else {
+          console.log('🔧 CLIENT SETUP NOT COMPLETED, SETTING FLAG FOR SETUP');
           localStorage.setItem('setup_after_verification', 'client');
           navigate("/");
         }
@@ -164,8 +177,10 @@ export default function Auth() {
         // If user hasn't completed setup, set flag to auto-open setup modal
         // Check if setup_completed is 0, false, null, or undefined (not completed)
         const setupNotCompleted = !userFromResponse?.setup_completed;
+        console.log('🔍 DEFAULT SIGN-IN REDIRECT:', { setupNotCompleted, role: userFromResponse?.role });
         if (setupNotCompleted) {
           const setupRole = userFromResponse?.role === 'developer' ? 'developer' : 'client';
+          console.log('⚙️ SETUP NEEDED, SETTING FLAG FOR ROLE:', setupRole);
           localStorage.setItem('setup_after_verification', setupRole);
         }
         navigate("/");
