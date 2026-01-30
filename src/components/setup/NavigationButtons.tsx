@@ -27,8 +27,23 @@ const NavigationButtons = ({
   const validateAllProfileData = (): boolean => {
     const formDataObj = formData as any;
     
-    // Step 1: Personal Info validation
-    const personal = formDataObj.personal || {};
+    // For clients, formData is passed directly as personal info (not nested)
+    if (userType === 'client') {
+      console.log('🔍 VALIDATING CLIENT DATA:', formDataObj);
+      // Client validation - just needs personal info
+      const fullName = (formDataObj?.fullName as string)?.trim() || '';
+      const bio = (formDataObj?.bio as string)?.trim() || '';
+      const phoneNumber = (formDataObj?.phoneNumber as string)?.trim() || '';
+      const currentLocation = (formDataObj?.currentLocation as string)?.trim() || '';
+      const occupation = (formDataObj?.occupation as string)?.trim() || '';
+      
+      const isValid = !!(fullName && bio && phoneNumber && currentLocation && occupation);
+      console.log('✅ CLIENT VALIDATION RESULT:', { fullName, bio, phoneNumber, currentLocation, occupation, isValid });
+      return isValid;
+    }
+
+    // For developers, formData is nested under personal property
+    const personal = formDataObj.personal || formDataObj;
     if (!personal?.fullName?.trim()) {
       return false;
     }
@@ -37,15 +52,6 @@ const NavigationButtons = ({
     }
     if (!personal?.role) {
       return false;
-    }
-    
-    // For clients, only personal info is required
-    if (userType === 'client' || personal.role === 'client') {
-      if (!personal?.phoneNumber?.trim()) return false;
-      if (!personal?.currentLocation?.trim()) return false;
-      if (!personal?.occupation?.trim()) return false;
-      // Clients can submit after personal info is complete
-      return true;
     }
     
     if (personal.role === 'developer') {
@@ -110,6 +116,14 @@ const NavigationButtons = ({
   useEffect(() => {
     if (currentStep === totalSteps) {
       const isComplete = validateAllProfileData();
+      console.log('🔍 PROFILE VALIDATION CHECK:', {
+        currentStep,
+        totalSteps,
+        isComplete,
+        formData,
+        personal: (formData as any)?.personal,
+        timestamp: new Date().toISOString()
+      });
       setIsProfileComplete(isComplete);
     }
   }, [formData, currentStep, totalSteps]);
