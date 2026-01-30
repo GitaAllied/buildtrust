@@ -54,49 +54,50 @@ useEffect(() => {
   });
 }, []);
 
-  // Check if user came from setup flow
+  // Check if user came from email verification or sign-in setup flow
   useEffect(() => {
     if (user && !loading) {
-      // Admin users don't need setup - they go straight to dashboard
-      if (user.role === 'admin') {
-        return;
-      }
+      // Check if setup was triggered by email verification or sign-in
+      const setupRole = localStorage.getItem('setup_after_verification');
       
-      // Only force setup redirect if email is verified AND setup is NOT completed
-      if (user.email_verified && !user.setup_completed) {
-        if (user.role === "developer") {
-          setShowSetup(true);
-        } else if (user.role === "client") {
-          setShowClientSetup(true);
-        }
-        return;
-      }
-      
-      // If setup is completed, allow user to stay on homepage
-      if (user.setup_completed) {
-        return;
-      }
-    }
+      console.log('🔍 SETUP REDIRECT CHECK:', {
+        setupRole,
+        userRole: user.role,
+        emailVerified: user.email_verified,
+        setupCompleted: user.setup_completed,
+        timestamp: new Date().toISOString()
+      });
 
-    const setupParam = searchParams.get('setup');
-    if (setupParam === 'developer' && user && !loading) {
-      if (user.email_verified && !user.setup_completed) {
-        setShowSetup(true);
-        // Clean up the URL
-        navigate('/', { replace: true });
-      } else {
-        // Already completed or not verified — just clean the URL
-        navigate('/', { replace: true });
+      if (setupRole) {
+        localStorage.removeItem('setup_after_verification');
+        
+        // Validate role matches and setup is needed
+        const setupNeeded = !user.setup_completed && user.email_verified;
+        
+        if (setupRole === 'developer' && user.role === 'developer' && setupNeeded) {
+          console.log('✅ OPENING DEVELOPER SETUP MODAL');
+          setShowSetup(true);
+        } else if (setupRole === 'client' && user.role === 'client' && setupNeeded) {
+          console.log('✅ OPENING CLIENT SETUP MODAL');
+          setShowClientSetup(true);
+        } else {
+          console.warn('⚠️ SETUP ROLE MISMATCH OR CONDITIONS NOT MET:', {
+            setupRole,
+            userRole: user.role,
+            setupNeeded,
+            emailVerified: user.email_verified,
+            setupCompleted: user.setup_completed
+          });
+        }
       }
-    } else if (setupParam === 'client' && user && !loading) {
-      if (user.email_verified && !user.setup_completed) {
-        setShowClientSetup(true);
-        navigate('/', { replace: true });
-      } else {
+      
+      // Clean up any stray URL params
+      const setupParam = new URLSearchParams(window.location.search).get('setup');
+      if (setupParam) {
         navigate('/', { replace: true });
       }
     }
-  }, [searchParams, user, loading, navigate]);
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     const line1 = "Build Your Dream";
@@ -149,12 +150,20 @@ useEffect(() => {
     }
     
     if (user) {
-      // Check if email is verified
+      // If the current user is a client, sending them to client setup
+      if (user.role === 'client') {
+        if (user.email_verified) {
+          setShowClientSetup(true);
+        } else {
+          navigate("/verify-email");
+        }
+        return;
+      }
+
+      // Otherwise (developer or other non-admin), go to developer setup when verified
       if (user.email_verified) {
-        // User is authenticated and verified, show setup
         setShowSetup(true);
       } else {
-        // User is authenticated but not verified, redirect to verification
         navigate("/verify-email");
       }
     } else {
@@ -172,12 +181,20 @@ useEffect(() => {
     }
     
     if (user) {
-      // Check if email is verified
+      // If the current user is a developer, send them to developer setup when verified
+      if (user.role === 'developer') {
+        if (user.email_verified) {
+          setShowSetup(true);
+        } else {
+          navigate("/verify-email");
+        }
+        return;
+      }
+
+      // Otherwise (client or other non-admin), go to client setup when verified
       if (user.email_verified) {
-        // User is authenticated and verified, show client setup
         setShowClientSetup(true);
       } else {
-        // User is authenticated but not verified, redirect to verification
         navigate("/verify-email");
       }
     } else {
@@ -286,7 +303,7 @@ useEffect(() => {
             </a>
             {user ? (
               <div className="flex items-center space-x-3">
-                {user.role === 'client' && (
+                {user.role === 'client' && user.is_active === 1 && (
                   <Button
                     variant="outline"
                     onClick={() => navigate("/client-dashboard")}
@@ -295,7 +312,7 @@ useEffect(() => {
                     Client Dashboard
                   </Button>
                 )}
-                {user.role === 'developer' && (
+                {user.role === 'developer' && user.is_active === 1 && (
                   <Button
                     variant="outline"
                     onClick={() => navigate("/developer-dashboard")}
@@ -387,7 +404,7 @@ useEffect(() => {
               <div className="border-t border-gray-200 pt-4 space-y-3">
                 {user ? (
                   <>
-                    {user.role === 'client' && (
+                    {user.role === 'client' && user.is_active === 1 && (
                       <Button
                         variant="outline"
                         onClick={() => {
@@ -399,7 +416,7 @@ useEffect(() => {
                         Client Dashboard
                       </Button>
                     )}
-                    {user.role === 'developer' && (
+                    {user.role === 'developer' && user.is_active === 1 && (
                       <Button
                         variant="outline"
                         onClick={() => {
@@ -481,26 +498,28 @@ useEffect(() => {
             complete confidence from anywhere in the world.
           </p>
 
-          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-5">
-            <Button
-              size="lg"
-              onClick={handleClientSetup}
-              className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-60 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 animate-pulse-scale w-full lg:w-auto"
-            >
-              <User className="w-4 sm:w-5 h-4 sm:h-5 mr-1 sm:mr-2" />
-              Join as Client
-              <ArrowRight className="w-4 sm:w-5 h-4 sm:h-5 ml-1 sm:ml-2" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={handleDeveloperSetup}
-              className="bg-white/10 backdrop-blur-sm border border-black/10 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl hover:bg-[#226F75] hover:bg-opacity-25 transition-all duration-300 w-full lg:w-auto"
-            >
-              <Heart className="w-5 h-5 mr-2" />
-              Join as Developer
-            </Button>
-          </div>
+          {!(user && user.setup_completed === true) && (
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-5">
+              <Button
+                size="lg"
+                onClick={handleClientSetup}
+                className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:bg-opacity-60 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 animate-pulse-scale w-full lg:w-auto"
+              >
+                <User className="w-4 sm:w-5 h-4 sm:h-5 mr-1 sm:mr-2" />
+                Join as Client
+                <ArrowRight className="w-4 sm:w-5 h-4 sm:h-5 ml-1 sm:ml-2" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleDeveloperSetup}
+                className="bg-white/10 backdrop-blur-sm border border-black/10 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl hover:bg-[#226F75] hover:bg-opacity-25 transition-all duration-300 w-full lg:w-auto"
+              >
+                <Heart className="w-5 h-5 mr-2" />
+                Join as Developer
+              </Button>
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 sm:gap-6 md:gap-8 p-3 sm:p-4 border-t border-slate-100 dark:border-neutral-900 mt-6 sm:mt-8">

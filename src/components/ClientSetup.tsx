@@ -116,10 +116,15 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
   };
 
   const updateFormData = (section: string, data: Record<string, unknown>) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: data
-    }));
+    console.log('📝 [ClientSetup] updateFormData called:', { section, data });
+    setFormData(prev => {
+      const newState = {
+        ...prev,
+        [section]: data
+      };
+      console.log('📊 [ClientSetup] New formData state:', newState);
+      return newState;
+    });
   };
 
   const browse = () => {

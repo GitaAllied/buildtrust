@@ -51,6 +51,7 @@ const signUpSchema = z
         "Password must contain at least one special character",
       ),
     confirmPassword: z.string(),
+    role: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -134,37 +135,75 @@ export default function Auth() {
       // Redirect based on user role and setup intent
       const userFromResponse = response.user;
 
+      console.log('📊 SIGN-IN REDIRECT LOGIC:', {
+        userRole: userFromResponse?.role,
+        setupCompleted: userFromResponse?.setup_completed,
+        emailVerified: userFromResponse?.email_verified,
+        setupIntent,
+        timestamp: new Date().toISOString()
+      });
+
       // Admin users go to admin dashboard
       if (userFromResponse && userFromResponse.role === "admin") {
+        console.log('👨‍💼 REDIRECTING ADMIN TO DASHBOARD');
         navigate("/super-admin-dashboard");
         return;
       }
 
       // Developer setup flow
       if (setupIntent === "developer-setup") {
-        if (userFromResponse && userFromResponse.setup_completed === true) {
+        if (userFromResponse?.setup_completed) {
+          console.log('✅ DEVELOPER SETUP ALREADY COMPLETED, REDIRECTING TO HOME');
           navigate("/");
         } else {
-          navigate("/?setup=developer");
+          console.log('🔧 DEVELOPER SETUP NOT COMPLETED, SETTING FLAG FOR SETUP');
+          localStorage.setItem('setup_after_verification', 'developer');
+          navigate("/");
         }
       }
       // Client setup flow
       else if (setupIntent === "client-setup") {
-        if (userFromResponse && userFromResponse.setup_completed === true) {
+        if (userFromResponse?.setup_completed) {
+          console.log('✅ CLIENT SETUP ALREADY COMPLETED, REDIRECTING TO HOME');
           navigate("/");
         } else {
-          navigate("/?setup=client");
+          console.log('🔧 CLIENT SETUP NOT COMPLETED, SETTING FLAG FOR SETUP');
+          localStorage.setItem('setup_after_verification', 'client');
+          navigate("/");
         }
       }
-      // Default redirect
+      // Default redirect - check if setup is needed
       else {
+        // If user hasn't completed setup, set flag to auto-open setup modal
+        // Check if setup_completed is 0, false, null, or undefined (not completed)
+        const setupNotCompleted = !userFromResponse?.setup_completed;
+        console.log('🔍 DEFAULT SIGN-IN REDIRECT:', { setupNotCompleted, role: userFromResponse?.role });
+        if (setupNotCompleted) {
+          const setupRole = userFromResponse?.role === 'developer' ? 'developer' : 'client';
+          console.log('⚙️ SETUP NEEDED, SETTING FLAG FOR ROLE:', setupRole);
+          localStorage.setItem('setup_after_verification', setupRole);
+        }
         navigate("/");
       }
     } catch (error) {
+      // Handle structured API errors from apiClient (it attaches `status` and `body` to Error)
+      const errAny = error as any;
+      const serverBody = errAny && errAny.body ? errAny.body : null;
+
+      // If backend indicates email not verified, redirect to verification flow
+      if (errAny && errAny.status === 403 && serverBody && serverBody.error === 'Email not verified') {
+        try {
+          localStorage.setItem('pending_verification_email', data.email);
+        } catch {}
+        navigate('/verify-email');
+        return;
+      }
+
       const errorMessage =
         error instanceof Error
           ? error.message
           : "An unexpected error occurred. Please try again.";
+
       if (
         errorMessage.includes("Invalid") ||
         errorMessage.includes("password")
@@ -191,10 +230,23 @@ export default function Auth() {
       });
 
       const payload: any = { email: data.email, password: data.password };
+
+      // Determine role: prefer explicit form value, fallback to setupIntent mapping
+      const roleFromForm = (data as any).role;
+      if (roleFromForm && roleFromForm !== "") {
+        payload.role = roleFromForm;
+      } else if (setupIntent === "developer-setup") {
+        payload.role = "developer";
+      } else if (setupIntent === "client-setup") {
+        payload.role = "client";
+      }
+
       if (setupIntent) {
         payload.intent = setupIntent;
         console.log("🎯 SETUP INTENT DETECTED:", setupIntent);
       }
+
+      console.log("🔖 ROLE INCLUDED IN PAYLOAD:", payload.role);
 
       console.log("📤 SENDING SIGNUP REQUEST TO API:", {
         payloadKeys: Object.keys(payload),
@@ -516,7 +568,11 @@ export default function Auth() {
                       >
                         I am signing up as a
                       </Label>
-                        <select name="signupOption" id="signupOption" className=" w-full relative border border-[#253E44]/50 rounded-md pl-4 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all placeholder:text-muted-foreground">
+                        <select
+                          id="signup-role"
+                          {...signUpForm.register("role")}
+                          className=" w-full relative border border-[#253E44]/50 rounded-md pl-4 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all placeholder:text-muted-foreground"
+                        >
                           <option value="">Select an option</option>
                           <option value="client">Client</option>
                           <option value="developer">Developer</option>

@@ -68,16 +68,27 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
     }
   }, [files, onChange]);
 
-  const handleFileUpload = (type: string, fileList: FileList | null) => {
-    console.log(`File upload handler called for ${type}`, fileList);
+  const handleFileUpload = (type: string, fileOrList: File | FileList | null) => {
+    console.log(`File upload handler called for ${type}`, fileOrList);
     setError(null);
 
-    if (!fileList || fileList.length === 0) {
-      console.log('No files selected');
+    if (!fileOrList) {
+      console.log('No files provided');
       return;
     }
 
-    const file = fileList[0];
+    let file: File | null = null;
+    if (fileOrList instanceof FileList) {
+      if (fileOrList.length === 0) {
+        console.log('No files selected');
+        return;
+      }
+      file = fileOrList[0];
+    } else if (fileOrList instanceof File) {
+      file = fileOrList;
+    }
+
+    if (!file) return;
     console.log(`Processing file: ${file.name}, type: ${file.type}, size: ${file.size}`);
 
     // Validation
@@ -120,6 +131,107 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
     console.log(`Updated ${type} file:`, fileData);
     setFiles(updatedFiles);
     onChange(updatedFiles);
+  };
+
+  // Camera state and helpers for live selfie capture
+  const [cameraActive, setCameraActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const startCamera = async () => {
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      try {
+        // Some browsers require an explicit play() call even with autoPlay/muted
+        if (videoRef.current && typeof videoRef.current.play === 'function') {
+          // ignore returned promise rejection (autoplay policies) but attempt
+          // to play so the user sees their preview.
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          videoRef.current.play().catch((e) => console.warn('video play failed', e));
+        }
+      } catch (e) {
+        console.warn('Failed to start video playback', e);
+      }
+      setCameraActive(true);
+    } catch (err: any) {
+      console.error('Camera start failed', err);
+      if (err && err.name === 'NotAllowedError') {
+        setError('Camera access was denied. Please allow camera permission to take a selfie.');
+      } else {
+        setError('Unable to access camera.');
+      }
+    }
+  };
+
+  const stopCamera = () => {
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+    } catch (e) {
+      console.warn('Error stopping camera', e);
+    }
+    try {
+      if (videoRef.current) {
+        try { videoRef.current.pause(); } catch (e) { /* ignore */ }
+        try { (videoRef.current as any).srcObject = null; } catch (e) { /* ignore */ }
+        try { videoRef.current.removeAttribute('src'); videoRef.current.load(); } catch (e) { /* ignore */ }
+      }
+    } catch (e) {
+      console.warn('Error clearing video element', e);
+    }
+    setCameraActive(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Ensure the video element receives the stream and starts playback when cameraActive is true
+  useEffect(() => {
+    if (!cameraActive) return;
+    const v = videoRef.current;
+    if (!v) return;
+    try {
+      if (v.srcObject !== streamRef.current) v.srcObject = streamRef.current;
+      const playPromise = v.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.catch((e) => console.warn('video play failed in effect', e));
+      }
+    } catch (e) {
+      console.warn('Error attaching stream to video', e);
+    }
+  }, [cameraActive]);
+
+  const capturePhoto = async (type: string) => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return new Promise<void>((resolve) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          setError('Failed to capture image');
+          resolve();
+          return;
+        }
+        const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        handleFileUpload(type, file);
+        stopCamera();
+        resolve();
+      }, 'image/jpeg', 0.9);
+    });
   };
 
   const removeFile = (type: string) => {
@@ -180,18 +292,61 @@ const IdentityVerification = ({ data, onChange }: IdentityVerificationProps) => 
           onDrop={handleDrop}
         >
           {!fileData ? (
-            <label htmlFor={inputId} className="cursor-pointer block w-full">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
+            // If selfie and camera active, show live preview + capture controls
+            type === 'selfie' && cameraActive ? (
+              <div className="flex-1 flex flex-col justify-center py-4">
+                <video ref={videoRef} autoPlay playsInline muted className="mx-auto w-full max-w-xs rounded object-cover h-48" />
+                <div className="flex gap-2 justify-center mt-3">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      capturePhoto(type);
+                    }}
+                    type="button"
+                    className="text-sm px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Capture
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      stopCamera();
+                    }}
+                    type="button"
+                    className="text-sm px-3 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div className="text-sm font-medium text-gray-900 mb-1">Upload Document</div>
-              <div className="text-xs text-gray-500">Click to upload or drag and drop</div>
-              <div className="text-xs text-gray-400 mt-1">
-                {type === 'selfie' ? 'Image files up to 10MB' : 'PDF, JPG, PNG, DOC, DOCX up to 10MB'}
-              </div>
-            </label>
+            ) : (
+              <label htmlFor={inputId} className="cursor-pointer block w-full">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <div className="text-sm font-medium text-gray-900 mb-1">Upload Document</div>
+                <div className="text-xs text-gray-500">Click to upload or drag and drop</div>
+                <div className="text-xs text-gray-400 mt-1">
+                  {type === 'selfie' ? 'Image files up to 10MB' : 'PDF, JPG, PNG, DOC, DOCX up to 10MB'}
+                </div>
+                {type === 'selfie' && (
+                  <div className="mt-2 flex justify-center">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        startCamera();
+                      }}
+                      type="button"
+                      className="text-xs px-3 py-1 bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                    >
+                      Use Camera
+                    </button>
+                  </div>
+                )}
+              </label>
+            )
           ) : (
             <div className="flex-1 flex flex-col justify-center py-4">
               <div className="flex items-center justify-center mb-3">

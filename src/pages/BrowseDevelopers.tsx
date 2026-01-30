@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { apiClient } from "@/lib/api";
 import Logo from '../assets/Logo.png'
 
+// Compute backend origin for uploads (remove trailing /api if present)
+const BACKEND_ORIGIN = (import.meta.env.VITE_API_URL ?? 'https://buildtrust-backend.onrender.com/api').replace(/\/+$/,'').replace(/\/api$/,'');
+
 const BrowseDevelopers = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,7 +27,43 @@ const BrowseDevelopers = () => {
         setLoading(true);
         setError(null);
         const response = await apiClient.getDevelopers();
-        setDevelopers(response.developers || response || []);
+        const list = (response.developers || response || []) as any[];
+
+        // Enrich each developer with their full details (including projects/media)
+        const enriched = await Promise.all(
+          list.map(async (dev) => {
+            try {
+              const details = await apiClient.getDeveloperById(dev.id);
+              // The API may return the developer directly or under `developer`
+              const full = details.developer || details || dev;
+              return { ...dev, ...full };
+            } catch (e) {
+              // If the per-dev fetch fails, return the basic dev entry
+              return dev;
+            }
+          })
+        );
+
+        // Normalize project media shape if present
+        const normalized = enriched.map((d) => {
+          if (d.projects && Array.isArray(d.projects)) {
+            d.projects = d.projects.map((p: any) => {
+              // Some APIs store media as `media: [{ url }]`, others as `media.url` or `image`
+              const mediaArray = [] as any[];
+              if (Array.isArray(p.media) && p.media.length > 0) {
+                mediaArray.push(...p.media);
+              } else if (p.media && p.media.url) {
+                mediaArray.push(p.media);
+              } else if (p.image) {
+                mediaArray.push({ url: p.image });
+              }
+              return { ...p, media: mediaArray };
+            });
+          }
+          return d;
+        });
+
+        setDevelopers(normalized || []);
       } catch (err: any) {
         setError(err.message || "Failed to load developers");
         setDevelopers([]);
@@ -202,18 +241,41 @@ const BrowseDevelopers = () => {
                     {/* Project Thumbnails */}
                     {dev.projects && dev.projects.length > 0 ? (
                       <div className="grid grid-cols-2 gap-2 mb-4">
-                        {dev.projects.slice(0, 2).map((project: any, idx: number) => (
-                          <div key={idx} className="relative">
-                            <img 
-                              src={project.image || project.media?.[0]?.url || "/placeholder.svg"} 
-                              alt={project.title}
-                              className="w-full h-20 object-cover rounded-lg bg-gray-200"
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg flex items-end">
-                              <span className="text-white text-xs p-2 truncate">{project.title || "Project"}</span>
+                        {dev.projects.slice(0, 2).map((project: any, idx: number) => {
+                          // Handle both direct image property and media array
+                          const rawUrl = project.media?.[0]?.url || project.image || "/placeholder.svg";
+
+                          // Build absolute URL for backend-served uploads
+                          const imageUrl = (rawUrl && (rawUrl.startsWith('http') || rawUrl.startsWith('data:')))
+                            ? rawUrl
+                            : rawUrl === '/placeholder.svg'
+                              ? rawUrl
+                              : (rawUrl.startsWith('/') ? `${BACKEND_ORIGIN}${rawUrl}` : `${BACKEND_ORIGIN}/${rawUrl}`);
+
+                          return (
+                            <div key={idx} className="relative">
+                              <img 
+                                src={imageUrl}
+                                alt={project.title || "Project"}
+                                className="w-full h-20 object-cover rounded-lg bg-gray-200"
+                                onError={(e) => {
+                                  // Fallback to placeholder if image fails to load
+                                  (e.target as HTMLImageElement).src = "/placeholder.svg";
+                                }}
+                              />
+
+                              {/* Badge to indicate this is a past project provided during developer setup */}
+                              <div className="absolute top-2 left-2 bg-[#226F75]/90 text-white text-[10px] px-2 py-1 rounded-full font-semibold">
+                                Past Project
+                              </div>
+
+                              <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg flex flex-col justify-end p-2">
+                                <div className="text-white text-xs font-semibold truncate">{project.title || "Project"}</div>
+                                <div className="text-white text-[11px] opacity-90 truncate">{project.setupDetails || project.description || project.notes || 'Details provided during setup'}</div>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : null}
 
@@ -224,7 +286,7 @@ const BrowseDevelopers = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        {dev.location} • {dev.experience} years experience
+                        {dev.location || 'Nigeria'} • {dev.experience || 0} years experience
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <svg className="w-4 h-4 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">

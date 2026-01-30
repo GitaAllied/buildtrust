@@ -386,6 +386,12 @@ const PersonalInfo = ({ data, onChange, userType }: PersonalInfoProps) => {
     }
   }, [userType, formData.role]);
 
+  // Sync local formData with parent component on mount and after role change
+  useEffect(() => {
+    console.log('🔄 [PersonalInfo] Syncing formData to parent onChange:', formData);
+    onChange(formData);
+  }, []); // Only run on mount to sync initial data
+
   const updateData = (field: string, value: unknown) => {
     const newData = { ...formData, [field]: value };
     setFormData(newData);
