@@ -20,6 +20,84 @@ const BACKEND_ORIGIN = (
   .replace(/\/+$/, "")
   .replace(/\/api$/, "");
 
+// Component for rotating project images in the badge
+const ProjectImageBadge = ({ project, idx }: any) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Extract media array from project
+  const mediaArray = Array.isArray(project.project_media) ? project.project_media : 
+                     Array.isArray(project.media) ? project.media : [];
+
+  // Get current image URL
+  let currentImageUrl: string | null = null;
+  if (mediaArray.length > 0) {
+    const currentMedia = mediaArray[currentImageIndex];
+    if (currentMedia && typeof currentMedia === 'object' && currentMedia.url) {
+      currentImageUrl = currentMedia.url;
+    } else if (typeof currentMedia === 'string') {
+      currentImageUrl = currentMedia;
+    }
+  }
+
+  // Construct full display URL
+  const displayUrl = currentImageUrl 
+    ? (currentImageUrl.startsWith('http') ? currentImageUrl : `${BACKEND_ORIGIN}${currentImageUrl}`)
+    : null;
+
+  // Rotate images every 30 seconds
+  useEffect(() => {
+    if (mediaArray.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % mediaArray.length);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [mediaArray.length]);
+
+  // Log for debugging
+  if (displayUrl) {
+    console.log(`Project ${project.id} image rotation:`, {
+      currentIndex: currentImageIndex,
+      totalImages: mediaArray.length,
+      currentUrl: displayUrl
+    });
+  }
+
+  return (
+    <div
+      className="h-[1.5rem] w-[1.5rem] rounded-full border-2 border-gray-300 -ml-2 flex items-center justify-center bg-white overflow-hidden flex-shrink-0 relative group"
+      key={`${project.id}-${idx}`}
+      title={project.title || 'Project'}
+    >
+      {displayUrl ? (
+        <>
+          <img 
+            src={displayUrl} 
+            alt={project.title || 'Project'} 
+            className="w-full h-full object-cover transition-opacity duration-500"
+            loading="lazy"
+            onError={(e) => {
+              // Fallback to gradient if image fails to load
+              (e.target as HTMLImageElement).style.display = 'none';
+              const parent = (e.target as HTMLImageElement).parentElement;
+              if (parent) {
+                parent.style.background = 'linear-gradient(135deg, rgb(209, 213, 219), rgb(156, 163, 175))';
+              }
+            }}
+          />
+          {/* (counter removed) */}
+        </>
+      ) : (
+        // Placeholder for projects without media
+        <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-xs font-bold text-gray-500">
+          {project.source === 'portfolio' ? 'P' : '•'}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const BrowseDevelopers = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,6 +116,7 @@ const BrowseDevelopers = () => {
         setError(null);
         const response = await apiClient.getDevelopers();
         const list = (response.developers || response || []) as any[];
+        console.log('Initial developers response:', list);
 
         // Enrich each developer with their full details (including projects/media)
         const enriched = await Promise.all(
@@ -46,33 +125,33 @@ const BrowseDevelopers = () => {
               const details = await apiClient.getDeveloperById(dev.id);
               // The API may return the developer directly or under `developer`
               const full = details.developer || details || dev;
-              return { ...dev, ...full };
+              console.log(`Developer ${dev.id} detailed response:`, full);
+              // Use full details from getDeveloperById, which has complete project info with media
+              return full;
             } catch (e) {
               // If the per-dev fetch fails, return the basic dev entry
+              console.warn(`Failed to fetch details for developer ${dev.id}:`, e);
               return dev;
             }
           }),
         );
 
-        // Normalize project media shape if present
+        console.log('Enriched developers:', enriched);
+
+        // Normalize project media shape if present  
         const normalized = enriched.map((d) => {
           if (d.projects && Array.isArray(d.projects)) {
             d.projects = d.projects.map((p: any) => {
-              // Some APIs store media as `media: [{ url }]`, others as `media.url` or `image`
-              const mediaArray = [] as any[];
-              if (Array.isArray(p.media) && p.media.length > 0) {
-                mediaArray.push(...p.media);
-              } else if (p.media && p.media.url) {
-                mediaArray.push(p.media);
-              } else if (p.image) {
-                mediaArray.push({ url: p.image });
-              }
+              // Ensure media is always an array
+              const mediaArray = Array.isArray(p.project_media) ? p.project_media : 
+                                Array.isArray(p.media) ? p.media : [];
               return { ...p, media: mediaArray };
             });
           }
           return d;
         });
 
+        console.log('Final normalized developers:', normalized);
         setDevelopers(normalized || []);
       } catch (err: any) {
         setError(err.message || "Failed to load developers");
@@ -392,35 +471,15 @@ const BrowseDevelopers = () => {
                         {/* Projects count badges */}
                         <div className="flex ml-2 items-center">
                           <div className="flex -ml-2">
-                            {dev.projects && dev.projects.slice(0, 5).map((project: any, idx: number) => {
-                              const mediaUrl = project.media && project.media.length > 0 
-                                ? (project.media[0].url || project.media[0])
-                                : null;
-                              const displayUrl = mediaUrl ? (
-                                mediaUrl.startsWith('http') ? mediaUrl : `${BACKEND_ORIGIN}${mediaUrl}`
-                              ) : null;
-                              return (
-                                <div
-                                  className=" h-[1.5rem] w-[1.5rem] rounded-full border-2 border-gray-300 -ml-2 flex items-center justify-center bg-white overflow-hidden"
-                                  key={idx}
-                                  title={project.title || `Project ${idx + 1}`}
-                                >
-                                  {displayUrl ? (
-                                    <img src={displayUrl} alt={project.title || 'Project'} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400" />
-                                  )}
-                                </div>
-                              );
-                            })}
+                            {dev.projects && dev.projects.slice(0, 5).map((project: any, idx: number) => (
+                              <ProjectImageBadge key={`${project.id}-${idx}`} project={project} idx={idx} />
+                            ))}
                           </div>
 
-                          {/* Project count badge: prefer completed_projects (DB) then projects array length */}
+                          {/* Project count badge: show total from projects array (includes both sources) */}
                           <div className="ml-3">
                             <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                              {(dev.completed_projects !== null && dev.completed_projects !== undefined)
-                                ? dev.completed_projects
-                                : (dev.projects ? dev.projects.length : 0)} projects
+                              {dev.projects ? dev.projects.length : 0} projects
                             </span>
                           </div>
                         </div>
