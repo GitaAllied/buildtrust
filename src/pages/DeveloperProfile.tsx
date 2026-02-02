@@ -8,6 +8,84 @@ import ProjectRequestModal from "../components/ProjectRequestModal";
 import { apiClient } from "@/lib/api";
 import Logo from '../assets/Logo.png'
 
+// Component for rotating project images
+const ProjectImageCarousel = ({ project }: any) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showPagination, setShowPagination] = useState(false);
+
+  // Compute backend origin for image URLs
+  const BACKEND_ORIGIN = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/api$/, '');
+
+  // Extract media array from project
+  const mediaArray = Array.isArray(project.media) ? project.media : [];
+
+  // Get current image URL
+  let currentImageUrl: string | null = null;
+  if (mediaArray.length > 0) {
+    const currentMedia = mediaArray[currentImageIndex];
+    if (currentMedia && typeof currentMedia === 'object' && currentMedia.url) {
+      currentImageUrl = currentMedia.url;
+    } else if (typeof currentMedia === 'string') {
+      currentImageUrl = currentMedia;
+    }
+  }
+
+  // Construct full display URL
+  const displayUrl = currentImageUrl 
+    ? (currentImageUrl.startsWith('http') ? currentImageUrl : `${BACKEND_ORIGIN}${currentImageUrl}`)
+    : project.image || '/placeholder.svg';
+
+  // Rotate images every 10 seconds
+  useEffect(() => {
+    if (mediaArray.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % mediaArray.length);
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [mediaArray.length]);
+
+  const handleDotClick = (index: number) => {
+    setCurrentImageIndex(index);
+  };
+
+  return (
+    <div 
+      className="relative"
+      onMouseEnter={() => setShowPagination(true)}
+      onMouseLeave={() => setShowPagination(false)}
+    >
+      <img 
+        src={displayUrl} 
+        alt={project.title}
+        className="w-full h-48 object-cover rounded-t-lg transition-opacity duration-500"
+        loading="lazy"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = '/placeholder.svg';
+        }}
+      />
+      {/* Dot pagination */}
+      {mediaArray.length > 1 && (
+        <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1.5 px-2 py-1 bg-black/40 rounded-full transition-opacity duration-300 ${showPagination ? 'opacity-100' : 'opacity-0'}`}>
+          {mediaArray.map((_, index: number) => (
+            <button
+              key={index}
+              onClick={() => handleDotClick(index)}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                index === currentImageIndex 
+                  ? 'bg-white w-3' 
+                  : 'bg-white/60 hover:bg-white/80'
+              }`}
+              aria-label={`Go to image ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DeveloperProfile = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -49,6 +127,7 @@ const DeveloperProfile = () => {
               // Use first media item as the main image
               project.image = project.media[0]?.url || '/placeholder.svg';
             }
+            console.log(`📍 Project: ${project.title}, Location:`, project.location, 'City:', project.city);
             return project;
           });
         }
@@ -193,108 +272,233 @@ const DeveloperProfile = () => {
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="credentials">Credentials</TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview">
-            <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>About {developer.name || 'Developer'}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-gray-600">{developer.bio || 'No bio available'}</p>
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {citiesCovered.length > 0 && (
-                        <div>
-                          <h4 className="font-medium text-gray-900 mb-2">Cities Served</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {citiesCovered.map((city: any, idx: number) => (
-                              <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm">
-                                {city}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {developer.build_types && (
-                        <div>
-                          <h4 className="font-medium text-gray-900 mb-2">Build Types</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {developer.build_types.map((type: any, idx: number) => (
-                              <span key={idx} className="bg-[#226F75]/10 text-[#226F75] px-2 py-1 rounded text-sm">
-                                {typeof type === 'string' ? type : type.name || type}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+          <TabsContent value="overview" className="space-y-6">
+            {/* About Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">About This Developer</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Bio */}
+                <div>
+                  <p className="text-gray-700 leading-relaxed text-base">
+                    {developer.bio || 'This developer has not yet provided a bio. Contact them to learn more about their experience and expertise.'}
+                  </p>
+                </div>
 
-              <div>
+                {/* Key Highlights */}
+                <div className="grid md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-[#226F75]">{developer.years_experience || '0'}</div>
+                    <div className="text-xs text-gray-600 mt-1">Years Experience</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-[#226F75]">{developer.completed_projects || '0'}</div>
+                    <div className="text-xs text-gray-600 mt-1">Projects Completed</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-500">{developer.rating || '0'}</div>
+                    <div className="text-xs text-gray-600 mt-1">Average Rating</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{developer.trust_score || '0'}%</div>
+                    <div className="text-xs text-gray-600 mt-1">Trust Score</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Specializations & Services */}
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Build Types / Specializations */}
+              {developer.build_types && developer.build_types.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Quick Stats</CardTitle>
+                    <CardTitle>Project Types & Specializations</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Experience</span>
-                      <span className="font-medium">{developer.years_experience || 'N/A'} years</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Projects Completed</span>
-                      <span className="font-medium">{developer.completed_projects || 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Languages</span>
-                      <span className="font-medium">
-                        {developer.languages ? 
-                          (Array.isArray(developer.languages) ? developer.languages.join(", ") : developer.languages)
-                          : 'Not specified'
-                        }
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Rating</span>
-                      <span className="font-medium">{developer.rating || 'N/A'}/5</span>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 mb-4">
+                      This developer specializes in the following project types:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {developer.build_types.map((type: any, idx: number) => (
+                        <span 
+                          key={idx} 
+                          className="bg-[#226F75] text-white px-3 py-2 rounded-full text-sm font-medium"
+                        >
+                          {typeof type === 'string' ? type : type.name || type}
+                        </span>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              )}
+
+              {/* Languages & Communication */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Communication & Languages</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Languages</h4>
+                    <p className="text-gray-700">
+                      {developer.languages ? 
+                        (Array.isArray(developer.languages) ? developer.languages.join(", ") : developer.languages)
+                        : 'Not specified'
+                      }
+                    </p>
+                  </div>
+                  <div className="pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Response Time</h4>
+                    <p className="text-gray-700">
+                      {developer.response_time || 'within 24 hours'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
+
+            {/* Service Areas */}
+            {citiesCovered.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Service Areas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 mb-4">
+                    This developer is available to serve clients in the following cities:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {citiesCovered.map((city: any, idx: number) => (
+                      <span 
+                        key={idx} 
+                        className="inline-flex items-center bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-sm border border-blue-200"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        </svg>
+                        {city}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Working Style & Availability */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Availability & Engagement</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center mb-2">
+                      <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-medium text-green-900">Verified Professional</span>
+                    </div>
+                    <p className="text-xs text-green-700">
+                      {developer.is_verified ? 'Identity and credentials verified' : 'Pending verification'}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center mb-2">
+                      <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 2m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium text-blue-900">Quick Response</span>
+                    </div>
+                    <p className="text-xs text-blue-700">
+                      Responds {developer.response_time || 'within 24 hours'}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center mb-2">
+                      <svg className="w-5 h-5 text-purple-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <span className="font-medium text-purple-900">Highly Rated</span>
+                    </div>
+                    <p className="text-xs text-purple-700">
+                      {developer.rating || '0'}/5 stars from verified clients
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="portfolio">
+          <TabsContent value="projects">
             {developer.projects && developer.projects.length > 0 ? (
               <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {developer.projects.map((project: any) => (
                   <Card key={project.id} className="hover:shadow-lg transition-shadow">
                     <CardContent className="p-0">
-                      <img 
-                        src={project.image || '/placeholder.svg'} 
-                        alt={project.title}
-                        className="w-full h-48 object-cover rounded-t-lg"
-                      />
+                      <ProjectImageCarousel project={project} />
                       <div className="p-4">
-                        <h3 className="font-semibold text-gray-900 mb-1">{project.title || 'Untitled Project'}</h3>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {project.project_type || 'Project'} • {project.location || 'Not specified'}
-                        </p>
+                        <h3 className="font-semibold text-gray-900 mb-3">{project.title || 'Untitled Project'}</h3>
+                        
+                        {/* Project Type Tags */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {project.project_type && (
+                            <>
+                              {(() => {
+                                let types: any[] = [];
+                                if (Array.isArray(project.project_type)) {
+                                  types = project.project_type;
+                                } else if (typeof project.project_type === 'string') {
+                                  // Try to parse if it's a JSON string
+                                  try {
+                                    const parsed = JSON.parse(project.project_type);
+                                    types = Array.isArray(parsed) ? parsed : [project.project_type];
+                                  } catch {
+                                    types = [project.project_type];
+                                  }
+                                } else {
+                                  types = [project.project_type];
+                                }
+                                
+                                return types.map((type: any, typeIdx: number) => (
+                                  <span 
+                                    key={typeIdx}
+                                    className="inline-flex items-center bg-[#226F75] text-white px-3 py-1.5 rounded-full text-xs font-medium"
+                                  >
+                                    {typeof type === 'string' ? type : type.name || type}
+                                  </span>
+                                ));
+                              })()}
+                            </>
+                          )}
+                          {(project.location || project.city || project.project_location) && (
+                            <span className="inline-flex items-center bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-medium border border-blue-200">
+                              <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              </svg>
+                              {project.location || project.city || project.project_location}
+                            </span>
+                          )}
+                        </div>
+
                         <p className="text-sm text-gray-600 mb-3">{project.description || 'No description'}</p>
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                           <span className="font-medium text-green-600">
                             {project.budget ? `₦${project.budget}` : 'N/A'}
                           </span>
-                          <span className="text-sm text-gray-500">
-                            {project.completion_year || 'In progress'}
+                          <span className="text-xs text-gray-500 font-medium">
+                            {project.status === 'completed' || (project.status === 'open' && project.estimated_hours == null)
+                              ? 'Completed'
+                              : project.contract_id != null
+                              ? 'In progress'
+                              : (project.completion_year || 'In progress')
+                            }
                           </span>
                         </div>
                       </div>
@@ -305,7 +509,7 @@ const DeveloperProfile = () => {
             ) : (
               <Card>
                 <CardContent className="p-8 text-center text-gray-600">
-                  No portfolio projects available yet
+                  No projects available yet
                 </CardContent>
               </Card>
             )}
