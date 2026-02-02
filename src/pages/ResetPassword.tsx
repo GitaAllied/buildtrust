@@ -42,6 +42,7 @@ export default function ResetPassword() {
   const [token, setToken] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isExpiredToken, setIsExpiredToken] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -87,14 +88,72 @@ export default function ResetPassword() {
       // Redirect to auth page after a delay
       setTimeout(() => {
         navigate('/auth');
-      }, 3000);
+      }, 2000);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+      let errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+      
+      // Check for expired token error
+      if (errorMessage.toLowerCase().includes('expired') || (errorMessage.toLowerCase().includes('invalid') && errorMessage.toLowerCase().includes('token'))) {
+        errorMessage = 'This password reset link has expired. Please request a new password reset.';
+        setIsExpiredToken(true);
+      }
+      
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  if (isExpiredToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center relative px-4 py-12 overflow-hidden">
+        {/* Animated Background Gradient */}
+        <div className="absolute inset-0 bg-[#226F75]/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 -z-10" />
+
+        <div className="w-full max-w-md relative z-10">
+          <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-2 shadow-2xl">
+            <CardHeader className="text-center space-y-4 pb-8">
+              <div className="flex justify-center">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-red-500 rounded-full blur opacity-50" />
+                  <div className="relative bg-gradient-to-r from-red-500 to-red-600 p-3 rounded-full">
+                    <AlertCircle className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <CardTitle className="text-3xl font-bold text-red-600">
+                  Password Reset Link Expired
+                </CardTitle>
+                <CardDescription className="text-base mt-2">
+                  {error || 'This password reset link has expired. Please request a new password reset.'}
+                </CardDescription>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              <div className="text-center space-y-4">
+                <Link
+                  to="/forgot-password"
+                  className="inline-flex items-center gap-2 text-[#226F75]/60 hover:text-[#226F75]/70 font-medium underline"
+                >
+                  Request a new password reset
+                </Link>
+
+                <Link
+                  to="/auth"
+                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to sign in
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (success) {
     return (
