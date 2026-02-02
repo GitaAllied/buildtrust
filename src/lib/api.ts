@@ -357,6 +357,18 @@ class ApiClient {
       method: 'GET',
     });
   }
+
+  async submitProjectRequest(data: Record<string, unknown>) {
+    console.log('📋 SUBMITTING PROJECT REQUEST:', {
+      timestamp: new Date().toISOString(),
+      requestData: data
+    });
+    return this.request('/projects/request/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
