@@ -103,7 +103,7 @@ const BrowseDevelopers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("all");
   const [selectedProjectType, setSelectedProjectType] = useState("all");
-  const [minTransparency, setMinTransparency] = useState(70);
+  const [minTransparency, setMinTransparency] = useState(25);
   const [budgetRange, setBudgetRange] = useState("all");
   const [developers, setDevelopers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
