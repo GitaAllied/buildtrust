@@ -1,18 +1,22 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiClient } from "@/lib/api";
 
 interface ProjectRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   developerName: string;
+  developerId?: number;
 }
 
-const ProjectRequestModal = ({ isOpen, onClose, developerName }: ProjectRequestModalProps) => {
+const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: ProjectRequestModalProps) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     projectName: "",
     location: "",
@@ -24,10 +28,95 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName }: ProjectRequestM
     sitePlan: null as File | null
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // Get auth token from localStorage
+      const token = localStorage.getItem('auth_token');
+
+      // If no token, redirect to login with message
+      if (!token) {
+        navigate('/', { 
+          state: { 
+            message: 'Please log in to submit a project request',
+            messageType: 'info'
+          }
+        });
+        handleClose();
+        return;
+      }
+
+      // Check if user is a developer
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      const isDeveloper = user?.role === 'developer';
+
+      // Submit the project request
+      const response = await apiClient.submitProjectRequest({
+        developerId,
+        projectName: formData.projectName,
+        location: formData.location,
+        buildingType: formData.buildingType,
+        budgetRange: formData.budgetRange,
+        startDate: formData.startDate,
+        duration: formData.duration,
+        message: formData.message,
+        sitePlan: formData.sitePlan ? {
+          url: `/uploads/project-requests/${formData.sitePlan.name}`,
+          filename: formData.sitePlan.name,
+          mimeType: formData.sitePlan.type
+        } : null
+      });
+
+      if (response.success) {
+        setIsSubmitted(true);
+
+        // Redirect after success message is shown (delay for UX)
+        setTimeout(() => {
+          if (isDeveloper) {
+            navigate(`/developer/${developerId}`, {
+              state: {
+                message: '✓ Project request submitted! The developer will review and respond within 24 hours.',
+                messageType: 'success'
+              }
+            });
+          } else {
+            navigate('/browse', {
+              state: {
+                message: '✓ Project request submitted! The developer will review and respond within 24 hours.',
+                messageType: 'success'
+              }
+            });
+          }
+          handleClose();
+        }, 2000);
+      } else {
+        setError(response.error || 'Failed to submit project request');
+      }
+    } catch (err: any) {
+      const errorMsg = err.message || 'An error occurred while submitting your request';
+      
+      // Check if it's a login-required error
+      if (err.message?.includes('unauthorized') || err.requireLogin) {
+        navigate('/', {
+          state: {
+            message: 'Please log in to submit a project request',
+            messageType: 'info'
+          }
+        });
+        handleClose();
+      } else {
+        setError(errorMsg);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -68,9 +157,33 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName }: ProjectRequestM
             <p className="text-gray-600 mb-6">
               {developerName} will review your project request and respond within 24 hours.
             </p>
-            <Button onClick={handleClose} className="bg-green-600 hover:bg-green-700">
-              Close
-            </Button>
+            <p className="text-sm text-gray-500">Redirecting...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (error) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <div className="text-center py-6">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Request Failed</h3>
+            <p className="text-red-600 mb-6">{error}</p>
+            <div className="flex justify-center space-x-3">
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Close
+              </Button>
+              <Button onClick={() => setError(null)} className="bg-blue-600 hover:bg-blue-700">
+                Try Again
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -213,11 +326,11 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName }: ProjectRequestM
           </div>
 
           <div className="flex justify-end space-x-3">
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-green-600 hover:bg-green-700">
-              Send Request
+            <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={isLoading}>
+              {isLoading ? 'Submitting...' : 'Send Request'}
             </Button>
           </div>
         </form>

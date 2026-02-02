@@ -493,11 +493,13 @@ const DeveloperProfile = () => {
                             {project.budget ? `₦${project.budget}` : 'N/A'}
                           </span>
                           <span className="text-xs text-gray-500 font-medium">
-                            {project.status === 'completed' || (project.status === 'open' && project.estimated_hours == null)
-                              ? 'Completed'
-                              : project.contract_id != null
-                              ? 'In progress'
-                              : (project.completion_year || 'In progress')
+                            {project.contract_id != null
+                              ? project.status === 'completed'
+                                ? 'Completed'
+                                : project.status === 'open'
+                                ? 'Open'
+                                : 'In progress'
+                              : 'Completed'
                             }
                           </span>
                         </div>
@@ -625,6 +627,7 @@ const DeveloperProfile = () => {
         isOpen={showRequestModal}
         onClose={() => setShowRequestModal(false)}
         developerName={developer?.name || 'Developer'}
+        developerId={developer?.id}
       />
     </div>
   );
