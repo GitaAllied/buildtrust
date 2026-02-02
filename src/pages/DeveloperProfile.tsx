@@ -516,34 +516,64 @@ const DeveloperProfile = () => {
           </TabsContent>
 
           <TabsContent value="credentials">
-            {developer.licenses && developer.licenses.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {developer.licenses.map((license: any, index: number) => (
-                  <Card key={index}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-gray-900">{license.name || 'License'}</h4>
-                        {license.is_verified && (
-                          <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600">{license.license_type || 'License'}</p>
-                      {license.is_verified && (
-                        <div className="mt-2 text-xs text-green-600">✓ Verified</div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="p-8 text-center text-gray-600">
-                  No credentials available yet
-                </CardContent>
-              </Card>
-            )}
+            {/* Always show 6 expected documents and whether each is submitted/verified */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(() => {
+                const expected = [
+                  { key: 'government_id', label: 'Government ID' },
+                  { key: 'business_registration', label: 'Business Registration (CAC)' },
+                  { key: 'selfie', label: 'Selfie' },
+                  { key: 'license', label: 'License' },
+                  { key: 'certification', label: 'Certification' },
+                  { key: 'testimonial', label: 'Testimonial' }
+                ];
+
+                const docs: any[] = developer.documents || [];
+                const docDescriptions: Record<string, string> = {
+                  government_id: 'Government-issued ID (passport, driver\'s license)',
+                  business_registration: 'Official company registration document',
+                  selfie: 'Recent selfie for identity confirmation',
+                  license: 'Professional license or permit',
+                  certification: 'Relevant certification or certificate',
+                  testimonial: 'Client testimonial or reference'
+                };
+
+                return expected.map((item) => {
+                  const found = docs.find(d => (d.type || '').toLowerCase() === item.key || (d.filename || '').toLowerCase().includes(item.key));
+                  const submitted = !!found;
+                  const verified = !!(found && (found.verified === 1 || found.verified === true));
+
+                  return (
+                    <Card key={item.key} className="relative">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-gray-900">{item.label}</h4>
+                          {verified && (
+                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+
+                        <p className="text-sm text-gray-600">
+                          {docDescriptions[item.key] || item.label}
+                        </p>
+
+                        <div className="mt-3">
+                          {verified ? (
+                            <div className="inline-flex items-center text-xs text-green-600">✓ Verified by admin</div>
+                          ) : submitted ? (
+                            <div className="inline-flex items-center text-xs text-yellow-600">Pending verification</div>
+                          ) : (
+                            <div className="inline-flex items-center text-xs text-gray-500">Awaiting upload</div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                });
+              })()}
+            </div>
           </TabsContent>
 
           <TabsContent value="reviews">
