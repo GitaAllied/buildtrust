@@ -374,7 +374,7 @@ const ClientDashboard = () => {
                       >
                         <CardContent className="p-4 sm:p-2 md:p-3 flex flex-col md:flex-row gap-5">
                           <img
-                            src={project.image}
+                            src={project.image.length === 0 ? PROJECT_PLACEHOLDER : project.image}
                             alt={project.title}
                             onError={(e: any) => {
                               e.currentTarget.onerror = null;
