@@ -533,7 +533,7 @@ export default function Auth() {
                   <div className="text-center">
                     <Link
                       to="/forgot-password"
-                      className="text-sm text-white hover:text-[#253E44] font-medium underline"
+                      className="text-sm text-[#253E44] font-medium underline"
                     >
                       Forgot Password?
                     </Link>
