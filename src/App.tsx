@@ -60,12 +60,14 @@ const App = () => (
           <Route path="/browse" element={<BrowseDevelopers />} />
           <Route path="/developer/:id" element={<DeveloperProfile />} />
 
-          {/* Protected Routes - require email verification */}
+          {/* Protected Routes - require email verification and role-based access */}
           <Route
             path="/client-dashboard"
             element={
               <EmailVerificationGuard>
-                <ClientDashboard />
+                <ProtectedRoute requiredRole="client">
+                  <ClientDashboard />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -73,7 +75,9 @@ const App = () => (
             path="/developer-dashboard"
             element={
               <EmailVerificationGuard>
-                <DeveloperDashboard />
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperDashboard />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -81,7 +85,9 @@ const App = () => (
             path="/super-admin-dashboard"
             element={
               <EmailVerificationGuard>
-                <SuperAdminDashboard />
+                <ProtectedRoute requiredRole="admin">
+                  <SuperAdminDashboard />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -89,7 +95,9 @@ const App = () => (
             path="/admin/users"
             element={
               <EmailVerificationGuard>
-                <AdminUsers />
+                <ProtectedRoute requiredRole="admin">
+                  <AdminUsers />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -97,7 +105,9 @@ const App = () => (
             path="/admin/users/:userId"
             element={
               <EmailVerificationGuard>
-                <AdminUserView />
+                <ProtectedRoute requiredRole="admin">
+                  <AdminUserView />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -105,7 +115,9 @@ const App = () => (
             path="/admin/users/:userId/edit"
             element={
               <EmailVerificationGuard>
-                <AdminUserEdit />
+                <ProtectedRoute requiredRole="admin">
+                  <AdminUserEdit />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -113,7 +125,9 @@ const App = () => (
             path="/admin/reports"
             element={
               <EmailVerificationGuard>
-                <AdminReports />
+                <ProtectedRoute requiredRole="admin">
+                  <AdminReports />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -121,7 +135,9 @@ const App = () => (
             path="/admin/settings"
             element={
               <EmailVerificationGuard>
-                <AdminSettings />
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSettings />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -129,7 +145,9 @@ const App = () => (
             path="/admin/support"
             element={
               <EmailVerificationGuard>
-                <AdminSupport />
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSupport />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -137,7 +155,9 @@ const App = () => (
             path="/admin/support/ticket/:ticketId"
             element={
               <EmailVerificationGuard>
-                <AdminSupportTicketDetail />
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSupportTicketDetail />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -145,7 +165,9 @@ const App = () => (
             path="/admin/messages"
             element={
               <EmailVerificationGuard>
-                <AdminMessages />
+                <ProtectedRoute requiredRole="admin">
+                  <AdminMessages />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -153,7 +175,9 @@ const App = () => (
             path="/messages"
             element={
               <EmailVerificationGuard>
-                <Messages />
+                <ProtectedRoute>
+                  <Messages />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -161,7 +185,9 @@ const App = () => (
             path="/payments"
             element={
               <EmailVerificationGuard>
-                <Payments />
+                <ProtectedRoute>
+                  <Payments />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -169,7 +195,9 @@ const App = () => (
             path="/projects"
             element={
               <EmailVerificationGuard>
-                <Projects />
+                <ProtectedRoute requiredRole="client">
+                  <Projects />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -177,7 +205,9 @@ const App = () => (
             path="/settings"
             element={
               <EmailVerificationGuard>
-                <Settings />
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -185,7 +215,9 @@ const App = () => (
             path="/contracts"
             element={
               <EmailVerificationGuard>
-                <Contracts />
+                <ProtectedRoute>
+                  <Contracts />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -193,7 +225,9 @@ const App = () => (
             path="/saved-developers"
             element={
               <EmailVerificationGuard>
-                <SavedDevelopers />
+                <ProtectedRoute requiredRole="client">
+                  <SavedDevelopers />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -201,7 +235,9 @@ const App = () => (
             path="/project-requests"
             element={
               <EmailVerificationGuard>
-                <ProjectRequests />
+                <ProtectedRoute requiredRole="developer">
+                  <ProjectRequests />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -209,7 +245,9 @@ const App = () => (
             path="/upload-update"
             element={
               <EmailVerificationGuard>
-                <UploadUpdate />
+                <ProtectedRoute requiredRole="developer">
+                  <UploadUpdate />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -217,7 +255,9 @@ const App = () => (
             path="/support"
             element={
               <EmailVerificationGuard>
-                <Support />
+                <ProtectedRoute>
+                  <Support />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -225,7 +265,9 @@ const App = () => (
             path="/active-projects"
             element={
               <EmailVerificationGuard>
-                <ActiveProjects />
+                <ProtectedRoute requiredRole="client">
+                  <ActiveProjects />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -233,7 +275,9 @@ const App = () => (
             path="/developer-messages"
             element={
               <EmailVerificationGuard>
-                <DeveloperMessages />
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperMessages />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -241,7 +285,9 @@ const App = () => (
             path="/developer-payments"
             element={
               <EmailVerificationGuard>
-                <DeveloperPayments />
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperPayments />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
@@ -249,7 +295,9 @@ const App = () => (
             path="/developer-liscences"
             element={
               <EmailVerificationGuard>
-                <DeveloperLiscences />
+                <ProtectedRoute requiredRole="developer">
+                  <DeveloperLiscences />
+                </ProtectedRoute>
               </EmailVerificationGuard>
             }
           />
