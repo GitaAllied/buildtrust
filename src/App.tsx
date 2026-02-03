@@ -277,7 +277,7 @@ const App = () => (
             path="/active-projects"
             element={
               <EmailVerificationGuard>
-                <ProtectedRoute requiredRole="client">
+                <ProtectedRoute>
                   <ActiveProjects />
                 </ProtectedRoute>
               </EmailVerificationGuard>
@@ -303,16 +303,8 @@ const App = () => (
               </EmailVerificationGuard>
             }
           />
-          <Route
-            path="/developer-liscences"
-            element={
-              <EmailVerificationGuard>
-                <ProtectedRoute requiredRole="developer">
-                  <DeveloperLiscences />
-                </ProtectedRoute>
-              </EmailVerificationGuard>
-            }
-          />
+          {/* // TODO: After modification add protection to this route (require developer + email verification) */}
+          <Route path="/developer-liscences" element={<DeveloperLiscences />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

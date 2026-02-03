@@ -150,7 +150,7 @@ const DeveloperDashboard = () => {
         navigate("/project-requests");
         break;
       case "projects":
-        navigate("/active-projects");
+        navigate("/projects");
         break;
       case "upload":
         navigate("/upload-update");

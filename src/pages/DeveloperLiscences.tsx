@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import {
   X,
@@ -38,8 +39,8 @@ const DeveloperLiscences = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("profile");
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { signOut } = useAuth();
+  const { user, signOut, refreshUser } = useAuth();
+  const { toast } = useToast();
 
   // Account information state
   const [accountInfo, setAccountInfo] = useState({
@@ -49,33 +50,70 @@ const DeveloperLiscences = () => {
   });
   const [accountLoading, setAccountLoading] = useState(true);
 
+  // Editable profile state
+  const [profile, setProfile] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    bio: "",
+    location: "",
+    website: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [documents, setDocuments] = useState<any[]>([]);
+
   // Load account data on mount
   useEffect(() => {
     const loadAccountData = async () => {
-      if (user) {
-        try {
-          const response = await apiClient.getCurrentUser();
-          const fullUserData = response.user || response;
+      if (!user) {
+        setAccountLoading(false);
+        return;
+      }
 
-          // Generate Account ID from user ID and role
-          const accountId = fullUserData.id ? `BT-${fullUserData.role?.charAt(0).toUpperCase() || 'U'}-${String(fullUserData.id).padStart(6, '0')}` : "";
-          
-          // Format member since date
-          const memberSince = fullUserData.created_at ? new Date(fullUserData.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "";
-          
-          // Format account type from role
-          const accountType = fullUserData.role ? `${fullUserData.role.charAt(0).toUpperCase()}${fullUserData.role.slice(1)}` : "";
+      try {
+        const response = await apiClient.getCurrentUser();
+        const fullUserData = response.user || response;
 
-          setAccountInfo({
-            accountId,
-            memberSince,
-            accountType,
-          });
-        } catch (error) {
-          console.error('Failed to load account data:', error);
-        } finally {
-          setAccountLoading(false);
-        }
+        // Generate Account ID from user ID and role
+        const accountId = fullUserData.id
+          ? `BT-${fullUserData.role?.charAt(0).toUpperCase() || 'U'}-${String(fullUserData.id).padStart(6, '0')}`
+          : '';
+
+        // Format member since date
+        const memberSince = fullUserData.created_at
+          ? new Date(fullUserData.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+          : '';
+
+        // Format account type from role
+        const accountType = fullUserData.role
+          ? `${fullUserData.role.charAt(0).toUpperCase()}${fullUserData.role.slice(1)}`
+          : '';
+
+        setAccountInfo({
+          accountId,
+          memberSince,
+          accountType,
+        });
+
+        // Populate editable profile
+        setProfile({
+          first_name: (fullUserData.name || '').split(' ')[0] || '',
+          last_name: (fullUserData.name || '').split(' ').slice(1).join(' ') || '',
+          email: fullUserData.email || '',
+          phone: fullUserData.phone || '',
+          bio: fullUserData.bio || '',
+          location: fullUserData.location || '',
+          website: fullUserData.website || '',
+        });
+        // Populate documents array (license, id, etc.)
+        setDocuments(fullUserData.documents || fullUserData.user_documents || []);
+      } catch (error) {
+        console.error('Failed to load account data:', error);
+        toast({ title: 'Error', description: 'Failed to load account data', variant: 'destructive' });
+      } finally {
+        setAccountLoading(false);
       }
     };
 
@@ -264,31 +302,181 @@ const DeveloperLiscences = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">First Name</Label>
-                        <Input id="firstName" defaultValue="Divine" />
+                        <Input
+                          id="firstName"
+                          value={profile.first_name}
+                          onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                        />
                       </div>
                       <div>
                         <Label htmlFor="lastName">Last Name</Label>
-                        <Input id="lastName" defaultValue="Okechukwu" />
+                        <Input
+                          id="lastName"
+                          value={profile.last_name}
+                          onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                        />
                       </div>
                     </div>
 
                     <div>
                       <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        defaultValue="divine@example.com"
-                      />
+                      <Input id="email" type="email" value={profile.email} disabled />
                     </div>
 
                     <div>
                       <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" defaultValue="+234 801 234 5678" />
+                      <Input
+                        id="phone"
+                        value={profile.phone}
+                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                      />
                     </div>
 
-                    <Button className="bg-[#253E44] hover:bg-[#253E44]/70">
-                      Save Changes
-                    </Button>
+                    <div>
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        value={profile.bio}
+                        onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={profile.location}
+                        onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        value={profile.website}
+                        onChange={(e) => setProfile({ ...profile, website: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mt-2">
+                      {/* Existing license preview */}
+                      <div className="w-full md:w-48">
+                        {(() => {
+                          const license = (documents || []).find((d: any) => {
+                            const t = (d.type || "").toLowerCase();
+                            const f = (d.filename || "").toLowerCase();
+                            return t === 'license' || f.includes('license');
+                          });
+
+                          if (!license) {
+                            return (
+                              <div className="p-3 border rounded-lg bg-white">
+                                <p className="text-sm text-gray-600">No license on file</p>
+                                <p className="text-xs text-gray-400">Upload below to add your professional license (existing license remains until replaced).</p>
+                              </div>
+                            );
+                          }
+
+                          const url = license.url || license.path || license.file_url || license.download_url || license.filename || '';
+
+                          return (
+                            <div className="flex items-center gap-3 p-3 border rounded-lg bg-white">
+                              <div className="w-16 h-12 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                                {url && (url.endsWith('.pdf') || url.endsWith('.PDF')) ? (
+                                  <svg className="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" /></svg>
+                                ) : (
+                                  <img src={url} alt={license.filename || 'license'} className="w-full h-full object-cover" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium truncate">{license.filename || license.name || 'License'}</p>
+                                  {license.verified === 1 || license.verified === true ? (
+                                    <span className="text-xs text-green-600">Verified</span>
+                                  ) : (
+                                    <span className="text-xs text-yellow-600">Pending</span>
+                                  )}
+                                </div>
+                                <div className="mt-2 flex items-center gap-2">
+                                  {url ? (
+                                    <a href={url} target="_blank" rel="noreferrer" className="text-xs text-[#226F75] hover:underline">View</a>
+                                  ) : null}
+                                  <a
+                                    href={url || '#'}
+                                    download
+                                    className="text-xs text-gray-600 hover:text-gray-800"
+                                  >
+                                    Download
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Upload control */}
+                      <div className="flex items-center gap-3">
+                        <label htmlFor="licenseFile" className="text-sm text-gray-600">Upload new license (optional):</label>
+                        <input
+                          id="licenseFile"
+                          type="file"
+                          accept="application/pdf,image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file || !user) return;
+                            try {
+                              setUploading(true);
+                              await apiClient.uploadDocument(user.id, 'license', file);
+                              toast({ title: 'Uploaded', description: 'License uploaded successfully' });
+                              // Refresh user to pick up new documents
+                              try { await refreshUser(); } catch {}
+                            } catch (err) {
+                              console.error(err);
+                              toast({ title: 'Upload failed', description: (err as any)?.message || 'Could not upload file', variant: 'destructive' });
+                            } finally {
+                              setUploading(false);
+                              // clear the file input
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }}
+                        />
+                        <Button disabled={uploading} variant="outline" size="sm">
+                          {uploading ? 'Uploading...' : 'Upload'}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <Button
+                        className="bg-[#253E44] hover:bg-[#253E44]/70"
+                        onClick={async () => {
+                          if (!user) return;
+                          setSaving(true);
+                          try {
+                            const payload: Record<string, unknown> = {
+                              name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
+                              phone: profile.phone || undefined,
+                              bio: profile.bio || undefined,
+                              location: profile.location || undefined,
+                              website: profile.website || undefined,
+                            };
+                            await apiClient.updateProfile(payload);
+                            toast({ title: 'Saved', description: 'Profile updated successfully' });
+                            try { await refreshUser(); } catch {}
+                          } catch (err) {
+                            console.error('Save failed', err);
+                            toast({ title: 'Save failed', description: (err as any)?.message || 'Could not save profile', variant: 'destructive' });
+                          } finally {
+                            setSaving(false);
+                          }
+                        }}
+                        disabled={saving}
+                      >
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
