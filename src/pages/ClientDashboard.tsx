@@ -31,7 +31,7 @@ import {
 } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 
-const PROJECT_PLACEHOLDER = 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=300&h=200&fit=crop';
+const PROJECT_PLACEHOLDER = 'https://placehold.net/600x400.png';
 
 const ClientDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
