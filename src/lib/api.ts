@@ -369,6 +369,12 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  async getClientProjects() {
+    return this.request('/projects', {
+      method: 'GET',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,36 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  const getStoredRole = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u?.role) return String(u.role).toLowerCase().trim();
+      }
+
+      const t = localStorage.getItem('auth_token');
+      if (t) {
+        const parts = t.split('.');
+        if (parts.length >= 2) {
+          try {
+            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+            const roleFromToken = payload?.role || payload?.roles || null;
+            if (roleFromToken) return String(roleFromToken).toLowerCase().trim();
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return null;
+  };
+
+  const effectiveRole = userRole ?? getStoredRole();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,10 +82,18 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
         return;
       }
 
-      // Check if user is a developer
-      const userStr = localStorage.getItem('user');
-      const user = userStr ? JSON.parse(userStr) : null;
-      const isDeveloper = user?.role === 'developer';
+      const role = effectiveRole ?? '';
+
+      // Prevent developers from submitting project requests
+      if (role === 'developer') {
+        setIsLoading(false);
+        setError(
+          'You are currently registered as a developer and cannot submit project requests. '
+          + 'If you need to request a build, please sign in with a client account, create a separate client profile, '
+          + 'or contact our support team for help converting your account.'
+        );
+        return;
+      }
 
       // Submit the project request
       const response = await apiClient.submitProjectRequest({
@@ -79,15 +117,16 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
 
         // Redirect after success message is shown (delay for UX)
         setTimeout(() => {
-          if (isDeveloper) {
-            navigate(`/developer/${developerId}`, {
+          if (effectiveRole === 'developer') {
+              navigate(`/developer/${developerId}`, {
               state: {
                 message: '✓ Project request submitted! The developer will review and respond within 24 hours.',
                 messageType: 'success'
               }
             });
           } else {
-            navigate('/browse', {
+            // Redirect clients to the client dashboard
+            navigate('/client-dashboard', {
               state: {
                 message: '✓ Project request submitted! The developer will review and respond within 24 hours.',
                 messageType: 'success'
@@ -127,6 +166,18 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
     const file = e.target.files?.[0] || null;
     setFormData(prev => ({ ...prev, sitePlan: file }));
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      const role = user?.role ? String(user.role).toLowerCase() : null;
+      setUserRole(role);
+    } catch (e) {
+      setUserRole(null);
+    }
+  }, [isOpen]);
 
   const handleClose = () => {
     setIsSubmitted(false);
@@ -183,6 +234,39 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
               <Button onClick={() => setError(null)} className="bg-blue-600 hover:bg-blue-700">
                 Try Again
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // If the logged-in user is a developer, do not show the request form.
+  if (effectiveRole === 'developer') {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <svg className="h-8 w-8 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Action not available for developer accounts</h3>
+              <p className="text-sm text-gray-700 mb-3">
+                Our platform restricts project requests to developers. To request a build, please sign in using a client account
+                or create a client profile. If you believe this is an error or need assistance converting your account,
+                contact our support team and we'll help you through the process.
+              </p>
+              <div className="flex space-x-3">
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  Close
+                </Button>
+                <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={() => navigate('/support')}>
+                  Contact Support
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
