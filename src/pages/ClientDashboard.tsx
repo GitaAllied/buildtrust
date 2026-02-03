@@ -355,64 +355,76 @@ const ClientDashboard = () => {
                 <h2 className="text-sm sm:text-base md:text-lg font-bold text-[#253E44] mb-4 px-1">
                   Active Projects
                 </h2>
-                <div className="grid gap-4 sm:gap-5">
-                  {activeProjects.map((project) => (
-                    <Card
-                      key={project.id}
-                      className="hover:shadow-xl transition-all duration-300 border border-black/10 bg-white/80 rounded-2xl overflow-hidden group"
-                    >
-                      <CardContent className="p-4 sm:p-2 md:p-3 flex flex-col md:flex-row gap-5">
-                        <img
-                          src={project.image}
-                          alt={project.title}
-                          onError={(e: any) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = PROJECT_PLACEHOLDER;
-                          }}
-                          className="w-full sm:w-32 md:w-40 rounded-xl object-cover flex-shrink-0 group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 w-full">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-sm sm:text-base text-[#253E44] line-clamp-2">
-                              {project.title}
-                            </h3>
-                            <p className="text-xs sm:text-sm text-gray-500 mb-2">
-                              {project.location}
-                            </p>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-1">
-                              Developer: {project.developer}
-                            </p>
+                {activeProjects.length === 0 && !isLoading ? (
+                  <Card className="bg-white/90 rounded-2xl border border-black/5">
+                    <CardContent className="p-6 text-center">
+                      <h3 className="font-semibold text-sm text-[#253E44]">No active projects found</h3>
+                      <p className="text-xs text-gray-600 mt-2">You don't have any active projects right now. Browse developers to request a build or create a new project.</p>
+                      <div className="mt-4">
+                        <Button onClick={() => navigate('/browse')} className="bg-gradient-to-r from-[#226F75] to-[#253E44] text-white">Browse Developers</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-4 sm:gap-5">
+                    {activeProjects.map((project) => (
+                      <Card
+                        key={project.id}
+                        className="hover:shadow-xl transition-all duration-300 border border-black/10 bg-white/80 rounded-2xl overflow-hidden group"
+                      >
+                        <CardContent className="p-4 sm:p-2 md:p-3 flex flex-col md:flex-row gap-5">
+                          <img
+                            src={project.image}
+                            alt={project.title}
+                            onError={(e: any) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = PROJECT_PLACEHOLDER;
+                            }}
+                            className="w-full sm:w-32 md:w-40 rounded-xl object-cover flex-shrink-0 group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 w-full">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-sm sm:text-base text-[#253E44] line-clamp-2">
+                                {project.title}
+                              </h3>
+                              <p className="text-xs sm:text-sm text-gray-500 mb-2">
+                                {project.location}
+                              </p>
+                              <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-1">
+                                Developer: {project.developer}
+                              </p>
 
-                            <div className="mb-4">
-                              <div className="flex justify-between text-xs sm:text-sm mb-2 text-[#226F75] font-medium">
-                                <span>Progress</span>
-                                <span>{project.progress}%</span>
+                              <div className="mb-4">
+                                <div className="flex justify-between text-xs sm:text-sm mb-2 text-[#226F75] font-medium">
+                                  <span>Progress</span>
+                                  <span>{project.progress}%</span>
+                                </div>
+                                <Progress
+                                  value={project.progress}
+                                  className="h-2.5 bg-[#226F75]/10"
+                                />
                               </div>
-                              <Progress
-                                value={project.progress}
-                                className="h-2.5 bg-[#226F75]/10"
-                              />
-                            </div>
 
-                            <div className="flex flex-row items-start sm:items-center justify-between gap-2">
-                              <Badge className="bg-[#226F75]/10 text-[#253E44] text-xs font-medium p-2 px-4">
-                                {project.status}
-                              </Badge>
-                              <Button
-                                size="sm"
-                                className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-xs sm:w-auto shadow-md px-5"
-                                onClick={() => navigate("/projects")}
-                              >
-                                View Project{" "}
-                                <ArrowRight className="ml-1 h-3 w-3" />
-                              </Button>
+                              <div className="flex flex-row items-start sm:items-center justify-between gap-2">
+                                <Badge className="bg-[#226F75]/10 text-[#253E44] text-xs font-medium p-2 px-4">
+                                  {project.status}
+                                </Badge>
+                                <Button
+                                  size="sm"
+                                  className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-xs sm:w-auto shadow-md px-5"
+                                  onClick={() => navigate("/projects")}
+                                >
+                                  View Project{" "}
+                                  <ArrowRight className="ml-1 h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Upcoming Milestone */}
