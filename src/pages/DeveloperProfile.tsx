@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectRequestModal from "../components/ProjectRequestModal";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { apiClient } from "@/lib/api";
 import Logo from '../assets/Logo.png'
 
@@ -93,6 +94,7 @@ const DeveloperProfile = () => {
   const [developer, setDeveloper] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [requestError, setRequestError] = useState<string | null>(null);
 
   // Compute backend origin for image URLs
   const BACKEND_ORIGIN = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/api$/, '');
@@ -130,6 +132,14 @@ const DeveloperProfile = () => {
             console.log(`📍 Project: ${project.title}, Location:`, project.location, 'City:', project.city);
             return project;
           });
+
+          // Deduplicate projects by `id` (or fallback to a composite key) to avoid showing the same project twice
+          const seen = new Map<string, any>();
+          for (const p of payload.projects) {
+            const key = p?.id != null ? String(p.id) : `${p.title || ''}::${p.location || ''}::${p.budget || ''}`;
+            if (!seen.has(key)) seen.set(key, p);
+          }
+          payload.projects = Array.from(seen.values());
         }
 
         console.log('📄 DEVELOPER DATA LOADED:', payload);
@@ -217,6 +227,21 @@ const DeveloperProfile = () => {
         )}
 
         {/* Content */}
+        {/* Global request alert shown as a regular site alert */}
+        {requestError && (
+          <div className="max-w-6xl mx-auto px-6 mb-6">
+            <Alert variant="destructive">
+              <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m4-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <AlertTitle>Request Unavailable</AlertTitle>
+                <AlertDescription>{requestError}</AlertDescription>
+              </div>
+            </Alert>
+          </div>
+        )}
+
         {developer && !loading && (
           <>
         {/* Banner Section */}
@@ -254,8 +279,34 @@ const DeveloperProfile = () => {
                 </div>
               </div>
               <div className="mt-6 lg:mt-0">
+                
                 <Button 
-                  onClick={() => setShowRequestModal(true)}
+                  onClick={() => {
+                    // Clear previous request errors
+                    setRequestError(null);
+                    // Check login
+                    const token = localStorage.getItem('auth_token');
+                    if (!token) {
+                      setRequestError('Please log in before requesting a build.');
+                      return;
+                    }
+                    // Check role
+                    try {
+                      const userStr = localStorage.getItem('user');
+                      const user = userStr ? JSON.parse(userStr) : null;
+                      const role = (user?.role ?? '').toString().toLowerCase().trim();
+                      if (role === 'developer') {
+                        setRequestError('Only logged-in clients can request to build. Please switch to a client account or contact support for assistance.');
+                        return;
+                      }
+                    } catch (e) {
+                      // If parsing fails, require login again
+                      setRequestError('Please log in before requesting a build.');
+                      return;
+                    }
+
+                    setShowRequestModal(true);
+                  }}
                   className="bg-[#253E44] hover:bg-[#253E44]/70 text-lg px-8 py-3 h-auto"
                 >
                   Request to Build
@@ -625,7 +676,7 @@ const DeveloperProfile = () => {
 
       <ProjectRequestModal 
         isOpen={showRequestModal}
-        onClose={() => setShowRequestModal(false)}
+        onClose={() => { setShowRequestModal(false); setRequestError(null); }}
         developerName={developer?.name || 'Developer'}
         developerId={developer?.id}
       />

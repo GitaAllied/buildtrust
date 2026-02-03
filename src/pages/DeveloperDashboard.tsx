@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -43,8 +43,7 @@ const DeveloperDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -213,6 +212,55 @@ const DeveloperDashboard = () => {
     setFiles([]);
     setPreviews([]);
   };
+
+  // Protect route: only allow authenticated users with role 'developer'
+  useEffect(() => {
+    if (loading) return; // wait until auth state resolved
+
+    if (!user) {
+      navigate('/', {
+        state: {
+          message: 'Please log in to access the developer dashboard',
+          messageType: 'info',
+        },
+      });
+      return;
+    }
+
+    if (user.role !== 'developer') {
+      navigate('/', {
+        state: {
+          message:
+            'The developer dashboard is available to developer accounts only. Please sign in with a developer account or contact support for assistance.',
+          messageType: 'info',
+        },
+      });
+    }
+  }, [user, loading, navigate]);
+
+  // Show spinner while auth is being refreshed
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#226F75]/10">
+        <div className="text-center">
+          <svg
+            className="animate-spin h-12 w-12 text-[#226F75] mx-auto"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            />
+          </svg>
+          <p className="mt-3 text-sm text-gray-600">Loading dashboard…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">

@@ -31,11 +31,13 @@ import {
 } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 
+const PROJECT_PLACEHOLDER = 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=300&h=200&fit=crop';
+
 const ClientDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
 
   // Dynamic state for user data
   const [activeProjects, setActiveProjects] = useState([]);
@@ -47,41 +49,35 @@ const ClientDashboard = () => {
     activeProjectsCount: 0,
     avgRating: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch user dashboard data on mount
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        setLoading(true);
+        setIsLoading(true);
 
         // Fetch current user data to ensure it's fresh
         const currentUser = await apiClient.getCurrentUser();
 
-        // Since we don't have dedicated endpoints yet, we'll use mock data
-        // that would be replaced with actual API calls
-        setActiveProjects([
-          {
-            id: 1,
-            title: "Modern Duplex in Lekki",
-            location: "Lekki, Lagos",
-            progress: 45,
-            developer: "Engr. Adewale Structures",
-            image:
-              "https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=300&h=200&fit=crop",
-            status: "Foundation Complete",
-          },
-          {
-            id: 2,
-            title: "Commercial Plaza",
-            location: "Victoria Island, Lagos",
-            progress: 20,
-            developer: "Prime Build Ltd",
-            image:
-              "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=300&h=200&fit=crop",
-            status: "Site Preparation",
-          },
-        ]);
+        // Fetch real client projects from the database
+        const projectsResponse = await apiClient.getClientProjects();
+        const projectsData = projectsResponse.projects || [];
+
+        // Transform projects to match dashboard format
+        const activeProjects = projectsData
+          .filter((p: any) => p.status === 'active' || p.status === 'open')
+            .map((p: any) => ({
+            id: p.id,
+            title: p.title,
+            location: p.location || 'TBD',
+            progress: p.progress ?? 0, // From milestone calculation
+            developer: p.developer_name || 'Assigned Developer',
+              image: p.media?.url || PROJECT_PLACEHOLDER,
+            status: p.status === 'open' ? 'Pending' : 'In Progress',
+          }));
+
+        setActiveProjects(activeProjects);
 
         setRecentUpdates([
           {
@@ -137,14 +133,14 @@ const ClientDashboard = () => {
         setStats({
           totalInvestment: "₦25.4M",
           completedProjects: 3,
-          activeProjectsCount: 2,
+          activeProjectsCount: activeProjects.length,
           avgRating: 4.8,
         });
 
-        setLoading(false);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -152,6 +148,55 @@ const ClientDashboard = () => {
       fetchDashboardData();
     }
   }, [user]);
+
+  // Protect route: only allow authenticated users with role 'client'
+  useEffect(() => {
+    if (loading) return; // wait until auth state resolved
+
+    if (!user) {
+      navigate('/', {
+        state: {
+          message: 'Please log in to access the client dashboard',
+          messageType: 'info',
+        },
+      });
+      return;
+    }
+
+    if (user.role !== 'client') {
+      navigate('/', {
+        state: {
+          message:
+            'The client dashboard is available to client accounts only. Please sign in with a client account or contact support for assistance.',
+          messageType: 'info',
+        },
+      });
+    }
+  }, [user, loading, navigate]);
+
+  // Show a spinner/placeholder while auth is being refreshed
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#226F75]/10">
+        <div className="text-center">
+          <svg
+            className="animate-spin h-12 w-12 text-[#226F75] mx-auto"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            />
+          </svg>
+          <p className="mt-3 text-sm text-gray-600">Loading dashboard…</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogout = async () => {
     try {
@@ -276,7 +321,7 @@ const ClientDashboard = () => {
                   Welcome, {user?.name || "Client"}
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-500 truncate">
-                  Managing 2 active projects
+                  Managing {activeProjects.length} active project{activeProjects.length !== 1 ? 's' : ''}
                 </p>
               </div>
             </div>
@@ -320,6 +365,10 @@ const ClientDashboard = () => {
                         <img
                           src={project.image}
                           alt={project.title}
+                          onError={(e: any) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = PROJECT_PLACEHOLDER;
+                          }}
                           className="w-full sm:w-32 md:w-40 rounded-xl object-cover flex-shrink-0 group-hover:scale-105 transition-transform duration-300"
                         />
                         <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 w-full">
