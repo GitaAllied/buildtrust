@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,11 @@ import {
 } from "react-icons/fa6";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
+import { apiClient } from "@/lib/api";
+
+// Derive backend origin to resolve media URLs stored as "/uploads/...".
+const API_BASE = (import.meta.env.VITE_API_URL ?? 'https://buildtrust-backend.onrender.com/api').replace(/\/+$/, '');
+const API_ORIGIN = API_BASE.replace(/\/api$/, '');
 
 const Contracts = () => {
   const navigate = useNavigate();
@@ -75,39 +80,61 @@ const Contracts = () => {
         navigate("/browse");
     }
   };
+  // Real data state
+  const [contracts, setContracts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const contracts = [
-    {
-      id: 1,
-      title: "Modern Duplex Construction Contract",
-      developer: "Engr. Adewale Structures",
-      project: "Modern Duplex in Lekki",
-      value: "₦8,500,000",
-      status: "Active",
-      signed: "2024-01-15",
-      deadline: "2024-12-15",
-    },
-    {
-      id: 2,
-      title: "Commercial Plaza Development Agreement",
-      developer: "Prime Build Ltd",
-      project: "Commercial Plaza",
-      value: "₦25,000,000",
-      status: "Active",
-      signed: "2024-02-20",
-      deadline: "2025-06-20",
-    },
-    {
-      id: 3,
-      title: "Bungalow Renovation Contract",
-      developer: "Covenant Builders",
-      project: "Bungalow Renovation",
-      value: "₦4,200,000",
-      status: "Completed",
-      signed: "2023-10-10",
-      deadline: "2024-01-10",
-    },
-  ];
+  // Format date or show 'Pending' if null
+  const formatDateOrPending = (date: any) => {
+    if (!date) return 'Pending';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'Pending';
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  // Resolve media URL helper (in case contract has file references)
+  const resolveMediaUrl = (media: any) => {
+    if (!media) return null;
+    let url = media.url ?? media.filename ?? null;
+    if (!url) return null;
+    url = String(url);
+    if (url.startsWith('http')) return url;
+    if (!url.startsWith('/')) url = `/${url}`;
+    return `${API_ORIGIN}${url}`;
+  };
+
+  useEffect(() => {
+    const fetchContracts = async () => {
+      try {
+        setLoading(true);
+        // Backend does not expose /api/contracts; use /api/projects which returns enriched projects including contract info
+        const res = await apiClient.getClientProjects();
+        const projects = res.projects ?? res.data ?? res;
+        const mapped = (Array.isArray(projects) ? projects : []).map((p: any) => ({
+          id: p.contract_id || p.id,
+          title: p.contract_title || p.title || `Contract for ${p.title || 'Project'}`,
+          developer: p.developer_name || p.developer || '',
+          project: p.title || p.project_title || '',
+          value: p.agreed_amount || p.value || p.budget_range || p.budget || '—',
+          status: (p.contract_status || p.status) || (p.contract_id ? 'Active' : 'Draft') ,
+          start_date: p.start_date || null,
+          end_date: p.deadline || p.contract_deadline || p.end_date || null,
+          signed: p.contract_signed_at || p.signed_at || p.created_at || '',
+          deadline: p.contract_deadline || p.deadline || '',
+          file: p.contract_file || p.file || null,
+        })).filter((c: any) => c.id); // keep only entries with a contract id
+
+        setContracts(mapped);
+      } catch (err: any) {
+        console.error('Error fetching contracts:', err);
+        setError(err.message || 'Failed to load contracts');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchContracts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
@@ -176,70 +203,95 @@ const Contracts = () => {
         </div>
 
         <div className="p-6">
-          <div className="grid gap-6">
-            {contracts.map((contract) => (
-              <Card
-                key={contract.id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-5 md:justify-between flex-col md:flex-row">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <FileText className="h-5 w-5 text-gray-600" />
-                        <h3 className="font-semibold text-base md:text-lg">
-                          {contract.title}
-                        </h3>
-                        <Badge
-                          variant={
-                            contract.status === "Active"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className={
-                            contract.status === "Active" ? "bg-green-600" : ""
-                          }
-                        >
-                          {contract.status}
-                        </Badge>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+                <p className="mt-4 text-gray-600">Loading contracts...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="text-center text-red-600 py-12">
+              <p className="text-lg font-semibold">Error</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          ) : contracts.length === 0 ? (
+            <div className="text-center py-12 text-gray-600">No contracts found.</div>
+          ) : (
+            <div className="grid gap-6">
+              {contracts.map((contract) => (
+                <Card
+                  key={contract.id}
+                  className="hover:shadow-md transition-shadow"
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-5 md:justify-between flex-col md:flex-row">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <FileText className="h-5 w-5 text-gray-600" />
+                          <h3 className="font-semibold text-base md:text-lg">
+                            {contract.title}
+                          </h3>
+                          <Badge
+                            variant={
+                              contract.status === "Active"
+                                ? "default"
+                                : "secondary"
+                            }
+                            className={
+                              contract.status === "Active" ? "bg-green-600" : ""
+                            }
+                          >
+                            {contract.status}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-4 text-sm text-gray-600">
+                          <div>
+                            <p>
+                              <strong>Developer:</strong> {contract.developer}
+                            </p>
+                            <p>
+                              <strong>Project:</strong> {contract.project}
+                            </p>
+                          </div>
+                          <div>
+                            <p>
+                              <strong>Contract Value:</strong> {contract.value}
+                            </p>
+                            <p>
+                              <strong>Start Date:</strong> {formatDateOrPending(contract.start_date)}
+                            </p>
+                            <p>
+                              <strong>End Date:</strong> {formatDateOrPending(contract.end_date)}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-4 text-sm text-gray-600">
-                        <div>
-                          <p>
-                            <strong>Developer:</strong> {contract.developer}
-                          </p>
-                          <p>
-                            <strong>Project:</strong> {contract.project}
-                          </p>
-                        </div>
-                        <div>
-                          <p>
-                            <strong>Contract Value:</strong> {contract.value}
-                          </p>
-                          <p>
-                            <strong>Signed:</strong> {contract.signed}
-                          </p>
-                          <p>
-                            <strong>Deadline:</strong> {contract.deadline}
-                          </p>
-                        </div>
+                      <div className="flex space-x-2">
+                        <Button size="sm" variant="outline" onClick={() => navigate(`/contracts/${contract.id}`)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                        {contract.file ? (
+                          <a href={resolveMediaUrl(contract.file) || contract.file} target="_blank" rel="noreferrer">
+                            <Button size="sm" variant="outline">
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </Button>
+                          </a>
+                        ) : (
+                          <Button size="sm" variant="outline" disabled>
+                            <Download className="h-4 w-4 mr-2" />
+                            No File
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-4 w-4 mr-2" />
-                        View
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -375,6 +375,12 @@ class ApiClient {
       method: 'GET',
     });
   }
+
+  async getClientContracts() {
+    return this.request('/contracts', {
+      method: 'GET',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
