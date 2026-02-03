@@ -406,7 +406,7 @@ const ClientDashboard = () => {
                               </div>
 
                               <div className="flex flex-row items-start sm:items-center justify-between gap-2">
-                                <Badge className="bg-[#226F75]/10 text-[#253E44] text-xs font-medium p-2 px-4">
+                                <Badge className="bg-[#226F75]/10 hover:bg-[#226F75]/30 text-[#253E44] text-xs font-medium p-2 px-4">
                                   {project.status}
                                 </Badge>
                                 <Button
