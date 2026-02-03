@@ -27,6 +27,7 @@ import AdminUserEdit from "./pages/AdminUserEdit";
 import Messages from "./pages/Messages";
 import Payments from "./pages/Payments";
 import Projects from "./pages/Projects";
+import ProjectDetails from "./pages/ProjectDetails";
 import Settings from "./pages/Settings";
 import Contracts from "./pages/Contracts";
 import SavedDevelopers from "./pages/SavedDevelopers";
@@ -197,6 +198,16 @@ const App = () => (
               <EmailVerificationGuard>
                 <ProtectedRoute requiredRole="client">
                   <Projects />
+                </ProtectedRoute>
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/project/:id"
+            element={
+              <EmailVerificationGuard>
+                <ProtectedRoute requiredRole="client">
+                  <ProjectDetails />
                 </ProtectedRoute>
               </EmailVerificationGuard>
             }
