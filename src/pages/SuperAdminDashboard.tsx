@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api";
 import {
   Star,
   Upload,
@@ -43,78 +45,14 @@ import { Link } from "react-router-dom";
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
-
-  const sidebarItems = [
-    { id: "dashboard", label: "Dashboard", icon: <FaUser />, active: true },
-    { id: "users", label: "User Management", icon: <FaUsers /> },
-    { id: "messages", label: "Messages", icon: <FaMessage /> },
-    { id: "reports", label: "Reports", icon: <FaBook /> },
-    { id: "settings", label: "Settings", icon: <FaGear /> },
-    { id: "support", label: "Support", icon: <FaHandshake /> },
-    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
-  ];
-
-  const systemAlerts = [
-    {
-      id: 1,
-      type: "warning",
-      message: "High server load detected",
-      time: "5 minutes ago",
-    },
-    {
-      id: 2,
-      type: "info",
-      message: "New user registrations spike",
-      time: "1 hour ago",
-    },
-    {
-      id: 3,
-      type: "error",
-      message: "Payment gateway timeout",
-      time: "2 hours ago",
-    },
-  ];
-
-  const recentUsers = [
-    {
-      id: 1,
-      name: "John Developer",
-      role: "Developer",
-      status: "Verified",
-      joined: "2 days ago",
-    },
-    {
-      id: 2,
-      name: "Sarah Client",
-      role: "Client",
-      status: "Pending",
-      joined: "1 day ago",
-    },
-    {
-      id: 3,
-      name: "Mike Contractor",
-      role: "Developer",
-      status: "Verified",
-      joined: "3 days ago",
-    },
-  ];
-
-  const systemStats = [
+  const [recentUsers, setRecentUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [systemStats, setSystemStats] = useState([
     {
       label: "Total Users",
-      value: "12,847",
-      change: "+12%",
+      value: "0",
+      change: "+0%",
       icon: Users,
     },
     {
@@ -135,6 +73,105 @@ const SuperAdminDashboard = () => {
       change: "Stable",
       icon: Shield,
     },
+  ]);
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  // Fetch recent users from backend
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setUsersLoading(true);
+        setUsersError(null);
+        const response = await apiClient.getUsers();
+        const users = Array.isArray(response) ? response : response.users || [];
+        
+        // Calculate total users and 7-day stats
+        const totalUsers = users.length;
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const usersLast7Days = users.filter((user: any) => {
+          const userCreatedDate = new Date(user.created_at);
+          return userCreatedDate >= sevenDaysAgo;
+        }).length;
+        const userPercentageChange = totalUsers > 0 ? Math.round((usersLast7Days / totalUsers) * 100) : 0;
+        
+        // Fetch projects data
+        const projectsResponse = await apiClient.getAllProjects();
+        const projects = Array.isArray(projectsResponse) ? projectsResponse : projectsResponse.projects || [];
+        
+        // Calculate total in_progress projects and 7-day stats
+        const inProgressProjects = projects.filter((p: any) => p.status === 'in_progress');
+        const totalProjects = inProgressProjects.length;
+        const projectsLast7Days = inProgressProjects.filter((project: any) => {
+          const projectCreatedDate = new Date(project.created_at);
+          return projectCreatedDate >= sevenDaysAgo;
+        }).length;
+        const projectPercentageChange = totalProjects > 0 ? Math.round((projectsLast7Days / totalProjects) * 100) : 0;
+        
+        // Update system stats with real data
+        setSystemStats(prev => [
+          {
+            ...prev[0],
+            value: totalUsers.toLocaleString(),
+            change: `+${userPercentageChange}%`,
+          },
+          {
+            ...prev[1],
+            value: totalProjects.toLocaleString(),
+            change: `+${projectPercentageChange}%`,
+          },
+          ...prev.slice(2)
+        ]);
+        
+        // Get last 5 users (most recent)
+        const recent = users.slice(-5).reverse();
+        setRecentUsers(recent.map((user: any) => ({
+          id: user.id,
+          name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown',
+          role: user.role?.charAt(0).toUpperCase() + user.role?.slice(1) || 'User',
+          email_verified: user.email_verified === 1 || user.email_verified === true || user.email_verified === '1',
+          setup_completed: user.setup_completed === 1 || user.setup_completed === true || user.setup_completed === '1',
+          status: 
+            !user.email_verified || user.email_verified === 0 ? 'Email Unverified' :
+            (user.setup_completed === 1 || user.setup_completed === true || user.setup_completed === '1') ? 'Active' : 'Pending Setup',
+          joined: user.created_at
+            ? new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : 'Recently',
+        })));
+      } catch (error) {
+        console.error('Failed to load users:', error);
+        setUsersError((error as any)?.message || 'Failed to load users');
+        toast({ title: 'Error', description: 'Could not load recent users', variant: 'destructive' });
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+    loadUsers();
+  }, [toast]);
+
+
+  const sidebarItems = [
+    { id: "dashboard", label: "Dashboard", icon: <FaUser />, active: true },
+    { id: "users", label: "User Management", icon: <FaUsers /> },
+    { id: "projects", label: "Projects", icon: <FaHandshake /> },
+    { id: "contracts", label: "Contracts", icon: <FaBook /> },
+    { id: "developers", label: "Developers", icon: <FaUser /> },
+    { id: "messages", label: "Messages", icon: <FaMessage /> },
+    { id: "reports", label: "Reports", icon: <FaBook /> },
+    { id: "settings", label: "Settings", icon: <FaGear /> },
+    { id: "support", label: "Support", icon: <FaHandshake /> },
+    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
   ];
 
   const handleNavigation = (itemId: string) => {
@@ -145,6 +182,15 @@ const SuperAdminDashboard = () => {
         break;
       case "users":
         navigate("/admin/users");
+        break;
+      case "projects":
+        navigate("/admin/projects");
+        break;
+      case "contracts":
+        navigate("/admin/contracts");
+        break;
+      case "developers":
+        navigate("/admin/developers");
         break;
       case "messages":
         navigate("/admin/messages");
@@ -291,52 +337,72 @@ const SuperAdminDashboard = () => {
                   {recentUsers.length} New
                 </Badge>
               </div>
-              <div className="space-y-3 md:space-y-4">
-                {recentUsers.map((user) => (
-                  <Card
-                    key={user.id}
-                    className="hover:shadow-md transition-shadow"
-                  >
-                    <CardContent className="p-4 md:p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div className="flex items-center space-x-4">
-                          <Avatar className="h-8 md:h-10 w-8 md:w-10 flex-shrink-0">
-                            <AvatarFallback className="text-xs">
-                              {user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h3 className="font-semibold text-sm md:text-base">
-                              {user.name}
-                            </h3>
-                            <p className="text-xs md:text-sm text-gray-600">
-                              {user.role}
-                            </p>
+              {usersLoading ? (
+                <Card>
+                  <CardContent className="p-6 text-center text-gray-500">
+                    Loading users...
+                  </CardContent>
+                </Card>
+              ) : usersError ? (
+                <Card>
+                  <CardContent className="p-6 text-center text-red-500">
+                    {usersError}
+                  </CardContent>
+                </Card>
+              ) : recentUsers.length === 0 ? (
+                <Card>
+                  <CardContent className="p-6 text-center text-gray-500">
+                    No users found
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3 md:space-y-4">
+                  {recentUsers.map((user) => (
+                    <Card
+                      key={user.id}
+                      className="hover:shadow-md transition-shadow"
+                    >
+                      <CardContent className="p-4 md:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          <div className="flex items-center space-x-4">
+                            <Avatar className="h-8 md:h-10 w-8 md:w-10 flex-shrink-0">
+                              <AvatarFallback className="text-xs bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
+                                {user.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h3 className="font-semibold text-sm md:text-base">
+                                {user.name}
+                              </h3>
+                              <p className="text-xs md:text-sm text-gray-600">
+                                {user.role}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2 flex-wrap justify-between md:justify-start">
+                            <Badge
+                              variant={
+                                user.status === "Verified"
+                                  ? "default"
+                                  : "secondary"
+                              }
+                              className="text-xs"
+                            >
+                              {user.status}
+                            </Badge>
+                            <span className="text-xs md:text-sm text-gray-500">
+                              {user.joined}
+                            </span>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2 flex-wrap justify-between md:justify-start">
-                          <Badge
-                            variant={
-                              user.status === "Verified"
-                                ? "default"
-                                : "secondary"
-                            }
-                            className="text-xs"
-                          >
-                            {user.status}
-                          </Badge>
-                          <span className="text-xs md:text-sm text-gray-500">
-                            {user.joined}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-4 md:space-y-6">

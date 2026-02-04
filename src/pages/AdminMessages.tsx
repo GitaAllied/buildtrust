@@ -89,6 +89,9 @@ const AdminMessages = () => {
   const sidebarItems = [
       { id: "dashboard", label: "Dashboard", icon: <FaUser />},
       { id: "users", label: "User Management", icon: <FaUsers /> },
+      { id: "projects", label: "Projects", icon: <FaHandshake /> },
+      { id: "contracts", label: "Contracts", icon: <FaBook /> },
+      { id: "developers", label: "Developers", icon: <FaUser /> },
       { id: "messages", label: "Messages", icon: <FaMessage />, active: true },
       { id: "reports", label: "Reports", icon: <FaBook /> },
       { id: "settings", label: "Settings", icon: <FaGear /> },
@@ -103,6 +106,15 @@ const AdminMessages = () => {
         break;
       case "users":
         navigate("/admin/users");
+        break;
+      case "projects":
+        navigate("/admin/projects");
+        break;
+      case "contracts":
+        navigate("/admin/contracts");
+        break;
+      case "developers":
+        navigate("/admin/developers");
         break;
       case "messages":
         navigate("/admin/messages");

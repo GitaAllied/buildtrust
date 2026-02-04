@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import {
   Shield,
   ArrowLeft,
@@ -23,7 +25,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Upload
+  Loader2
 } from "lucide-react";
 
 interface User {
@@ -49,103 +51,62 @@ interface User {
 const AdminUserEdit = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     role: "",
-    status: "",
     phone: "",
     location: "",
     bio: "",
-    skills: [] as string[]
+    website: "",
+    email_verified: false,
+    is_active: true,
+    skills: "" as any,
   });
 
-  // Mock user data - in a real app, this would come from an API
-  const mockUsers: User[] = [
-    {
-      id: 1,
-      name: "John Developer",
-      email: "john@example.com",
-      role: "developer",
-      status: "Verified",
-      phone: "+234 801 234 5678",
-      location: "Lagos, Nigeria",
-      joined: "Jan 2024",
-      projects: 12,
-      rating: 4.8,
-      avatar: "",
-      bio: "Full-stack developer with 5+ years of experience in React, Node.js, and cloud technologies.",
-      skills: ["React", "Node.js", "TypeScript", "AWS", "MongoDB"],
-      completedProjects: 10,
-      activeProjects: 2,
-      totalEarnings: 25000,
-      lastActive: "2 hours ago"
-    },
-    {
-      id: 2,
-      name: "Sarah Client",
-      email: "sarah@example.com",
-      role: "client",
-      status: "Verified",
-      phone: "+234 802 345 6789",
-      location: "Abuja, Nigeria",
-      joined: "Mar 2024",
-      projects: 5,
-      rating: 4.9,
-      avatar: "",
-      bio: "Product manager looking to build innovative solutions for the Nigerian market.",
-      skills: ["Product Management", "Agile", "UX Design"],
-      completedProjects: 3,
-      activeProjects: 2,
-      totalEarnings: 15000,
-      lastActive: "1 day ago"
-    },
-    {
-      id: 3,
-      name: "Mike Contractor",
-      email: "mike@example.com",
-      role: "developer",
-      status: "Pending",
-      phone: "+234 803 456 7890",
-      location: "Port Harcourt, Nigeria",
-      joined: "Dec 2024",
-      projects: 0,
-      avatar: "",
-      bio: "New to the platform, excited to start building amazing projects.",
-      skills: ["JavaScript", "Python", "Django"],
-      completedProjects: 0,
-      activeProjects: 0,
-      totalEarnings: 0,
-      lastActive: "1 week ago"
-    }
-  ];
-
   useEffect(() => {
-    // Simulate API call
     const fetchUser = async () => {
       setLoading(true);
+      setError(null);
       try {
-        // In a real app, this would be an API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const foundUser = mockUsers.find(u => u.id === parseInt(userId || "0"));
-        if (foundUser) {
-          setUser(foundUser);
-          setFormData({
-            name: foundUser.name,
-            email: foundUser.email,
-            role: foundUser.role,
-            status: foundUser.status,
-            phone: foundUser.phone || "",
-            location: foundUser.location || "",
-            bio: foundUser.bio || "",
-            skills: foundUser.skills || []
-          });
+        if (!userId) {
+          setError('Invalid user ID');
+          return;
         }
-      } catch (error) {
-        console.error("Error fetching user:", error);
+        const userData = await apiClient.getUser(userId);
+        const mappedUser = {
+          id: userData.id,
+          name: userData.name || 'Unknown User',
+          email: userData.email,
+          role: userData.role?.charAt(0).toUpperCase() + userData.role?.slice(1) || 'User',
+          status: !userData.email_verified || userData.email_verified === 0 ? 'Pending' : (userData.setup_completed === 1 || userData.setup_completed === true) ? 'Verified' : 'Pending',
+          phone: userData.phone || '-',
+          location: userData.location || '-',
+          joined: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Recently',
+          projects: 0,
+          rating: 0,
+        } as User;
+        setUser(mappedUser);
+        setFormData({
+          name: mappedUser.name,
+          email: mappedUser.email,
+          role: userData.role || 'client',
+          phone: userData.phone || '',
+          location: userData.location || '',
+          bio: userData.bio || '',
+          website: userData.website || '',
+          email_verified: userData.email_verified === 1 || userData.email_verified === true,
+          is_active: userData.is_active === 1 || userData.is_active === true,
+          skills: userData.skills ? userData.skills.join(', ') : '',
+        });
+      } catch (err) {
+        console.error("Error fetching user:", err);
+        setError("User not found. The user you're looking for doesn't exist or has been removed.");
       } finally {
         setLoading(false);
       }
@@ -159,31 +120,40 @@ const AdminUserEdit = () => {
   const handleSave = async () => {
     // Validate form
     if (!formData.name || !formData.email) {
-      alert("Name and email are required");
+      toast({ title: 'Error', description: 'Name and email are required', variant: 'destructive' });
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      alert("Please enter a valid email address");
+      toast({ title: 'Error', description: 'Please enter a valid email address', variant: 'destructive' });
       return;
     }
 
     setSaving(true);
     try {
-      // In a real app, this would be an API call to update the user
-      console.log("Updating user:", formData);
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call API to update user
+      await apiClient.updateUser(parseInt(userId || '0'), {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        phone: formData.phone || null,
+        location: formData.location || null,
+        bio: formData.bio || null,
+        website: formData.website || null,
+        email_verified: formData.email_verified ? 1 : 0,
+        is_active: formData.is_active ? 1 : 0,
+        skills: formData.skills ? formData.skills.split(',').map((s: string) => s.trim()) : null,
+      });
 
-      // Show success message
-      alert("User updated successfully!");
-
+      toast({ title: 'Success', description: 'User updated successfully!' });
+      
       // Navigate back to user view
       navigate(`/admin/users/${userId}`);
-    } catch (error) {
-      console.error("Error updating user:", error);
-      alert("Failed to update user. Please try again.");
+    } catch (err) {
+      console.error("Error updating user:", err);
+      toast({ title: 'Error', description: 'Failed to update user. Please try again.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -191,11 +161,6 @@ const AdminUserEdit = () => {
 
   const handleCancel = () => {
     navigate(`/admin/users/${userId}`);
-  };
-
-  const handleSkillChange = (skillString: string) => {
-    const skills = skillString.split(',').map(s => s.trim()).filter(s => s.length > 0);
-    setFormData(prev => ({ ...prev, skills }));
   };
 
   const getStatusBadge = (status: string) => {
@@ -211,25 +176,25 @@ const AdminUserEdit = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <Loader2 className="animate-spin h-12 w-12 text-[#253E44] mx-auto" />
           <p className="mt-4 text-gray-600">Loading user details...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!user || error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Shield className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">User not found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            The user you're looking for doesn't exist or has been removed.
+            {error || "The user you're looking for doesn't exist or has been removed."}
           </p>
           <Button
             onClick={() => navigate('/admin/users')}
-            className="mt-4 bg-red-600 hover:bg-red-700"
+            className="mt-4 bg-[#253E44] hover:bg-[#253E44]/90"
           >
             Back to Users
           </Button>
@@ -259,7 +224,7 @@ const AdminUserEdit = () => {
             <div className="flex gap-2 md:gap-0 md:space-x-3">
               <Button variant="outline" onClick={handleCancel}>
                 <X className="md:mr-2 h-4 w-4" />
-                <span className=" hidden md:block">Cancel</span>
+                <span className="hidden md:inline">Cancel</span>
               </Button>
               <Button
                 onClick={handleSave}
@@ -268,13 +233,13 @@ const AdminUserEdit = () => {
               >
                 {saving ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
                     Saving...
                   </>
                 ) : (
                   <>
                     <Save className="md:mr-2 h-4 w-4" />
-                    <span className=" hidden md:block">Save Changes</span>
+                    <span className="hidden md:inline">Save Changes</span>
                   </>
                 )}
               </Button>
@@ -333,36 +298,43 @@ const AdminUserEdit = () => {
                     />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
+            <Card>
+              <CardHeader>
+                <CardTitle>Professional Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
+                  <Label htmlFor="bio">Bio/About</Label>
                   <Textarea
                     id="bio"
                     value={formData.bio}
                     onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                    placeholder="Tell us about this user..."
+                    placeholder="Write a brief bio about the user"
                     rows={4}
                   />
                 </div>
-
-                {user.role === 'developer' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="skills">Skills (comma-separated)</Label>
-                    <Input
-                      id="skills"
-                      value={formData.skills.join(', ')}
-                      onChange={(e) => handleSkillChange(e.target.value)}
-                      placeholder="React, Node.js, TypeScript"
-                    />
-                    {formData.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {formData.skills.map((skill, index) => (
-                          <Badge key={index} variant="secondary">{skill}</Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website/Portfolio</Label>
+                  <Input
+                    id="website"
+                    value={formData.website}
+                    onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                    placeholder="https://example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="skills">Skills (comma-separated)</Label>
+                  <Textarea
+                    id="skills"
+                    value={formData.skills}
+                    onChange={(e) => setFormData(prev => ({ ...prev, skills: e.target.value }))}
+                    placeholder="e.g. React, TypeScript, Node.js, UI Design"
+                    rows={3}
+                  />
+                </div>
               </CardContent>
             </Card>
 
@@ -385,18 +357,39 @@ const AdminUserEdit = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Verified">Verified</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Suspended">Suspended</SelectItem>
-                      </SelectContent>
-                    </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Status Control</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div>
+                      <Label className="text-base font-medium">Email Verified</Label>
+                      <p className="text-sm text-gray-600 mt-1">Mark if user email has been verified</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={formData.email_verified}
+                      onChange={(e) => setFormData(prev => ({ ...prev, email_verified: e.target.checked }))}
+                      className="w-5 h-5 cursor-pointer rounded border-gray-300"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div>
+                      <Label className="text-base font-medium">Account Active</Label>
+                      <p className="text-sm text-gray-600 mt-1">Uncheck to suspend the account</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={formData.is_active}
+                      onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                      className="w-5 h-5 cursor-pointer rounded border-gray-300"
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -412,7 +405,7 @@ const AdminUserEdit = () => {
               <CardContent>
                 <div className="flex items-center space-x-4 mb-4">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src={user.avatar} alt={formData.name} />
+                    <AvatarImage src={user?.avatar} alt={formData.name} />
                     <AvatarFallback>
                       {formData.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
@@ -421,7 +414,7 @@ const AdminUserEdit = () => {
                     <h3 className="font-semibold">{formData.name || 'User Name'}</h3>
                     <p className="text-sm text-gray-600">{formData.email || 'user@example.com'}</p>
                     <div className="flex items-center space-x-2 mt-1">
-                      {getStatusBadge(formData.status)}
+                      {getStatusBadge(user?.status || 'Pending')}
                     </div>
                   </div>
                 </div>
@@ -435,17 +428,17 @@ const AdminUserEdit = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Projects</span>
-                    <span className="font-medium">{user.projects}</span>
+                    <span className="font-medium">{user?.projects || 0}</span>
                   </div>
-                  {user.rating && (
+                  {user?.rating && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Rating</span>
-                      <span className="font-medium">{user.rating}/5</span>
+                      <span className="font-medium">{user?.rating}/5</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Joined</span>
-                    <span className="font-medium">{user.joined}</span>
+                    <span className="font-medium">{user?.joined}</span>
                   </div>
                 </div>
               </CardContent>
@@ -459,19 +452,19 @@ const AdminUserEdit = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Total Projects</span>
-                    <span className="font-semibold">{user.projects}</span>
+                    <span className="font-semibold">{user?.projects || 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Completed</span>
-                    <span className="font-semibold text-green-600">{user.completedProjects || 0}</span>
+                    <span className="font-semibold text-green-600">{user?.completedProjects || 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Active</span>
-                    <span className="font-semibold text-blue-600">{user.activeProjects || 0}</span>
+                    <span className="font-semibold text-blue-600">{user?.activeProjects || 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Total Earnings</span>
-                    <span className="font-semibold">${user.totalEarnings || 0}</span>
+                    <span className="font-semibold">${user?.totalEarnings || 0}</span>
                   </div>
                 </div>
               </CardContent>
