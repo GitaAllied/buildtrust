@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api";
 import {
   Users,
   Search,
@@ -46,7 +48,8 @@ import {
   Eye,
   MessageSquare,
   X,
-  Menu
+  Menu,
+  Loader2
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -66,17 +69,75 @@ const AdminUsers = () => {
   const [filterRole, setFilterRole] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
-    role: "client",
+    role: "sub_admin",
     phone: "",
     location: "",
+    password: "",
+    confirmPassword: "",
   });
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("users");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { signOut } = useAuth();
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+
+  // Fetch users on component mount
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      setUsersLoading(true);
+      setUsersError(null);
+      const response = await apiClient.getUsers();
+      const usersList = Array.isArray(response) ? response : response.users || [];
+      // Map to display format, filter out admin users, and sort in descending order (newest first)
+      const mappedUsers = usersList
+        .filter((user: any) => user.role !== 'admin') // Exclude admin/sub-admin users
+        .map((user: any) => {
+          // Determine status based on is_active first, then email/setup verification
+          let status = 'Pending';
+          if (user.is_active === false || user.is_active === 0) {
+            status = 'Suspended';
+          } else if (!user.email_verified || user.email_verified === 0) {
+            status = 'Pending';
+          } else if (user.setup_completed === 1 || user.setup_completed === true) {
+            status = 'Verified';
+          }
+          
+          return {
+            id: user.id,
+            name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown',
+            email: user.email,
+            role: user.role?.charAt(0).toUpperCase() + user.role?.slice(1) || 'User',
+            status: status,
+            joined: user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Recently',
+            phone: user.phone || '-',
+            location: user.location || '-',
+            rating: null,
+            projects: 0,
+            is_active: user.is_active,
+          };
+        })
+        .sort((a: any, b: any) => b.id - a.id);
+      setUsers(mappedUsers);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+      setUsersError((error as any)?.message || 'Failed to load users');
+      toast({ title: 'Error', description: 'Could not load users', variant: 'destructive' });
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -88,6 +149,9 @@ const AdminUsers = () => {
   const sidebarItems = [
       { id: "dashboard", label: "Dashboard", icon: <FaUser />, },
       { id: "users", label: "User Management", icon: <FaUsers />, active: true },
+      { id: "projects", label: "Projects", icon: <FaHandshake /> },
+      { id: "contracts", label: "Contracts", icon: <FaBook /> },
+      { id: "developers", label: "Developers", icon: <FaUser /> },
       { id: "messages", label: "Messages", icon: <FaMessage /> },
       { id: "reports", label: "Reports", icon: <FaBook /> },
       { id: "settings", label: "Settings", icon: <FaGear /> },
@@ -102,6 +166,15 @@ const AdminUsers = () => {
         break;
       case "users":
         navigate("/admin/users");
+        break;
+      case "projects":
+        navigate("/admin/projects");
+        break;
+      case "contracts":
+        navigate("/admin/contracts");
+        break;
+      case "developers":
+        navigate("/admin/developers");
         break;
       case "messages":
         navigate("/admin/messages");
@@ -123,98 +196,66 @@ const AdminUsers = () => {
     }
   };
 
-  const users = [
-    {
-      id: 1,
-      name: "John Developer",
-      email: "john@example.com",
-      role: "Developer",
-      status: "Verified",
-      joined: "2024-01-15",
-      projects: 12,
-      rating: 4.8,
-    },
-    {
-      id: 2,
-      name: "Sarah Client",
-      email: "sarah@example.com",
-      role: "Client",
-      status: "Pending",
-      joined: "2024-01-20",
-      projects: 3,
-      rating: null,
-    },
-    {
-      id: 3,
-      name: "Mike Contractor",
-      email: "mike@example.com",
-      role: "Developer",
-      status: "Verified",
-      joined: "2024-01-10",
-      projects: 25,
-      rating: 4.9,
-    },
-    {
-      id: 4,
-      name: "Admin User",
-      email: "admin@example.com",
-      role: "Admin",
-      status: "Verified",
-      joined: "2023-12-01",
-      projects: 0,
-      rating: null,
-    },
-  ];
-
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole =
-      filterRole === "all" || user.role.toLowerCase() === filterRole;
-    const matchesStatus =
-      filterStatus === "all" || user.status.toLowerCase() === filterStatus;
-    return matchesSearch && matchesRole && matchesStatus;
-  });
-
   const handleAddUser = async () => {
     // Validate form
-    if (!newUser.name || !newUser.email) {
-      alert("Please fill in all required fields");
+    if (!newUser.name || !newUser.email || !newUser.password || !newUser.confirmPassword) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newUser.email)) {
-      alert("Please enter a valid email address");
+      toast({ title: 'Error', description: 'Please enter a valid email address', variant: 'destructive' });
+      return;
+    }
+
+    // Password validation
+    if (newUser.password.length < 8) {
+      toast({ title: 'Error', description: 'Password must be at least 8 characters long', variant: 'destructive' });
+      return;
+    }
+
+    // Password match validation
+    if (newUser.password !== newUser.confirmPassword) {
+      toast({ title: 'Error', description: 'Passwords do not match', variant: 'destructive' });
       return;
     }
 
     try {
-      // In a real app, this would make an API call
-      console.log("Creating new user:", newUser);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setIsSubmitting(true);
+      // Call API to create sub-admin user
+      const response = await apiClient.createUser({
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        password: newUser.password,
+        phone: newUser.phone || null,
+        location: newUser.location || null,
+      });
 
       // Reset form and close modal
       setNewUser({
         name: "",
         email: "",
-        role: "client",
+        role: "sub_admin",
         phone: "",
         location: "",
+        password: "",
+        confirmPassword: "",
       });
       setIsAddUserModalOpen(false);
 
       // Show success message
-      alert("User created successfully!");
+      toast({ title: 'Success', description: 'User created successfully!' });
 
-      // In a real app, you would refresh the users list here
+      // Reload users list
+      loadUsers();
     } catch (error) {
       console.error("Error creating user:", error);
-      alert("Failed to create user. Please try again.");
+      toast({ title: 'Error', description: (error as any)?.message || 'Failed to create user', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -234,16 +275,24 @@ const AdminUsers = () => {
         break;
       case "suspend":
         if (confirm(`Are you sure you want to suspend ${user.name}?`)) {
-          console.log("Suspending user:", userId);
-          // In a real app, make API call to suspend user
-          alert(`${user.name} has been suspended`);
+          try {
+            await apiClient.updateUser(userId, { is_active: false });
+            toast({ title: 'Success', description: `${user.name} has been suspended` });
+            loadUsers();
+          } catch (error) {
+            toast({ title: 'Error', description: 'Failed to suspend user', variant: 'destructive' });
+          }
         }
         break;
       case "activate":
         if (confirm(`Are you sure you want to activate ${user.name}?`)) {
-          console.log("Activating user:", userId);
-          // In a real app, make API call to activate user
-          alert(`${user.name} has been activated`);
+          try {
+            await apiClient.updateUser(userId, { is_active: true });
+            toast({ title: 'Success', description: `${user.name} has been activated` });
+            loadUsers();
+          } catch (error) {
+            toast({ title: 'Error', description: 'Failed to activate user', variant: 'destructive' });
+          }
         }
         break;
       case "delete":
@@ -252,15 +301,30 @@ const AdminUsers = () => {
             `Are you sure you want to permanently delete ${user.name}? This action cannot be undone.`
           )
         ) {
-          console.log("Deleting user:", userId);
-          // In a real app, make API call to delete user
-          alert(`${user.name} has been deleted`);
+          try {
+            await apiClient.deleteUser(userId);
+            toast({ title: 'Success', description: `${user.name} has been deleted` });
+            loadUsers();
+          } catch (error) {
+            toast({ title: 'Error', description: 'Failed to delete user', variant: 'destructive' });
+          }
         }
         break;
       default:
         break;
     }
   };
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole =
+      filterRole === "all" || user.role.toLowerCase() === filterRole;
+    const matchesStatus =
+      filterStatus === "all" || user.status.toLowerCase() === filterStatus;
+    return matchesSearch && matchesRole && matchesStatus;
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -362,17 +426,16 @@ const AdminUsers = () => {
                 <DialogTrigger asChild>
                   <Button className="bg-[#253E44] hover:bg-[#253E44]/70">
                     <Plus className=" h-4 w-4" />
-                    Add New User
+                    Add New Sub Admin
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px] max-w-[90vw]">
                   <DialogHeader>
                     <DialogTitle className="text-base md:text-lg">
-                      Add New User
+                      Add New Sub Admin
                     </DialogTitle>
                     <DialogDescription className="text-xs md:text-sm">
-                      Create a new user account. They will receive an email with
-                      login instructions.
+                      Create a new sub-admin account with administrative privileges.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-3 py-4">
@@ -408,64 +471,43 @@ const AdminUsers = () => {
                           }))
                         }
                         className="sm:col-span-3 text-xs md:text-sm"
-                        placeholder="user@example.com"
+                        placeholder="subadmin@example.com"
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                      <Label htmlFor="role" className="text-xs sm:text-right">
-                        Role
-                      </Label>
-                      <Select
-                        value={newUser.role}
-                        onValueChange={(value) =>
-                          setNewUser((prev) => ({ ...prev, role: value }))
-                        }
-                      >
-                        <SelectTrigger className="sm:col-span-3 text-xs md:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="client">Client</SelectItem>
-                          <SelectItem value="developer">Developer</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                      <Label htmlFor="phone" className="text-xs sm:text-right">
-                        Phone
+                      <Label htmlFor="password" className="text-xs sm:text-right">
+                        Password *
                       </Label>
                       <Input
-                        id="phone"
-                        value={newUser.phone}
+                        id="password"
+                        type="password"
+                        value={newUser.password}
                         onChange={(e) =>
                           setNewUser((prev) => ({
                             ...prev,
-                            phone: e.target.value,
+                            password: e.target.value,
                           }))
                         }
                         className="sm:col-span-3 text-xs md:text-sm"
-                        placeholder="+234 xxx xxx xxxx"
+                        placeholder="Enter password (min 8 characters)"
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                      <Label
-                        htmlFor="location"
-                        className="text-xs sm:text-right"
-                      >
-                        Location
+                      <Label htmlFor="confirmPassword" className="text-xs sm:text-right">
+                        Confirm Password *
                       </Label>
                       <Input
-                        id="location"
-                        value={newUser.location}
+                        id="confirmPassword"
+                        type="password"
+                        value={newUser.confirmPassword}
                         onChange={(e) =>
                           setNewUser((prev) => ({
                             ...prev,
-                            location: e.target.value,
+                            confirmPassword: e.target.value,
                           }))
                         }
                         className="sm:col-span-3 text-xs md:text-sm"
-                        placeholder="City, Country"
+                        placeholder="Confirm password"
                       />
                     </div>
                   </div>
@@ -480,10 +522,18 @@ const AdminUsers = () => {
                     </Button>
                     <Button
                       onClick={handleAddUser}
+                      disabled={isSubmitting}
                       className="bg-[#253E44] hover:bg-[#253E44]/90 text-xs md:text-sm"
                       size="sm"
                     >
-                      Create User
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        'Create Sub Admin'
+                      )}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -533,7 +583,34 @@ const AdminUsers = () => {
 
           {/* Users List */}
           <div className="space-y-4">
-            {filteredUsers.map((user) => (
+            {usersLoading ? (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Loader2 className="mx-auto h-12 w-12 animate-spin text-gray-400" />
+                  <p className="mt-4 text-gray-600">Loading users...</p>
+                </CardContent>
+              </Card>
+            ) : usersError ? (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <p className="text-red-600 font-medium">{usersError}</p>
+                  <Button onClick={loadUsers} className="mt-4" variant="outline">
+                    Try Again
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">
+                  No users found
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Try adjusting your search or filter criteria.
+                </p>
+              </div>
+            ) : (
+              filteredUsers.map((user) => (
               <Card key={user.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-3 md:p-6">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -636,20 +713,9 @@ const AdminUsers = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            ))
+            )}
           </div>
-
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-12">
-              <Users className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No users found
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Try adjusting your search or filter criteria.
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>

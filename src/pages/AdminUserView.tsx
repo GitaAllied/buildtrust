@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { apiClient } from "@/lib/api";
 import {
   Shield,
   ArrowLeft,
@@ -17,7 +18,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Edit
+  Edit,
+  Loader2
 } from "lucide-react";
 
 interface User {
@@ -45,78 +47,52 @@ const AdminUserView = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Mock user data - in a real app, this would come from an API
-  const mockUsers: User[] = [
-    {
-      id: 1,
-      name: "John Developer",
-      email: "john@example.com",
-      role: "developer",
-      status: "Verified",
-      phone: "+234 801 234 5678",
-      location: "Lagos, Nigeria",
-      joined: "Jan 2024",
-      projects: 12,
-      rating: 4.8,
-      avatar: "",
-      bio: "Full-stack developer with 5+ years of experience in React, Node.js, and cloud technologies.",
-      skills: ["React", "Node.js", "TypeScript", "AWS", "MongoDB"],
-      completedProjects: 10,
-      activeProjects: 2,
-      totalEarnings: 25000,
-      lastActive: "2 hours ago"
-    },
-    {
-      id: 2,
-      name: "Sarah Client",
-      email: "sarah@example.com",
-      role: "client",
-      status: "Verified",
-      phone: "+234 802 345 6789",
-      location: "Abuja, Nigeria",
-      joined: "Mar 2024",
-      projects: 5,
-      rating: 4.9,
-      avatar: "",
-      bio: "Product manager looking to build innovative solutions for the Nigerian market.",
-      skills: ["Product Management", "Agile", "UX Design"],
-      completedProjects: 3,
-      activeProjects: 2,
-      totalEarnings: 15000,
-      lastActive: "1 day ago"
-    },
-    {
-      id: 3,
-      name: "Mike Contractor",
-      email: "mike@example.com",
-      role: "developer",
-      status: "Pending",
-      phone: "+234 803 456 7890",
-      location: "Port Harcourt, Nigeria",
-      joined: "Dec 2024",
-      projects: 0,
-      avatar: "",
-      bio: "New to the platform, excited to start building amazing projects.",
-      skills: ["JavaScript", "Python", "Django"],
-      completedProjects: 0,
-      activeProjects: 0,
-      totalEarnings: 0,
-      lastActive: "1 week ago"
-    }
-  ];
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate API call
     const fetchUser = async () => {
       setLoading(true);
+      setError(null);
       try {
-        // In a real app, this would be an API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const foundUser = mockUsers.find(u => u.id === parseInt(userId || "0"));
-        setUser(foundUser || null);
+        if (!userId) {
+          setError('Invalid user ID');
+          return;
+        }
+        const userData = await apiClient.getUser(userId);
+        
+        // Determine status based on is_active first, then email/setup verification
+        let status = 'Pending';
+        if (userData.is_active === false || userData.is_active === 0) {
+          status = 'Suspended';
+        } else if (!userData.email_verified || userData.email_verified === 0) {
+          status = 'Pending';
+        } else if (userData.setup_completed === 1 || userData.setup_completed === true) {
+          status = 'Verified';
+        }
+        
+        const mappedUser = {
+          id: userData.id,
+          name: userData.name || 'Unknown User',
+          email: userData.email,
+          role: userData.role?.charAt(0).toUpperCase() + userData.role?.slice(1) || 'User',
+          status: status,
+          phone: userData.phone || '-',
+          location: userData.location || '-',
+          joined: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Recently',
+          projects: 0,
+          rating: 0,
+          bio: '',
+          skills: [],
+          completedProjects: 0,
+          activeProjects: 0,
+          totalEarnings: 0,
+          lastActive: '',
+          avatar: '',
+        } as User;
+        setUser(mappedUser);
       } catch (error) {
         console.error("Error fetching user:", error);
+        setError("User not found\nThe user you're looking for doesn't exist or has been removed.");
       } finally {
         setLoading(false);
       }
@@ -153,14 +129,14 @@ const AdminUserView = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <Loader2 className="animate-spin h-12 w-12 text-[#253E44] mx-auto" />
           <p className="mt-4 text-gray-600">Loading user details...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!user || error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -198,13 +174,15 @@ const AdminUserView = () => {
                 <p className="text-sm text-gray-500">View user details and information</p>
               </div>
             </div>
-            <Button
-              onClick={() => navigate(`/admin/users/${user.id}/edit`)}
-              className="bg-[#253E44] hover:bg-[#253E44]/90"
-            >
-              <Edit className=" mr-0 md:mr-2 h-4 w-4" />
-              <p className=" hidden md:block">Edit User</p>
-            </Button>
+            {user && (
+              <Button
+                onClick={() => navigate(`/admin/users/${user.id}/edit`)}
+                className="bg-[#253E44] hover:bg-[#253E44]/90"
+              >
+                <Edit className=" mr-0 md:mr-2 h-4 w-4" />
+                <p className=" hidden md:block">Edit User</p>
+              </Button>
+            )}
           </div>
       </div>
 
@@ -216,27 +194,27 @@ const AdminUserView = () => {
               <CardHeader>
                 <div className="flex items-center flex-col md:flex-row space-x-4">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarImage src={user?.avatar} alt={user?.name} />
                     <AvatarFallback className="text-lg">
-                      {user.name.split(' ').map(n => n[0]).join('')}
+                      {user?.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 justify-center md:justify-start">
-                      <CardTitle className="text-2xl">{user.name}</CardTitle>
-                      {getStatusIcon(user.status)}
+                      <CardTitle className="text-2xl">{user?.name}</CardTitle>
+                      {user && getStatusIcon(user.status)}
                       {/* {getStatusBadge(user.status)} */}
                     </div>
-                    <p className="text-gray-600 mt-1 text-center md:text-left">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
+                    <p className="text-gray-600 mt-1 text-center md:text-left">{user?.role.charAt(0).toUpperCase() + user?.role.slice(1)}</p>
                     <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
                       <div className="flex items-center space-x-1">
                         <Mail className="h-4 w-4" />
-                        <span>{user.email}</span>
+                        <span>{user?.email}</span>
                       </div>
-                      {user.phone && (
+                      {user?.phone && (
                         <div className="flex items-center space-x-1">
                           <Phone className="h-4 w-4" />
-                          <span>{user.phone}</span>
+                          <span>{user?.phone}</span>
                         </div>
                       )}
                     </div>
@@ -244,77 +222,107 @@ const AdminUserView = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                {user.bio && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-2">About</h3>
-                    <p className="text-gray-700">{user.bio}</p>
-                  </div>
-                )}
-
-                {user.skills && user.skills.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3">Skills</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {user.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary">{skill}</Badge>
-                      ))}
+                <div className="space-y-6">
+                  
+                  {/* About Section */}
+                  {user?.bio && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">About</h3>
+                      <p className="text-gray-700 text-sm leading-relaxed">{user?.bio}</p>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <Separator className="my-6" />
+                  {/* Skills Section */}
+                  {user?.skills && user?.skills.length > 0 && (
+                    <>
+                      <Separator />
+                      <div>
+                        <h3 className="text-lg font-semibold mb-3">Skills</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {user?.skills.map((skill, index) => (
+                            <Badge key={index} variant="secondary">{skill}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">{user.completedProjects || 0}</div>
-                    <div className="text-sm text-gray-600">Completed Projects</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">{user.activeProjects || 0}</div>
-                    <div className="text-sm text-gray-600">Active Projects</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">{user.rating ? `${user.rating}/5` : 'N/A'}</div>
-                    <div className="text-sm text-gray-600">Rating</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">${user.totalEarnings || 0}</div>
-                    <div className="text-sm text-gray-600">Total Earnings</div>
+                  <Separator />
+
+                  {/* Statistics */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Performance Metrics</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center bg-blue-50 p-4 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">{user?.completedProjects || 0}</div>
+                        <div className="text-xs text-gray-600 mt-1">Completed Projects</div>
+                      </div>
+                      <div className="text-center bg-green-50 p-4 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">{user?.activeProjects || 0}</div>
+                        <div className="text-xs text-gray-600 mt-1">Active Projects</div>
+                      </div>
+                      <div className="text-center bg-yellow-50 p-4 rounded-lg">
+                        <div className="text-2xl font-bold text-yellow-600">{user?.rating ? `${user?.rating}` : '0'}</div>
+                        <div className="text-xs text-gray-600 mt-1">Rating</div>
+                      </div>
+                      <div className="text-center bg-purple-50 p-4 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">${user?.totalEarnings || 0}</div>
+                        <div className="text-xs text-gray-600 mt-1">Total Earnings</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Activity & Projects Card */}
+            {/* Activity & Timeline Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
+                <CardTitle>User Timeline & Activity</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="flex items-start space-x-3 pb-4 border-b">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mt-1 flex-shrink-0"></div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium">Account created</p>
-                      <p className="text-xs text-gray-500">Joined in {user.joined}</p>
+                      <p className="text-sm font-semibold text-gray-900">Account Created</p>
+                      <p className="text-xs text-gray-500 mt-1">Member since {user?.joined}</p>
                     </div>
                   </div>
-                  {user.lastActive && (
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+
+                  {user?.completedProjects > 0 && (
+                    <div className="flex items-start space-x-3 pb-4 border-b">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mt-1 flex-shrink-0"></div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">Last active</p>
-                        <p className="text-xs text-gray-500">{user.lastActive}</p>
+                        <p className="text-sm font-semibold text-gray-900">Projects Completed</p>
+                        <p className="text-xs text-gray-500 mt-1">{user?.completedProjects} successful projects delivered</p>
                       </div>
                     </div>
                   )}
-                  {user.projects > 0 && (
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+
+                  {user?.activeProjects > 0 && (
+                    <div className="flex items-start space-x-3 pb-4 border-b">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full mt-1 flex-shrink-0"></div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">Projects completed</p>
-                        <p className="text-xs text-gray-500">{user.completedProjects} projects finished</p>
+                        <p className="text-sm font-semibold text-gray-900">Active Projects</p>
+                        <p className="text-xs text-gray-500 mt-1">{user?.activeProjects} projects currently in progress</p>
                       </div>
+                    </div>
+                  )}
+
+                  {user?.rating && user?.rating > 0 && (
+                    <div className="flex items-start space-x-3">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full mt-1 flex-shrink-0"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900">Rating</p>
+                        <p className="text-xs text-gray-500 mt-1">Average rating: {user?.rating}/5 stars</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!user?.completedProjects && !user?.activeProjects && (
+                    <div className="text-center py-6">
+                      <p className="text-sm text-gray-500">No activity yet</p>
                     </div>
                   )}
                 </div>
@@ -333,24 +341,24 @@ const AdminUserView = () => {
                   <Mail className="h-5 w-5 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium">Email</p>
-                    <p className="text-sm text-gray-600">{user.email}</p>
+                    <p className="text-sm text-gray-600">{user?.email}</p>
                   </div>
                 </div>
-                {user.phone && (
+                {user?.phone && (
                   <div className="flex items-center space-x-3">
                     <Phone className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="text-sm font-medium">Phone</p>
-                      <p className="text-sm text-gray-600">{user.phone}</p>
+                      <p className="text-sm text-gray-600">{user?.phone}</p>
                     </div>
                   </div>
                 )}
-                {user.location && (
+                {user?.location && (
                   <div className="flex items-center space-x-3">
                     <MapPin className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="text-sm font-medium">Location</p>
-                      <p className="text-sm text-gray-600">{user.location}</p>
+                      <p className="text-sm text-gray-600">{user?.location}</p>
                     </div>
                   </div>
                 )}
@@ -358,7 +366,7 @@ const AdminUserView = () => {
                   <Calendar className="h-5 w-5 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium">Joined</p>
-                    <p className="text-sm text-gray-600">{user.joined}</p>
+                    <p className="text-sm text-gray-600">{user?.joined}</p>
                   </div>
                 </div>
               </CardContent>
@@ -371,24 +379,44 @@ const AdminUserView = () => {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Status</span>
-                  {getStatusBadge(user.status)}
+                  {user && getStatusBadge(user.status)}
                 </div>
                 <Separator className="my-4" />
-                <div className="space-y-2 text-sm">
+                <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Role</span>
-                    <span className="font-medium capitalize">{user.role}</span>
+                    <span className="font-medium capitalize">{user?.role}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Account ID</span>
+                    <span className="font-medium">{user?.id}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Email Verified</span>
+                    <span className="font-medium">
+                      {user?.status === 'Suspended' ? '✗ No' : '✓ Yes'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Active</span>
+                    <span className="font-medium">
+                      {user?.status === 'Suspended' ? '✗ No' : '✓ Yes'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Member Since</span>
+                    <span className="font-medium text-xs">{user?.joined}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Projects</span>
-                    <span className="font-medium">{user.projects}</span>
+                    <span className="font-medium">{user?.projects}</span>
                   </div>
-                  {user.rating && (
+                  {user?.rating && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Rating</span>
                       <span className="font-medium flex items-center">
                         <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                        {user.rating}/5
+                        {user?.rating}/5
                       </span>
                     </div>
                   )}

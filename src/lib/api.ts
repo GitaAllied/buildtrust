@@ -358,6 +358,24 @@ class ApiClient {
     });
   }
 
+  async getUsers() {
+    return this.request('/users', {
+      method: 'GET',
+    });
+  }
+
+  async getUser(userId: number | string) {
+    return this.request(`/users/${userId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAllProjects() {
+    return this.request('/projects/admin/all', {
+      method: 'GET',
+    });
+  }
+
   async submitProjectRequest(data: Record<string, unknown>) {
     console.log('📋 SUBMITTING PROJECT REQUEST:', {
       timestamp: new Date().toISOString(),
@@ -381,8 +399,58 @@ class ApiClient {
       method: 'GET',
     });
   }
-}
+
+  async createUser(data: Record<string, unknown>) {
+    // If role is sub_admin, use the create-sub-admin endpoint
+    if (data.role === 'sub_admin' || data.role === 'admin') {
+      return this.request('/auth/create-sub-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    }
+    
+    return this.request('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUser(userId: number, data: Record<string, unknown>) {
+    return this.request(`/users/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUser(userId: number) {
+    return this.request(`/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async assignDeveloperToProject(projectId: number, developerId: number) {
+    return this.request(`/projects/admin/${projectId}/assign-developer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ developer_id: developerId }),
+    });
+  }
+
+  async updateProjectStatus(projectId: number, status: string) {
+    return this.request(`/projects/admin/${projectId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async deleteProject(projectId: number) {
+    return this.request(`/projects/admin/${projectId}`, {
+      method: 'DELETE',
+    });
+  }}
 
 export const apiClient = new ApiClient(API_BASE_URL);
-
-

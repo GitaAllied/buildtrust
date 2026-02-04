@@ -40,6 +40,12 @@ import ActiveProjects from "./pages/ActiveProjects";
 import DeveloperMessages from "./pages/DeveloperMessages";
 import DeveloperPayments from "./pages/DeveloperPayments";
 import DeveloperLiscences from "./pages/DeveloperLiscences";
+import AdminProjects from "./pages/AdminProjects";
+import AdminContracts from "./pages/AdminContracts";
+import AdminDevelopers from "./pages/AdminDevelopers";
+import AdminProjectDetails from "./pages/AdminProjectDetails";
+import AdminContractDetails from "./pages/AdminContractDetails";
+import AdminDeveloperDetails from "./pages/AdminDeveloperDetails";
 // TEST
 import ClientSetup from "./components/ClientSetup";
 import PortfolioSetup from "./components/PortfolioSetup";
@@ -172,6 +178,51 @@ const App = () => (
                 </ProtectedRoute>
               </EmailVerificationGuard>
             }
+          />
+          <Route
+            path="/admin/projects"
+            element={
+              <EmailVerificationGuard>
+                <ProtectedRoute requiredRole="admin">
+                  <AdminProjects />
+                </ProtectedRoute>
+              </EmailVerificationGuard>
+            }
+          />
+          {/* PUBLIC (TEMP): Route is public for now — REMEMBER: protect route for modification and approval */}
+          <Route
+            path="/admin/projects/:id"
+            element={<AdminProjectDetails />}
+          />
+          <Route
+            path="/admin/contracts"
+            element={
+              <EmailVerificationGuard>
+                <ProtectedRoute requiredRole="admin">
+                  <AdminContracts />
+                </ProtectedRoute>
+              </EmailVerificationGuard>
+            }
+          />
+          {/* PUBLIC (TEMP): Route is public for now — REMEMBER: protect route for modification and approval */}
+          <Route
+            path="/admin/contracts/:id"
+            element={<AdminContractDetails />}
+          />
+          <Route
+            path="/admin/developers"
+            element={
+              <EmailVerificationGuard>
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDevelopers />
+                </ProtectedRoute>
+              </EmailVerificationGuard>
+            }
+          />
+          {/* PUBLIC (TEMP): Route is public for now — REMEMBER: protect route for modification and approval */}
+          <Route
+            path="/admin/developers/:id"
+            element={<AdminDeveloperDetails />}
           />
           <Route
             path="/messages"
