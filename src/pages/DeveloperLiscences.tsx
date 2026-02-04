@@ -78,18 +78,21 @@ const DeveloperLiscences = () => {
 
         // Generate Account ID from user ID and role
         const accountId = fullUserData.id
-          ? `BT-${fullUserData.role?.charAt(0).toUpperCase() || 'U'}-${String(fullUserData.id).padStart(6, '0')}`
-          : '';
+          ? `BT-${fullUserData.role?.charAt(0).toUpperCase() || "U"}-${String(fullUserData.id).padStart(6, "0")}`
+          : "";
 
         // Format member since date
         const memberSince = fullUserData.created_at
-          ? new Date(fullUserData.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
-          : '';
+          ? new Date(fullUserData.created_at).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+            })
+          : "";
 
         // Format account type from role
         const accountType = fullUserData.role
           ? `${fullUserData.role.charAt(0).toUpperCase()}${fullUserData.role.slice(1)}`
-          : '';
+          : "";
 
         setAccountInfo({
           accountId,
@@ -99,19 +102,26 @@ const DeveloperLiscences = () => {
 
         // Populate editable profile
         setProfile({
-          first_name: (fullUserData.name || '').split(' ')[0] || '',
-          last_name: (fullUserData.name || '').split(' ').slice(1).join(' ') || '',
-          email: fullUserData.email || '',
-          phone: fullUserData.phone || '',
-          bio: fullUserData.bio || '',
-          location: fullUserData.location || '',
-          website: fullUserData.website || '',
+          first_name: (fullUserData.name || "").split(" ")[0] || "",
+          last_name:
+            (fullUserData.name || "").split(" ").slice(1).join(" ") || "",
+          email: fullUserData.email || "",
+          phone: fullUserData.phone || "",
+          bio: fullUserData.bio || "",
+          location: fullUserData.location || "",
+          website: fullUserData.website || "",
         });
         // Populate documents array (license, id, etc.)
-        setDocuments(fullUserData.documents || fullUserData.user_documents || []);
+        setDocuments(
+          fullUserData.documents || fullUserData.user_documents || [],
+        );
       } catch (error) {
-        console.error('Failed to load account data:', error);
-        toast({ title: 'Error', description: 'Failed to load account data', variant: 'destructive' });
+        console.error("Failed to load account data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load account data",
+          variant: "destructive",
+        });
       } finally {
         setAccountLoading(false);
       }
@@ -133,13 +143,12 @@ const DeveloperLiscences = () => {
     {
       id: "dashboard",
       label: "Dashboard",
-      icon: <FaUser />
+      icon: <FaUser />,
     },
     { id: "requests", label: "Project Requests", icon: <FaDownload /> },
     { id: "projects", label: "Active Projects", icon: <FaBriefcase /> },
     { id: "upload", label: "Upload Update", icon: <FaUpload /> },
-    { id: "messages", label: "Messages", icon: <FaMessage />,
-      active: true, },
+    { id: "messages", label: "Messages", icon: <FaMessage />, active: true },
     { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
     { id: "profile", label: "Licenses & Profile", icon: <FaUser /> },
     { id: "support", label: "Support", icon: <FaGear /> },
@@ -181,7 +190,7 @@ const DeveloperLiscences = () => {
       case "support":
         navigate("/support");
         break;
-        case "logout":
+      case "logout":
         handleLogout();
         break;
       default:
@@ -194,7 +203,9 @@ const DeveloperLiscences = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
-          <Link to={'/'}><img src={Logo} alt="" /></Link>
+          <Link to={"/"}>
+            <img src={Logo} alt="" />
+          </Link>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -219,7 +230,9 @@ const DeveloperLiscences = () => {
             onClick={() => navigate("/")}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full"
           >
-            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
+            <Link to={"/"}>
+              <img src={Logo} alt="" className="w-[55%]" />
+            </Link>
           </button>
         </div>
         <nav className="p-3 sm:p-4 space-y-1">
@@ -305,7 +318,12 @@ const DeveloperLiscences = () => {
                         <Input
                           id="firstName"
                           value={profile.first_name}
-                          onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                          onChange={(e) =>
+                            setProfile({
+                              ...profile,
+                              first_name: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div>
@@ -313,14 +331,24 @@ const DeveloperLiscences = () => {
                         <Input
                           id="lastName"
                           value={profile.last_name}
-                          onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                          onChange={(e) =>
+                            setProfile({
+                              ...profile,
+                              last_name: e.target.value,
+                            })
+                          }
                         />
                       </div>
                     </div>
 
                     <div>
                       <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" value={profile.email} disabled />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={profile.email}
+                        disabled
+                      />
                     </div>
 
                     <div>
@@ -328,7 +356,9 @@ const DeveloperLiscences = () => {
                       <Input
                         id="phone"
                         value={profile.phone}
-                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                        onChange={(e) =>
+                          setProfile({ ...profile, phone: e.target.value })
+                        }
                       />
                     </div>
 
@@ -337,7 +367,9 @@ const DeveloperLiscences = () => {
                       <Textarea
                         id="bio"
                         value={profile.bio}
-                        onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                        onChange={(e) =>
+                          setProfile({ ...profile, bio: e.target.value })
+                        }
                       />
                     </div>
 
@@ -346,7 +378,9 @@ const DeveloperLiscences = () => {
                       <Input
                         id="location"
                         value={profile.location}
-                        onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                        onChange={(e) =>
+                          setProfile({ ...profile, location: e.target.value })
+                        }
                       />
                     </div>
 
@@ -355,55 +389,96 @@ const DeveloperLiscences = () => {
                       <Input
                         id="website"
                         value={profile.website}
-                        onChange={(e) => setProfile({ ...profile, website: e.target.value })}
+                        onChange={(e) =>
+                          setProfile({ ...profile, website: e.target.value })
+                        }
                       />
                     </div>
 
-                    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mt-2">
+                    {/* <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mt-2"> */}
                       {/* Existing license preview */}
-                      <div className="w-full md:w-48">
+                      {/* <div className="w-full md:w-48">
                         {(() => {
                           const license = (documents || []).find((d: any) => {
                             const t = (d.type || "").toLowerCase();
                             const f = (d.filename || "").toLowerCase();
-                            return t === 'license' || f.includes('license');
+                            return t === "license" || f.includes("license");
                           });
 
                           if (!license) {
                             return (
                               <div className="p-3 border rounded-lg bg-white">
-                                <p className="text-sm text-gray-600">No license on file</p>
-                                <p className="text-xs text-gray-400">Upload below to add your professional license (existing license remains until replaced).</p>
+                                <p className="text-sm text-gray-600">
+                                  No license on file
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  Upload below to add your professional license
+                                  (existing license remains until replaced).
+                                </p>
                               </div>
                             );
                           }
 
-                          const url = license.url || license.path || license.file_url || license.download_url || license.filename || '';
+                          const url =
+                            license.url ||
+                            license.path ||
+                            license.file_url ||
+                            license.download_url ||
+                            license.filename ||
+                            "";
 
                           return (
                             <div className="flex items-center gap-3 p-3 border rounded-lg bg-white">
                               <div className="w-16 h-12 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
-                                {url && (url.endsWith('.pdf') || url.endsWith('.PDF')) ? (
-                                  <svg className="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" /></svg>
+                                {url &&
+                                (url.endsWith(".pdf") ||
+                                  url.endsWith(".PDF")) ? (
+                                  <svg
+                                    className="w-8 h-8 text-gray-500"
+                                    fill="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+                                  </svg>
                                 ) : (
-                                  <img src={url} alt={license.filename || 'license'} className="w-full h-full object-cover" />
+                                  <img
+                                    src={url}
+                                    alt={license.filename || "license"}
+                                    className="w-full h-full object-cover"
+                                  />
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium truncate">{license.filename || license.name || 'License'}</p>
-                                  {license.verified === 1 || license.verified === true ? (
-                                    <span className="text-xs text-green-600">Verified</span>
+                                  <p className="text-sm font-medium truncate">
+                                    {license.filename ||
+                                      license.name ||
+                                      "License"}
+                                  </p>
+                                  {license.verified === 1 ||
+                                  license.verified === true ? (
+                                    <span className="text-xs text-green-600">
+                                      Verified
+                                    </span>
                                   ) : (
-                                    <span className="text-xs text-yellow-600">Pending</span>
+                                    <span className="text-xs text-yellow-600">
+                                      Pending
+                                    </span>
                                   )}
                                 </div>
                                 <div className="mt-2 flex items-center gap-2">
                                   {url ? (
-                                    <a href={url} target="_blank" rel="noreferrer" className="text-xs text-[#226F75] hover:underline">View</a>
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-xs text-[#226F75] hover:underline"
+                                    >
+                                      View
+                                    </a>
                                   ) : null}
                                   <a
-                                    href={url || '#'}
+                                    href={url || "#"}
                                     download
                                     className="text-xs text-gray-600 hover:text-gray-800"
                                   >
@@ -414,11 +489,16 @@ const DeveloperLiscences = () => {
                             </div>
                           );
                         })()}
-                      </div>
+                      </div> */}
 
                       {/* Upload control */}
-                      <div className="flex items-center gap-3">
-                        <label htmlFor="licenseFile" className="text-sm text-gray-600">Upload new license (optional):</label>
+                      {/* <div className="flex items-center gap-3">
+                        <label
+                          htmlFor="licenseFile"
+                          className="text-sm text-gray-600"
+                        >
+                          Upload new license (optional):
+                        </label>
                         <input
                           id="licenseFile"
                           type="file"
@@ -428,24 +508,79 @@ const DeveloperLiscences = () => {
                             if (!file || !user) return;
                             try {
                               setUploading(true);
-                              await apiClient.uploadDocument(user.id, 'license', file);
-                              toast({ title: 'Uploaded', description: 'License uploaded successfully' });
+                              await apiClient.uploadDocument(
+                                user.id,
+                                "license",
+                                file,
+                              );
+                              toast({
+                                title: "Uploaded",
+                                description: "License uploaded successfully",
+                              });
                               // Refresh user to pick up new documents
-                              try { await refreshUser(); } catch {}
+                              try {
+                                await refreshUser();
+                              } catch {}
                             } catch (err) {
                               console.error(err);
-                              toast({ title: 'Upload failed', description: (err as any)?.message || 'Could not upload file', variant: 'destructive' });
+                              toast({
+                                title: "Upload failed",
+                                description:
+                                  (err as any)?.message ||
+                                  "Could not upload file",
+                                variant: "destructive",
+                              });
                             } finally {
                               setUploading(false);
                               // clear the file input
-                              (e.target as HTMLInputElement).value = '';
+                              (e.target as HTMLInputElement).value = "";
                             }
                           }}
                         />
-                        <Button disabled={uploading} variant="outline" size="sm">
-                          {uploading ? 'Uploading...' : 'Upload'}
+                        <Button
+                          disabled={uploading}
+                          variant="outline"
+                          size="sm"
+                        >
+                          {uploading ? "Uploading..." : "Upload"}
                         </Button>
-                      </div>
+                      </div> */}
+                    {/* </div> */}
+
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/60 transition-colors cursor-pointer">
+                      <label htmlFor="" className="cursor-pointer block w-full">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <svg
+                            className="w-6 h-6 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            />
+                          </svg>
+                        </div>
+                        <div className="text-sm font-medium text-gray-900 mb-1">
+                          Upload Documents
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Click to upload or drag and drop
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          PDF, JPG, PNG up to 10MB each
+                        </div>
+                      </label>
+                      <input
+                        type="file"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        aria-label={`Upload`}
+                      />
                     </div>
 
                     <div className="mt-4">
@@ -456,25 +591,36 @@ const DeveloperLiscences = () => {
                           setSaving(true);
                           try {
                             const payload: Record<string, unknown> = {
-                              name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
+                              name: `${profile.first_name || ""} ${profile.last_name || ""}`.trim(),
                               phone: profile.phone || undefined,
                               bio: profile.bio || undefined,
                               location: profile.location || undefined,
                               website: profile.website || undefined,
                             };
                             await apiClient.updateProfile(payload);
-                            toast({ title: 'Saved', description: 'Profile updated successfully' });
-                            try { await refreshUser(); } catch {}
+                            toast({
+                              title: "Saved",
+                              description: "Profile updated successfully",
+                            });
+                            try {
+                              await refreshUser();
+                            } catch {}
                           } catch (err) {
-                            console.error('Save failed', err);
-                            toast({ title: 'Save failed', description: (err as any)?.message || 'Could not save profile', variant: 'destructive' });
+                            console.error("Save failed", err);
+                            toast({
+                              title: "Save failed",
+                              description:
+                                (err as any)?.message ||
+                                "Could not save profile",
+                              variant: "destructive",
+                            });
                           } finally {
                             setSaving(false);
                           }
                         }}
                         disabled={saving}
                       >
-                        {saving ? 'Saving...' : 'Save Changes'}
+                        {saving ? "Saving..." : "Save Changes"}
                       </Button>
                     </div>
                   </CardContent>
@@ -653,9 +799,24 @@ const DeveloperLiscences = () => {
                     <div className="border-t pt-6">
                       <h4 className="font-medium mb-2">Account Information</h4>
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p>Account ID: {accountLoading ? 'Loading...' : accountInfo.accountId || 'N/A'}</p>
-                        <p>Member since: {accountLoading ? 'Loading...' : accountInfo.memberSince || 'N/A'}</p>
-                        <p>Account type: {accountLoading ? 'Loading...' : accountInfo.accountType || 'N/A'}</p>
+                        <p>
+                          Account ID:{" "}
+                          {accountLoading
+                            ? "Loading..."
+                            : accountInfo.accountId || "N/A"}
+                        </p>
+                        <p>
+                          Member since:{" "}
+                          {accountLoading
+                            ? "Loading..."
+                            : accountInfo.memberSince || "N/A"}
+                        </p>
+                        <p>
+                          Account type:{" "}
+                          {accountLoading
+                            ? "Loading..."
+                            : accountInfo.accountType || "N/A"}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
