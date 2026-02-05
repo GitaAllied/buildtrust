@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Bell,
   MessageSquare,
@@ -25,7 +26,9 @@ import {
   FaFileContract,
   FaGear,
   FaMessage,
+  FaMicroscope,
   FaMoneyBill,
+  FaSearchengin,
   FaUser,
   FaUserGear,
 } from "react-icons/fa6";
@@ -36,6 +39,7 @@ const PROJECT_PLACEHOLDER = 'https://placehold.net/main.svg';
 const ClientDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate = useNavigate();
   const { user, signOut, loading } = useAuth();
 
@@ -50,6 +54,29 @@ const ClientDashboard = () => {
     avgRating: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      title: "Project Update",
+      message: "Foundation work completed on Modern Duplex",
+      time: "2 hours ago",
+      unread: true,
+    },
+    {
+      id: 2,
+      title: "Payment Reminder",
+      message: "Milestone payment due for Commercial Plaza",
+      time: "1 day ago",
+      unread: true,
+    },
+    {
+      id: 3,
+      title: "New Message",
+      message: "Engr. Adewale sent you a message",
+      time: "3 days ago",
+      unread: false,
+    },
+  ]);
 
   // Fetch user dashboard data on mount
   useEffect(() => {
@@ -153,25 +180,25 @@ const ClientDashboard = () => {
   useEffect(() => {
     if (loading) return; // wait until auth state resolved
 
-    if (!user) {
-      navigate('/', {
-        state: {
-          message: 'Please log in to access the client dashboard',
-          messageType: 'info',
-        },
-      });
-      return;
-    }
+    // if (!user) {
+    //   navigate('/', {
+    //     state: {
+    //       message: 'Please log in to access the client dashboard',
+    //       messageType: 'info',
+    //     },
+    //   });
+    //   return;
+    // }
 
-    if (user.role !== 'client') {
-      navigate('/', {
-        state: {
-          message:
-            'The client dashboard is available to client accounts only. Please sign in with a client account or contact support for assistance.',
-          messageType: 'info',
-        },
-      });
-    }
+    // if (user.role !== 'client') {
+    //   navigate('/', {
+    //     state: {
+    //       message:
+    //         'The client dashboard is available to client accounts only. Please sign in with a client account or contact support for assistance.',
+    //       messageType: 'info',
+    //     },
+    //   });
+    // }
   }, [user, loading, navigate]);
 
   // Show a spinner/placeholder while auth is being refreshed
@@ -309,9 +336,9 @@ const ClientDashboard = () => {
         {/* Header */}
         <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
           <div className="flex flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
-              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20 hidden md:flex">
-                <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" />
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
+                <AvatarImage src="https://placehold.net/avatar-4.svg" />
                 <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
                   DN
                 </AvatarFallback>
@@ -325,22 +352,96 @@ const ClientDashboard = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 hover:bg-[#226F75]/10"
-              >
-                <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
-                  3
-                </Badge>
-              </Button>
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 hover:bg-[#226F75]/10"
+                  >
+                    <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
+                      {notifications.filter(n => n.unread).length}
+                    </Badge>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-screen h-screen sm:w-80 sm:h-auto p-0 mt-2" side="bottom" align="end">
+                  <div className="p-4 border-b border-gray-200">
+                    <h3 className="font-semibold text-[#253E44]">Notifications</h3>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">
+                        No notifications
+                      </div>
+                    ) : (
+                      notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
+                            notification.unread ? 'bg-blue-50' : ''
+                          }`}
+                          onClick={() => {
+                            // Mark as read and close dropdown
+                            setNotifications(prev =>
+                              prev.map(n =>
+                                n.id === notification.id ? { ...n, unread: false } : n
+                              )
+                            );
+                            setNotificationsOpen(false);
+                            // Navigate based on notification type
+                            if (notification.title === "New Message") {
+                              navigate("/messages");
+                            } else if (notification.title === "Payment Reminder") {
+                              navigate("/payments");
+                            } else {
+                              navigate("/projects");
+                            }
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0">
+                              {notification.unread && (
+                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm text-[#253E44] truncate">
+                                {notification.title}
+                              </p>
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {notification.time}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="p-3 border-t border-gray-200">
+                    <Button
+                      variant="ghost"
+                      className="w-full text-xs text-[#226F75] hover:bg-[#226F75]/10"
+                      onClick={() => {
+                        setNotificationsOpen(false);
+                        navigate("/messages"); // Or a dedicated notifications page
+                      }}
+                    >
+                      View All Notifications
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button
                 onClick={() => navigate("/browse")}
                 className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-xs sm:text-sm shadow-md hover:shadow-lg transition-all"
               >
-                Browse Developers
+                <p className=" hidden md:block">Browse Developers</p>
+                <FaSearchengin className=" md:hidden"/>
               </Button>
             </div>
           </div>
