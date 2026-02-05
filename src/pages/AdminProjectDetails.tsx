@@ -200,97 +200,6 @@ const AdminProjectDetails = () => {
 
       <div className=" px-4 sm:px-6 lg:px-8 py-8">
         {!isEditing ? (
-          // <>
-          //   {/* View Mode */}
-          //   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          //     <Card>
-          //       <CardContent className="pt-6">
-          //         <div className="flex items-center justify-between">
-          //           <div>
-          //             <p className="text-sm text-gray-600">Status</p>
-          //             <div className="flex items-center space-x-2 mt-2">
-          //               {getStatusIcon(project.status)}
-          //               {getStatusBadge(project.status)}
-          //             </div>
-          //           </div>
-          //         </div>
-          //       </CardContent>
-          //     </Card>
-
-          //     <Card>
-          //       <CardContent className="pt-6">
-          //         <div>
-          //           <p className="text-sm text-gray-600">Budget</p>
-          //           <div className="flex items-center space-x-1 text-2xl font-bold text-gray-900 mt-2">
-          //             <DollarSign className="h-6 w-6" />
-          //             <span>{project.budget.toLocaleString()}</span>
-          //           </div>
-          //         </div>
-          //       </CardContent>
-          //     </Card>
-
-          //     <Card>
-          //       <CardContent className="pt-6">
-          //         <div>
-          //           <p className="text-sm text-gray-600">Created</p>
-          //           <p className="text-lg font-semibold text-gray-900 mt-2">
-          //             {new Date(project.created_at).toLocaleDateString()}
-          //           </p>
-          //         </div>
-          //       </CardContent>
-          //     </Card>
-          //   </div>
-
-          //   <Card className="mb-6">
-          //     <CardHeader>
-          //       <CardTitle>Project Information</CardTitle>
-          //     </CardHeader>
-          //     <CardContent className="space-y-6">
-          //       <div>
-          //         <label className="text-sm font-medium text-gray-600">
-          //           Description
-          //         </label>
-          //         <p className="text-gray-900 mt-2">{project.description}</p>
-          //       </div>
-
-          //       <div className="grid grid-cols-2 gap-6">
-          //         <div>
-          //           <label className="text-sm font-medium text-gray-600">
-          //             Client
-          //           </label>
-          //           <p className="text-gray-900 mt-2">{project.client_name}</p>
-          //         </div>
-          //         <div>
-          //           <label className="text-sm font-medium text-gray-600">
-          //             Assigned Developer
-          //           </label>
-          //           <Badge className="mt-2">
-          //             {project.developer_name || "Unassigned"}
-          //           </Badge>
-          //         </div>
-          //       </div>
-
-          //       <div className="grid grid-cols-2 gap-6">
-          //         <div>
-          //           <label className="text-sm font-medium text-gray-600">
-          //             Start Date
-          //           </label>
-          //           <p className="text-gray-900 mt-2">
-          //             {new Date(project.created_at).toLocaleDateString()}
-          //           </p>
-          //         </div>
-          //         <div>
-          //           <label className="text-sm font-medium text-gray-600">
-          //             Last Updated
-          //           </label>
-          //           <p className="text-gray-900 mt-2">
-          //             {new Date(project.updated_at).toLocaleDateString()}
-          //           </p>
-          //         </div>
-          //       </div>
-          //     </CardContent>
-          //   </Card>
-          // </>
           <div className=" px-6 py-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <Card className=" p-6 flex flex-col">
@@ -298,7 +207,7 @@ const AdminProjectDetails = () => {
                   Status
                 </span>
                 <span className="font-bold text-3xl capitalize text-slate-900">
-                  In progress
+                  {project.status.replace("_", " ")}
                 </span>
               </Card>
               <Card className=" p-6">
@@ -307,7 +216,7 @@ const AdminProjectDetails = () => {
                 </span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-3xl font-bold text-slate-900">
-                    $150,000
+                    ${project.budget.toLocaleString()}
                   </span>
                   <span className="text-slate-400 text-sm">USD</span>
                 </div>
@@ -350,10 +259,11 @@ const AdminProjectDetails = () => {
                     Description
                   </h4>
                   <p className="text-slate-700 leading-relaxed text-lg">
-                    Complete architectural design and structural construction of
+                    {/* Complete architectural design and structural construction of
                     a 5-bedroom modern luxury duplex in the heart of Lekki. This
                     project emphasizes sustainable building materials and
-                    energy-efficient systems throughout the residence.
+                    energy-efficient systems throughout the residence. */}
+                    {project.description}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
@@ -365,7 +275,7 @@ const AdminProjectDetails = () => {
                       <div className="flex items-center gap-3">
                         
                         <p className="text-slate-900 font-medium">
-                          TechStore Inc. Real Estate
+                          {project.client_name}
                         </p>
                       </div>
                     </div>
@@ -378,11 +288,11 @@ const AdminProjectDetails = () => {
                         <img
                           alt="Developer Avatar"
                           className="w-8 h-8 rounded-full"
-                          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZZipmIPOq67nmPdMbfiMtHBaUP3fgUng88SOFEycBJI3V6mfYhdz1tVeyjz81cWK6aK9GyjSvjZAHljdmLLjVnAzGhuPbtSE7jQ8hci0GHzIBimNn60ZCBA46BbACa9k3VABQWBbgbXm18muTpCkY_55MuF0ggcA-hYlbzJgNrTPVBtO63C4b-YXDO-WoRlfBBSsoLnjadDUsq66CC6zv2ZODLq51kWoOtMQ64Xvb2JXx6X-7hWeWjzAUbNUCTYqu3HIkifTKqhh8"
+                          src="https://placehold.net/avatar-4.svg"
                         />
                         <div>
                           <p className="text-slate-900 font-medium">
-                            John Smith
+                            {project.developer_name || "Unassigned"}
                           </p>
                           <p className="text-xs text-slate-400">
                             Senior Civil Engineer
@@ -398,7 +308,11 @@ const AdminProjectDetails = () => {
                           Start Date
                         </h4>
                         <p className="text-slate-900 font-medium">
-                          15 Nov, 2025
+                          {new Date(project.created_at).toLocaleDateString("en-NG", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric"
+                          })}
                         </p>
                       </div>
                       <div>
@@ -430,7 +344,7 @@ const AdminProjectDetails = () => {
                   <div className="text-xs text-slate-400">
                     <span className="block">LAST UPDATED</span>
                     <span className="text-slate-600 font-medium">
-                      03/02/2026
+                      {new Date(project.updated_at).toLocaleDateString()}
                     </span>
                   </div>
                   <div className="text-xs text-slate-400">
