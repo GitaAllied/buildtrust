@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+ 
 import { apiClient } from "@/lib/api";
 import {
   FaBook,
@@ -44,6 +44,7 @@ import { Link } from "react-router-dom";
 interface Message {
   id: number;
   senderId: number;
+  sender_id?: number;
   senderName: string;
   senderRole: "client" | "developer" | "admin";
   senderAvatar?: string;
@@ -59,6 +60,7 @@ interface Message {
   priority: "low" | "medium" | "high";
   status?: string;
   delivered?: boolean;
+  is_read?: number | boolean;
 }
 
 interface Conversation {
@@ -78,6 +80,8 @@ interface Conversation {
 
 const AdminMessages = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const currentUserId = currentUser?.id || 0;
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -86,6 +90,9 @@ const AdminMessages = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [activeTab, setActiveTab] = useState("messages");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const messageListRef = useRef<HTMLDivElement | null>(null);
+  const isUserScrollingRef = useRef(false);
+  const [selectedStatus, setSelectedStatus] = useState<{ userOnline?: boolean; lastSeen?: string; typing?: boolean; typingUserId?: number } | null>(null);
     const { signOut } = useAuth();
   const handleLogout = async () => {
     try {
@@ -149,62 +156,46 @@ const AdminMessages = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
 
-  const messages: Message[] = [
-    {
-      id: 1,
-      senderId: 101,
-      senderName: "John Smith",
-      senderRole: "client",
-      senderAvatar: "/api/placeholder/40/40",
-      recipientId: 0, // Admin
-      recipientName: "Admin",
-      recipientRole: "admin",
-      subject: "Project Requirements Help",
-      content:
-        "Hi admin, I need help with my project requirements. The form seems confusing and I'm not sure what information I should provide.",
-      timestamp: "2024-01-09 14:30",
-      isRead: false,
-      priority: "medium",
-    },
-    {
-      id: 2,
-      senderId: 0, // Admin
-      senderName: "Admin",
-      senderRole: "admin",
-      recipientId: 101,
-      recipientName: "John Smith",
-      recipientRole: "client",
-      subject: "Re: Project Requirements Help",
-      content:
-        "Hello John! I'd be happy to help you with your project requirements. Could you please tell me which specific part is confusing? The project form is designed to collect essential information about your needs.",
-      timestamp: "2024-01-09 14:25",
-      isRead: true,
-      priority: "medium",
-    },
-    {
-      id: 3,
-      senderId: 101,
-      senderName: "John Smith",
-      senderRole: "client",
-      recipientId: 0,
-      recipientName: "Admin",
-      recipientRole: "admin",
-      subject: "Re: Project Requirements Help",
-      content:
-        "The budget section and timeline requirements are what I'm struggling with. Can you provide some examples?",
-      timestamp: "2024-01-09 14:20",
-      isRead: false,
-      priority: "medium",
-    },
-  ];
+  // No static mock messages — messages come from backend or localStorage
 
-  // Load users from API and map to conversations
+  // Load users from API and map to conversations using DATABASE messages, with polling for online status
   useEffect(() => {
     let mounted = true;
+    let interval: any;
     const loadUsers = async () => {
+      // Skip polling while user is manually scrolling through messages
+      if (isUserScrollingRef.current) return;
       setUsersLoading(true);
       setUsersError(null);
       try {
+        // First get all conversations from the database
+        let backendConversations: any[] = [];
+        try {
+          backendConversations = await apiClient.getConversations();
+          if (!Array.isArray(backendConversations)) {
+            backendConversations = [];
+          }
+        } catch (e) {
+          // Could not fetch conversations - continue with fallback
+        }
+
+        // Create a map of user ID to last message info
+        const lastMessageMap: Record<number, { lastMessage: string; lastMessageTime: string }> = {};
+        backendConversations.forEach((conv: any) => {
+          const otherId = conv.other_id || conv.participant2_id || conv.participant1_id;
+          if (otherId && conv.last_message_at) {
+            let lastMessage = conv.last_message_content || conv.last_message;
+            // If backend doesn't provide, try to get from messages array (local fallback)
+            if (!lastMessage && Array.isArray(conv.messages) && conv.messages.length > 0) {
+              lastMessage = conv.messages[conv.messages.length - 1].content;
+            }
+            lastMessageMap[otherId] = {
+              lastMessage: lastMessage || '',
+              lastMessageTime: conv.last_message_at,
+            };
+          }
+        });
+
         const resp = await apiClient.getUsers();
         const users = Array.isArray(resp) ? resp : resp.users || [];
 
@@ -216,29 +207,38 @@ const AdminMessages = () => {
         });
 
         const convs = filteredUsers.map((u: any) => {
-          const savedKey = `admin_messages_${u.id}`;
-          const saved = localStorage.getItem(savedKey);
+          const lastInfo = lastMessageMap[u.id];
           let lastMessage = 'No messages yet';
           let lastMessageTime = new Date().toISOString();
-          if (saved) {
-            try {
-              const arr = JSON.parse(saved) as Message[];
-              if (arr.length > 0) {
-                const last = arr[arr.length - 1];
-                lastMessage = last.content;
-                lastMessageTime = last.timestamp;
-              }
-            } catch {}
+          
+          if (lastInfo) {
+            lastMessage = lastInfo.lastMessage;
+            lastMessageTime = lastInfo.lastMessageTime;
           }
 
-          // determine online status: prefer explicit `is_online`, fallback to recent `last_seen`
+          // Robust online detection: check multiple possible fields and fallbacks
+          const now = Date.now();
+          const truthy = (v: any) => v === true || v === 1 || v === '1' || v === 'true' || v === 'on';
+          const lastSeenField = u.last_seen || u.lastSeen || u.last_login || u.lastLogin || u.last_activity || u.lastActivity;
           let isOnline = false;
-          if (typeof u.is_online !== 'undefined') {
-            isOnline = u.is_online === true || u.is_online === 1 || u.is_online === '1';
-          } else if (u.last_seen) {
-            const ts = Date.parse(u.last_seen);
+
+          // If this record matches the currently authenticated user, prefer true
+          if (currentUser && u.id === currentUser.id) {
+            isOnline = true;
+          }
+
+          // explicit boolean/string flags that indicate online
+          if (!isOnline) {
+            if (truthy(u.session_active) || truthy(u.sessionActive) || truthy(u.is_online) || truthy(u.isOnline) || truthy(u.online) || truthy(u.online_status)) {
+              isOnline = true;
+            }
+          }
+
+          // last seen / last login timestamps (consider online if within 5 minutes)
+          if (!isOnline && lastSeenField) {
+            const ts = Date.parse(lastSeenField);
             if (!isNaN(ts)) {
-              isOnline = (Date.now() - ts) < 5 * 60 * 1000; // online if seen within 5 minutes
+              isOnline = (now - ts) < 5 * 60 * 1000;
             }
           }
 
@@ -251,13 +251,22 @@ const AdminMessages = () => {
             lastMessage,
             lastMessageTime,
             userOnline: isOnline,
-            lastSeen: u.last_seen,
+            lastSeen: lastSeenField,
             unreadCount: 0,
             status: 'active',
           } as Conversation;
         });
 
-        if (mounted) setConversations(convs);
+        if (mounted) {
+          setConversations(convs);
+          // keep header status in sync if a conversation is selected
+          if (selectedConversation) {
+            const updated = convs.find(c => c.userId === selectedConversation.userId);
+            if (updated) {
+              setSelectedStatus({ userOnline: updated.userOnline, lastSeen: updated.lastSeen });
+            }
+          }
+        }
       } catch (err: any) {
         setUsersError(err?.message || 'Failed to load users');
         // Fallback to an example conversation if API fails
@@ -282,7 +291,8 @@ const AdminMessages = () => {
     };
 
     loadUsers();
-    return () => { mounted = false; };
+    interval = setInterval(loadUsers, 30000); // Poll every 30s
+    return () => { mounted = false; clearInterval(interval); };
   }, []);
 
   const filteredConversations = conversations.filter((conversation) => {
@@ -312,10 +322,8 @@ const AdminMessages = () => {
       }
     }
 
-    // fallback: filter internal mock messages
-    return messages.filter(
-      (msg) => (msg.senderId === userId && msg.recipientId === 0) || (msg.senderId === 0 && msg.recipientId === userId)
-    );
+    // fallback: no mock messages available
+    return [];
   };
 
   const [conversationMessages, setConversationMessages] = useState<Message[]>([]);
@@ -323,13 +331,113 @@ const AdminMessages = () => {
   // update messages view when a conversation is selected
   const currentMessages = selectedConversation ? conversationMessages : [];
 
+  // Keep selectedConversation's online/lastSeen info in sync with polled conversations
+  useEffect(() => {
+    if (!selectedConversation) return;
+    const updated = conversations.find((c) => c.userId === selectedConversation.userId);
+    if (!updated) return;
+    const shouldUpdate = (
+      updated.userOnline !== selectedConversation.userOnline ||
+      updated.lastSeen !== selectedConversation.lastSeen ||
+      updated.lastMessage !== selectedConversation.lastMessage ||
+      updated.lastMessageTime !== selectedConversation.lastMessageTime
+    );
+    if (shouldUpdate) {
+      setSelectedConversation((s) => (s ? { ...s,
+        userOnline: updated.userOnline,
+        lastSeen: updated.lastSeen,
+        lastMessage: updated.lastMessage,
+        lastMessageTime: updated.lastMessageTime,
+      } : s));
+    }
+  }, [conversations, selectedConversation]);
+
+  // Poll typing status for the selected conversation (so admin sees when user is typing)
+  useEffect(() => {
+    let interval: any = null;
+    let mounted = true;
+    const pollTyping = async () => {
+      if (!selectedConversation) return;
+
+      // Determine a valid conversation id to poll. Prefer explicit conversation_id
+      let convId = selectedConversation.conversation_id;
+      if (!convId) {
+        const found = conversations.find(c => c.userId === selectedConversation.userId && (c.conversation_id || c.id));
+        if (found) {
+          convId = found.conversation_id || found.id;
+          // safely set it on selectedConversation so subsequent polls won't repeat the search
+          setSelectedConversation((s) => (s ? { ...s, conversation_id: convId } : s));
+        }
+      }
+      if (!convId) return; // nothing to poll until backend has a conversation id
+      try {
+        const res: any = await apiClient.getTyping(convId);
+        if (!mounted) return;
+        setSelectedStatus((s) => ({ ...(s || {}), typing: !!res?.typing, typingUserId: res?.userId }));
+      } catch (e: any) {
+        // If route not found (404) or other error, stop polling until conversation_id is available
+        if (e?.status === 404) {
+          // do nothing; avoid noisy retries until conversation_id exists
+          return;
+        }
+        // swallow other errors silently to avoid console spam
+      }
+    };
+
+    if (selectedConversation) {
+      pollTyping();
+      interval = setInterval(pollTyping, 700);
+    }
+
+    return () => { mounted = false; if (interval) clearInterval(interval); };
+  }, [selectedConversation, conversations]);
+
+  // Auto-scroll behavior: attach scroll listener to detect manual scrolling
+  useEffect(() => {
+    const el = messageListRef.current;
+    if (!el) return;
+    let t: any = null;
+    const onScroll = () => {
+      isUserScrollingRef.current = true;
+      if (t) clearTimeout(t);
+      t = setTimeout(() => {
+        isUserScrollingRef.current = false;
+      }, 1500);
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (t) clearTimeout(t);
+    };
+  }, [selectedConversation?.userId]);
+
+  // Auto-scroll to bottom only when new messages arrive and user is not manually scrolling
+  useEffect(() => {
+    const el = messageListRef.current;
+    if (!el) return;
+    if (isUserScrollingRef.current) return;
+    // If user is already near bottom, keep them at bottom on new messages
+    const nearBottom = (el.scrollHeight - el.scrollTop - el.clientHeight) < 100;
+    if (nearBottom || !isUserScrollingRef.current) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [conversationMessages.length]);
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
 
+    // Check if user is authenticated
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('You are not authenticated. Please log in again.');
+      navigate('/login');
+      return;
+    }
+
     const msg: Message = {
       id: Date.now(), // simple unique id
-      senderId: 0, // admin
-      senderName: 'Admin',
+      senderId: currentUserId, // use actual current user id
+      senderName: currentUser?.name || 'Admin',
       senderRole: 'admin',
       recipientId: selectedConversation.userId,
       recipientName: selectedConversation.userName,
@@ -342,56 +450,50 @@ const AdminMessages = () => {
     };
 
     try {
-      // Optimistic UI update and local persistence
-      const key = `admin_messages_${selectedConversation.userId}`;
-      const existing = loadConversationMessages(selectedConversation.userId) || [];
-      const updated = [...existing, msg];
-      localStorage.setItem(key, JSON.stringify(updated));
-      setConversationMessages(updated);
-      setNewMessage("");
-
-      // Update the conversation's lastMessage and lastMessageTime in the conversations list
-      setConversations((prevConvs) =>
-        prevConvs.map((conv) =>
-          conv.userId === selectedConversation.userId
-            ? {
-                ...conv,
-                lastMessage: msg.content,
-                lastMessageTime: msg.timestamp,
-              }
-            : conv
-        )
-      );
-
-      // Update selectedConversation as well
-      setSelectedConversation((s) =>
-        s
-          ? {
-              ...s,
-              lastMessage: msg.content,
-              lastMessageTime: msg.timestamp,
-            }
-          : s
-      );
-
-      // Try to send to backend and reconcile conversation id
+      // Try to send to backend first
       try {
         const resp: any = await apiClient.sendMessage(selectedConversation.userId, msg.content, selectedConversation.conversation_id);
-        // if backend returned a message and conversation id, reconcile
+        
+        // Update local state with backend message data
+        const backendMsg: Message = {
+          id: resp.id || msg.id,
+          senderId: resp.sender_id || currentUserId,
+          senderName: resp.sender_name || msg.senderName,
+          senderRole: msg.senderRole,
+          recipientId: selectedConversation.userId,
+          recipientName: selectedConversation.userName,
+          recipientRole: selectedConversation.userRole,
+          subject: msg.subject,
+          content: msg.content,
+          timestamp: resp.created_at || msg.timestamp,
+          isRead: resp.is_read === 1 ? true : false,
+          priority: 'medium',
+        };
+        
+        setConversationMessages((prev) => [...prev, backendMsg]);
+        
+        // Update conversation in list
+        setConversations((prevConvs) =>
+          prevConvs.map((conv) =>
+            conv.userId === selectedConversation.userId
+              ? {
+                  ...conv,
+                  lastMessage: msg.content,
+                  lastMessageTime: msg.timestamp,
+                  conversation_id: resp.conversation_id,
+                }
+              : conv
+          )
+        );
+
+        // Update selectedConversation with conversation_id from backend
         if (resp && resp.conversation_id) {
-          // set conversation id on selectedConversation
           setSelectedConversation((s) => s ? { ...s, conversation_id: resp.conversation_id } : s);
-          // also update in the conversations list
-          setConversations((prevConvs) =>
-            prevConvs.map((conv) =>
-              conv.userId === selectedConversation.userId
-                ? { ...conv, conversation_id: resp.conversation_id }
-                : conv
-            )
-          );
         }
+        
+        setNewMessage("");
       } catch (e) {
-        console.error('Failed to send message to backend:', e);
+        alert('Message sending failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -422,26 +524,64 @@ const AdminMessages = () => {
         if (conv && conv.conversation_id) {
           const msgs = await apiClient.getConversationMessages(conv.conversation_id);
           if (mounted) {
-            setConversationMessages(Array.isArray(msgs) ? msgs : []);
-            // attach conversation id for future sends
-            setSelectedConversation((s) => s ? { ...s, conversation_id: conv.conversation_id } : s);
+            const newMsgs = Array.isArray(msgs) ? msgs : [];
+            // Only update state if messages actually changed to avoid extra renders
+            setConversationMessages((prev) => {
+              try {
+                const prevStr = JSON.stringify(prev || []);
+                const nextStr = JSON.stringify(newMsgs || []);
+                if (prevStr === nextStr) return prev;
+              } catch {
+                // If stringify fails, fall back to setting
+              }
+              return newMsgs;
+            });
+
+            // attach conversation id for future sends, but only if different
+            setSelectedConversation((s) => {
+              if (!s) return s;
+              if (s.conversation_id && s.conversation_id === conv.conversation_id) return s;
+              return { ...s, conversation_id: conv.conversation_id };
+            });
+
             try {
               // explicitly mark as read on backend (ensures read receipts update)
               await apiClient.markConversationRead(conv.conversation_id);
             } catch (e) {
-              console.debug('markConversationRead failed (ignored):', e);
+              // Mark as read failed - continue silently
             }
             return;
           }
         }
       } catch (e) {
         // ignore and fallback to localStorage
-        console.debug('Could not load backend conversation:', e);
       }
 
       // fallback to local storage / mock messages
       const msgs = loadConversationMessages(selectedConversation.userId);
       if (mounted) setConversationMessages(msgs);
+
+      // refresh the user's online status immediately for the header
+      try {
+        const resp = await apiClient.getUsers();
+        const users = Array.isArray(resp) ? resp : resp.users || [];
+        const u = users.find((x: any) => x.id === selectedConversation.userId);
+        if (u) {
+          const lastSeenField = u.last_seen || u.lastSeen || u.last_login || u.lastLogin || u.last_activity || u.lastActivity;
+          const now = Date.now();
+          const truthy = (v: any) => v === true || v === 1 || v === '1' || v === 'true' || v === 'on';
+          let isOnline = false;
+          if (currentUser && u.id === currentUser.id) isOnline = true;
+          if (!isOnline && (truthy(u.session_active) || truthy(u.sessionActive) || truthy(u.is_online) || truthy(u.isOnline) || truthy(u.online))) isOnline = true;
+          if (!isOnline && lastSeenField) {
+            const ts = Date.parse(lastSeenField);
+            if (!isNaN(ts)) isOnline = (now - ts) < 5 * 60 * 1000;
+          }
+          setSelectedStatus({ userOnline: isOnline, lastSeen: lastSeenField });
+        }
+      } catch (e) {
+        // ignore
+      }
     };
 
     loadMsgs();
@@ -550,8 +690,8 @@ const AdminMessages = () => {
   };
 
   const renderTicks = (message: any) => {
-    // Only show ticks for messages sent by admin (senderId === 0)
-    if (message.senderId !== 0) return null;
+    // Only show ticks for messages sent by current user (the admin)
+    if (message.senderId !== currentUserId && message.sender_id !== currentUserId) return null;
 
     // Determine status: prefer explicit `status`, then `isRead`/`delivered`
     // support both snake_case (from backend) and camelCase
@@ -717,7 +857,12 @@ const AdminMessages = () => {
                     {filteredConversations.map((conversation) => (
                       <div
                         key={conversation.id}
-                        onClick={() => setSelectedConversation(conversation)}
+                        onClick={() => {
+                              if (!selectedConversation || selectedConversation.id !== conversation.id) {
+                                setSelectedConversation(conversation);
+                                setSelectedStatus({ userOnline: conversation.userOnline, lastSeen: conversation.lastSeen });
+                              }
+                            }}
                         className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
                           selectedConversation?.id === conversation.id
                             ? "bg-[#226F75]/10 border-[#226F75]/20"
@@ -738,9 +883,11 @@ const AdminMessages = () => {
                                   .join("")}
                               </AvatarFallback>
                             </Avatar>
+                            {/* Online status dot: green if online, gray if offline */}
                             <span
-                              title={conversation.userOnline ? 'Online' : 'Offline'}
+                              title={conversation.userOnline ? `Online (userOnline=${conversation.userOnline})` : `Offline (userOnline=${conversation.userOnline})`}
                               className={`absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white ${conversation.userOnline ? 'bg-green-500' : 'bg-gray-400'}`}
+                              style={{ boxShadow: conversation.userOnline ? '0 0 4px 2px #22c55e' : undefined }}
                             />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -809,10 +956,16 @@ const AdminMessages = () => {
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
-                        <span
-                          title={selectedConversation.userOnline ? 'Online' : 'Offline'}
-                          className={`absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white ${selectedConversation.userOnline ? 'bg-green-500' : 'bg-gray-400'}`}
-                        />
+                        {(() => {
+                          const headerOnline = selectedStatus?.userOnline ?? selectedConversation.userOnline;
+                          return (
+                            <span
+                              title={headerOnline ? 'Online' : 'Offline'}
+                              className={`absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white ${headerOnline ? 'bg-green-500' : 'bg-gray-400'}`}
+                              style={{ boxShadow: headerOnline ? '0 0 4px 2px #22c55e' : undefined }}
+                            />
+                          );
+                        })()}
                       </div>
                       <div>
                         <h3 className="text-lg font-medium text-gray-900">
@@ -824,87 +977,101 @@ const AdminMessages = () => {
                             {selectedConversation.userRole}
                           </span>
                         </div>
-                        {selectedConversation.userOnline ? (
-                          <p className="text-xs text-gray-400 mt-1">Online</p>
-                        ) : selectedConversation.lastSeen ? (
-                          <p className="text-xs text-gray-400 mt-1">
-                            Last seen {formatLastSeen(selectedConversation.lastSeen)}
-                          </p>
-                        ) : null}
+                        {(() => {
+                          const headerTyping = selectedStatus?.typing;
+                          const typingUserId = selectedStatus?.typingUserId;
+                          const headerOnline = selectedStatus?.userOnline ?? selectedConversation.userOnline;
+                          const headerLastSeen = selectedStatus?.lastSeen ?? selectedConversation.lastSeen;
+                          // Show the other participant's name when they are typing
+                          if (headerTyping && typingUserId && typingUserId === selectedConversation.userId) {
+                            return <p className="text-xs text-gray-400 mt-1">{selectedConversation.userName} is typing...</p>;
+                          }
+                          if (headerOnline) return <p className="text-xs text-gray-400 mt-1">Online</p>;
+                          if (headerLastSeen) return <p className="text-xs text-gray-400 mt-1">Last seen {formatLastSeen(headerLastSeen)}</p>;
+                          return null;
+                        })()}
                       </div>
                     </div>
                   </CardHeader>
 
                   <CardContent className="flex-1 flex flex-col p-0">
-                    {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                      {currentMessages.map((message, idx) => {
-                        const tsStr = message.timestamp || message.created_at || message.createdAt;
-                        const ts = tsStr ? Date.parse(tsStr) : NaN;
-                        const isOld = !isNaN(ts) && (Date.now() - ts) > 24 * 60 * 60 * 1000;
-                        const prev = idx > 0 ? currentMessages[idx - 1] : null;
-                        const prevTsStr = prev ? (prev.timestamp || prev.created_at || prev.createdAt) : null;
-                        const prevTs = prevTsStr ? Date.parse(prevTsStr) : NaN;
-                        const prevIsOld = !isNaN(prevTs) && (Date.now() - prevTs) > 24 * 60 * 60 * 1000;
+                    {/* Messages area: scrollable, input fixed at bottom */}
+                    <div className="flex-1 relative">
+                      <div
+                        className="absolute inset-0 overflow-y-auto p-4 space-y-4"
+                        style={{ bottom: 64, paddingBottom: 96 }}
+                        ref={messageListRef}
+                      >
+                        {currentMessages.map((message, idx, arr) => {
+                          const tsStr = message.timestamp || message.created_at || message.createdAt;
+                          const ts = tsStr ? Date.parse(tsStr) : NaN;
+                          const isOld = !isNaN(ts) && (Date.now() - ts) > 24 * 60 * 60 * 1000;
+                          const prev = idx > 0 ? arr[idx - 1] : null;
+                          const prevTsStr = prev ? (prev.timestamp || prev.created_at || prev.createdAt) : null;
+                          const prevTs = prevTsStr ? Date.parse(prevTsStr) : NaN;
+                          const prevIsOld = !isNaN(prevTs) && (Date.now() - prevTs) > 24 * 60 * 60 * 1000;
 
-                        const showDivider = isOld && !prevIsOld;
+                          const showDivider = isOld && !prevIsOld;
 
-                        return (
-                          <div key={`m-${message.id}-${idx}`}>
-                            {showDivider && (
-                              <div className="py-2">
-                                <div className="flex items-center justify-center">
-                                  <span className="text-xs text-gray-400">Older messages</span>
+                          // Support both senderId and sender_id for backend compatibility
+                          const isCurrentUser = message.senderId === currentUserId || message.sender_id === currentUserId;
+                          return (
+                            <div key={`m-${message.id}-${idx}`}>
+                              {showDivider && (
+                                <div className="py-2">
+                                  <div className="flex items-center justify-center">
+                                    <span className="text-xs text-gray-400">Older messages</span>
+                                  </div>
+                                  <div className="my-2 border-t" />
                                 </div>
-                                <div className="my-2 border-t" />
-                              </div>
-                            )}
+                              )}
 
-                            <div
-                              className={`flex ${
-                                message.senderId === 0 ? 'justify-end' : 'justify-start'
-                              }`}
-                            >
                               <div
-                                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                                  message.senderId === 0 ? 'bg-[#253E44] text-white' : 'bg-gray-200 text-gray-900'
+                                className={`flex ${
+                                  isCurrentUser ? 'justify-end' : 'justify-start'
                                 }`}
                               >
-                                <p className="text-sm">{message.content}</p>
-                                <div className="flex items-center justify-end mt-1 space-x-2">
-                                  {message.senderId === 0 ? (
-                                    <>
-                                      {renderTicks(message)}
+                                <div
+                                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                                    isCurrentUser ? 'bg-[#253E44] text-white' : 'bg-gray-200 text-gray-900'
+                                  }`}
+                                  style={{ marginBottom: '16px' }}
+                                >
+                                  <p className="text-sm">{message.content}</p>
+                                  <div className="flex items-center justify-end mt-1 space-x-2">
+                                    {isCurrentUser ? (
+                                      <>
+                                        {renderTicks(message)}
+                                        <span className="text-xs opacity-75">{formatTimeOnly(message)}</span>
+                                      </>
+                                    ) : (
                                       <span className="text-xs opacity-75">{formatTimeOnly(message)}</span>
-                                    </>
-                                  ) : (
-                                    <span className="text-xs opacity-75">{formatTimeOnly(message)}</span>
-                                  )}
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Message Input */}
-                    <div className="border-t p-4">
-                      <div className="flex space-x-2">
-                        <Textarea
-                          placeholder="Type your message..."
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          className="flex-1"
-                          rows={3}
-                        />
-                        <Button
-                          onClick={handleSendMessage}
-                          disabled={!newMessage.trim()}
-                          className="bg-[#253E44]/90 hover:bg-[#253E44]"
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
+                          );
+                        })}
+                      </div>
+                      {/* Message Input fixed at bottom */}
+                      <div className="absolute left-0 right-0 bottom-0 border-t p-4 bg-white">
+                        <div className="flex space-x-2">
+                          <Textarea
+                            placeholder="Type your message..."
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            className="flex-1"
+                            rows={3}
+                          />
+                          <Button
+                            onClick={handleSendMessage}
+                            disabled={!newMessage.trim()}
+                            className="bg-[#253E44]/90 hover:bg-[#253E44]"
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

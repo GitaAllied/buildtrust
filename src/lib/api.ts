@@ -60,18 +60,26 @@ class ApiClient {
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.warn('⚠️ NO AUTH TOKEN FOUND in localStorage');
     }
 
     // Ensure endpoint is joined to baseUrl with exactly one slash
     const url = endpoint.startsWith('/') ? `${this.baseUrl}${endpoint}` : `${this.baseUrl}/${endpoint}`;
 
-    console.log(`🌐 API REQUEST:`, {
-      method: options.method || 'GET',
-      url,
-      headers,
-      body: options.body,
-      timestamp: new Date().toISOString()
-    });
+    // Suppress verbose logging for typing endpoint polling (too noisy, expected to 404 sometimes)
+    const isTypingEndpoint = endpoint.includes('/typing');
+    
+    if (!isTypingEndpoint) {
+      console.log(`🌐 API REQUEST:`, {
+        method: options.method || 'GET',
+        url,
+        headers,
+        body: options.body,
+        hasToken: !!token,
+        timestamp: new Date().toISOString()
+      });
+    }
 
     try {
       const response = await fetch(url, {
@@ -87,12 +95,18 @@ class ApiClient {
         body = text;
       }
 
-      console.log(`🌐 API RESPONSE:`, {
-        status: response.status,
-        statusText: response.statusText,
-        body,
-        timestamp: new Date().toISOString()
-      });
+      // Suppress logging for expected 404s on typing endpoint (transient feature)
+      const isTypingEndpoint = endpoint.includes('/typing');
+      const isBenignError = response.status === 404 && isTypingEndpoint;
+      
+      if (!isBenignError) {
+        console.log(`🌐 API RESPONSE:`, {
+          status: response.status,
+          statusText: response.statusText,
+          body,
+          timestamp: new Date().toISOString()
+        });
+      }
 
       if (!response.ok) {
         const serverMsg = body?.error || body?.message || text || `HTTP ${response.status}`;
@@ -387,6 +401,17 @@ class ApiClient {
     return this.request(`/users/${userId}`, {
       method: 'GET',
     });
+  }
+
+  async setTyping(conversationId: number | string, typing: boolean) {
+    return this.request(`/messages/${conversationId}/typing`, {
+      method: 'POST',
+      body: JSON.stringify({ typing }),
+    });
+  }
+
+  async getTyping(conversationId: number | string) {
+    return this.request(`/messages/${conversationId}/typing`, { method: 'GET' });
   }
 
   async getAllProjects() {
