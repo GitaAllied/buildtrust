@@ -271,29 +271,29 @@ const ProjectDetails = () => {
               <div className=" md:col-span-2 space-y-3">
                 {/* stats cards */}
                 <div className=" grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  <Card className=" p-10 px-8 flex flex-col items-center">
+                  <Card className=" p-6 sm:p-8 md:p-10 px-6 sm:px-8 flex flex-col items-center">
                     <p className=" text-xs font-bold text-[#253E44]/50">
                       TOTAL BUDGET
                     </p>
-                    <h1 className=" font-extrabold text-2xl text-[#253E44]">
+                    <h1 className=" font-extrabold text-xl sm:text-2xl text-[#253E44]">
                       N8.5M
                     </h1>
                   </Card>
-                  <Card className="p-10 px-8 flex flex-col items-center">
+                  <Card className="p-6 sm:p-8 md:p-10 px-6 sm:px-8 flex flex-col items-center">
                     <p className=" text-xs font-bold text-[#253E44]/50">
                       PROJECT TIMELINE
                     </p>
-                    <h1 className=" font-extrabold text-2xl text-[#253E44]">
+                    <h1 className=" font-extrabold text-xl sm:text-2xl text-[#253E44]">
                       {daysLeft} Days
                     </h1>
                     <p className=" text-xs text-gray-400">64 days left</p>
                   </Card>
-                  <Card className="p-10 px-8 text-center">
+                  <Card className="p-6 sm:p-8 md:p-10 px-6 sm:px-8 text-center">
                     <p className=" text-xs font-bold text-[#253E44]/50">
                       TOTAL PROGRESS
                     </p>
                     <div className=" flex items-center gap-2">
-                      <h1 className=" font-extrabold text-2xl text-[#253E44]">
+                      <h1 className=" font-extrabold text-xl sm:text-2xl text-[#253E44]">
                         {project.progress || 0}%
                       </h1>
                       <div className="flex-1">
@@ -306,8 +306,8 @@ const ProjectDetails = () => {
                   </Card>
                 </div>
                 {/* project description */}
-                <Card className=" p-8 space-y-3">
-                  <h3 className="font-bold text-lg">Project Description</h3>
+                <Card className=" p-4 sm:p-6 md:p-8 space-y-3">
+                  <h3 className="font-bold text-base sm:text-lg">Project Description</h3>
                   <p className="text-sm text-gray-700 leading-6">
                     {project.description}
                   </p>
