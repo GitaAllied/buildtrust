@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,16 +19,23 @@ import {
   FaUserGear,
 } from "react-icons/fa6";
 import { useAuth } from "@/hooks/useAuth";
+import { apiClient } from "@/lib/api";
 import { Link } from "react-router-dom";
 
 const Messages = () => {
-  const [selectedConversation, setSelectedConversation] = useState(1);
+  const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [adminUser, setAdminUser] = useState<any | null>(null);
+  const messagesRef = useRef<HTMLDivElement | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
+  const isTypingRef = useRef(false);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("messages");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -82,58 +89,74 @@ const Messages = () => {
     }
   };
 
-  const conversations = [
-    {
-      id: 1,
-      name: "Engr. Adewale",
-      lastMessage: "Foundation work completed ahead of schedule!",
-      time: "1h ago",
-      unread: true,
-      project: "Modern Duplex",
-    },
-    {
-      id: 2,
-      name: "Prime Build Ltd",
-      lastMessage: "Site survey documents ready for review",
-      time: "3h ago",
-      unread: false,
-      project: "Commercial Plaza",
-    },
-    {
-      id: 3,
-      name: "Covenant Builders",
-      lastMessage: "Thank you for choosing our services",
-      time: "2 days ago",
-      unread: false,
-      project: "Bungalow Renovation",
-    },
-  ];
+  // load conversations and admin on mount
 
-  const messages = [
-    {
-      id: 1,
-      sender: "Engr. Adewale",
-      message:
-        "Good morning! I'm pleased to inform you that we've completed the foundation work ahead of schedule.",
-      time: "2h ago",
-      isOwn: false,
-    },
-    {
-      id: 2,
-      sender: "You",
-      message:
-        "That's excellent news! Can you share some photos of the progress?",
-      time: "1h ago",
-      isOwn: true,
-    },
-    {
-      id: 3,
-      sender: "Engr. Adewale",
-      message: "Foundation work completed ahead of schedule!",
-      time: "1h ago",
-      isOwn: false,
-    },
-  ];
+  useEffect(() => {
+    const init = async () => {
+      try {
+        // find admin user (clients can only message admin)
+        const users: any[] = await apiClient.getUsers();
+        const admin = users.find((u) => u.role === 'admin');
+        setAdminUser(admin || null);
+
+        // load conversations
+        const convs: any[] = await apiClient.getConversations();
+
+        if (user?.role === 'client') {
+          // keep only conversation with admin (if exists)
+          const convWithAdmin = convs.find(c => c.other_id === admin?.id || c.participant1_id === admin?.id || c.participant2_id === admin?.id);
+          if (convWithAdmin) {
+            setConversations([convWithAdmin]);
+            setSelectedConversation(convWithAdmin.conversation_id || convWithAdmin.id);
+            await loadMessages(convWithAdmin.conversation_id || convWithAdmin.id);
+          } else {
+            setConversations([]);
+            setSelectedConversation(null);
+            setMessages([]);
+          }
+        } else {
+          setConversations(convs);
+          if (convs.length > 0) {
+            setSelectedConversation(convs[0].conversation_id || convs[0].id);
+            await loadMessages(convs[0].conversation_id || convs[0].id);
+          }
+        }
+      } catch (err) {
+        console.error('Error initializing messages:', err);
+      }
+    };
+
+    init();
+  }, [user]);
+
+  // cleanup typing indicator when unmount or conversation changes
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+      if (isTypingRef.current && selectedConversation) {
+        try {
+          apiClient.setTyping(selectedConversation, false);
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, [selectedConversation]);
+
+  const loadMessages = async (conversationId: number | string) => {
+    try {
+      const msgs: any[] = await apiClient.getConversationMessages(conversationId as any);
+      setMessages(msgs || []);
+      // scroll to bottom after a small delay to let DOM render
+      setTimeout(() => {
+        if (messagesRef.current) {
+          messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+        }
+      }, 50);
+    } catch (err) {
+      console.error('Error loading messages:', err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
@@ -219,43 +242,46 @@ const Messages = () => {
             </div>
 
             <div className="overflow-y-auto flex-1">
-              {conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  onClick={() => setSelectedConversation(conv.id)}
-                  className={`p-3 sm:p-4 border-b hover:bg-gray-50 cursor-pointer text-xs sm:text-sm ${
-                    selectedConversation === conv.id
-                      ? "bg-[#226F75]/10 border-r-2 border-r-[#226F75]/60"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-start gap-2 sm:gap-3">
-                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
-                      <AvatarFallback className="text-xs">
-                        {conv.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <p className="font-medium truncate">{conv.name}</p>
-                        <p className="text-xs text-gray-500 flex-shrink-0">
-                          {conv.time}
+              {conversations.map((conv) => {
+                const cid = conv.conversation_id || conv.id;
+                return (
+                  <div
+                    key={cid}
+                    onClick={async () => {
+                      setSelectedConversation(cid);
+                      await loadMessages(cid);
+                    }}
+                    className={`p-3 sm:p-4 border-b hover:bg-gray-50 cursor-pointer text-xs sm:text-sm ${
+                      selectedConversation === cid
+                        ? "bg-[#226F75]/10 border-r-2 border-r-[#226F75]/60"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
+                        <AvatarFallback className="text-xs">
+                          {((conv.other_name || conv.name) || 'M')
+                            .toString()
+                            .split(" ")
+                            .map((n:any) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="font-medium truncate">{conv.other_name || conv.name || 'Management'}</p>
+                          <p className="text-xs text-gray-500 flex-shrink-0">
+                            {conv.last_message_at ? new Date(conv.last_message_at).toLocaleString() : ''}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-600 truncate">
+                          {conv.preview || ''}
                         </p>
                       </div>
-                      <p className="text-xs text-gray-600 truncate">
-                        {conv.lastMessage}
-                      </p>
-                      <p className="text-xs text-gray-400">{conv.project}</p>
-                      {conv.unread && (
-                        <Badge className="mt-1 bg-green-600 text-xs">New</Badge>
-                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -265,44 +291,34 @@ const Messages = () => {
             <div className="bg-white border-b p-3 sm:p-4">
               <div className="flex items-center gap-2 sm:gap-3">
                 <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
-                  <AvatarFallback className="text-xs">EA</AvatarFallback>
+                  <AvatarFallback className="text-xs">M</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
                   <h3 className="font-medium text-xs sm:text-sm truncate">
-                    Engr. Adewale
+                    {user?.role === 'client' ? 'Management' : (conversations.find(c => (c.conversation_id || c.id) === selectedConversation)?.other_name || 'Conversation')}
                   </h3>
                   <p className="text-xs text-gray-500 truncate">
-                    Modern Duplex Project
+                    {user?.role === 'client' ? 'Message the management team' : ''}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${
-                    msg.isOwn ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-xs sm:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm ${
-                      msg.isOwn ? "bg-[#253E44] text-white" : "bg-white border"
-                    }`}
-                  >
-                    <p>{msg.message}</p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        msg.isOwn ? "text-white" : "text-gray-500"
-                      }`}
-                    >
-                      {msg.time}
-                    </p>
+            <div ref={messagesRef} className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
+              {messages.map((msg) => {
+                const isOwn = msg.sender_id === user?.id;
+                return (
+                  <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-xs sm:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm ${isOwn ? 'bg-[#253E44] text-white' : 'bg-white border'}`}>
+                      <p>{msg.content || msg.message}</p>
+                      <p className={`text-xs mt-1 ${isOwn ? 'text-white' : 'text-gray-500'}`}>
+                        {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Message Input */}
@@ -311,10 +327,63 @@ const Messages = () => {
                 <Textarea
                   placeholder="Type your message..."
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={async (e) => {
+                    const v = e.target.value;
+                    setNewMessage(v);
+                    // typing indicator: notify backend when user starts typing, and mark stopped after delay
+                    try {
+                      const convId = selectedConversation;
+                      if (!convId) return;
+                      if (!isTypingRef.current) {
+                        isTypingRef.current = true;
+                        await apiClient.setTyping(convId, true);
+                      }
+                      // reset timeout
+                      if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+                      typingTimeoutRef.current = window.setTimeout(async () => {
+                        isTypingRef.current = false;
+                        try {
+                          await apiClient.setTyping(convId, false);
+                        } catch (err) {
+                          // ignore
+                        }
+                      }, 2500);
+                    } catch (err) {
+                      // ignore typing errors
+                    }
+                  }}
                   className="flex-1 min-h-[36px] sm:min-h-[40px] max-h-32 text-xs sm:text-sm"
                 />
-                <Button className="bg-[#253E44] hover:bg-[#253E44]/70 h-9 sm:h-10 px-2 sm:px-3">
+                <Button
+                  onClick={async () => {
+                    if (!newMessage.trim()) return;
+                    try {
+                      const recipientId = user?.role === 'client' ? adminUser?.id : undefined;
+                      const resp: any = await apiClient.sendMessage(recipientId, newMessage.trim(), selectedConversation || undefined);
+                      // resp should be the posted message
+                      if (resp) {
+                        setMessages((m) => [...m, resp]);
+                        // ensure conversation id is set
+                        if (resp.conversation_id) setSelectedConversation(resp.conversation_id);
+                        setNewMessage('');
+                        try {
+                          // mark typing stopped
+                          const convId = resp.conversation_id || selectedConversation;
+                          if (convId) await apiClient.setTyping(convId, false);
+                        } catch (err) {
+                          // ignore
+                        }
+                        // scroll to bottom
+                        setTimeout(() => {
+                          if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+                        }, 50);
+                      }
+                    } catch (err) {
+                      console.error('Error sending message:', err);
+                    }
+                  }}
+                  className="bg-[#253E44] hover:bg-[#253E44]/70 h-9 sm:h-10 px-2 sm:px-3"
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
