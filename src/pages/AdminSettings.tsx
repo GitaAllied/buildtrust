@@ -22,13 +22,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Settings, TestTube, ArrowLeft, Eye, EyeOff, Database, MessageSquare, Smartphone, Shield, Mail, Bell, Lock, Globe, X, Menu, AlertTriangle, CreditCard, DollarSign, Key} from "lucide-react";
 import { Link } from "react-router-dom";
-
+import SignoutModal from "@/components/ui/signoutModal";
 
 const AdminSettings = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("settings");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { signOut } = useAuth();
+  const [signOutModal, setSignOutModal] = useState(false);
   const handleLogout = async () => {
     try {
       await signOut();
@@ -509,7 +510,7 @@ const AdminSettings = () => {
           sidebarOpen ? "block" : "hidden"
         } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
       >
-        <div className=" h-full flex flex-col justify-between">
+        <div className=" h-full flex flex-col justify-start md:justify-between">
           <div>
             {/* logo */}
             <div className="p-4 pb-0 sm:pb-0 sm:p-6 hidden md:block">
@@ -547,7 +548,7 @@ const AdminSettings = () => {
           <div className="p-3 sm:p-4 pb-0 sm:pb-0">
             <button
               onClick={() => {
-                handleLogout();
+                setSignOutModal(true);
               }}
               className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center text-red-500"
             >
@@ -2872,6 +2873,12 @@ const AdminSettings = () => {
           </div>
         </div>
       </div>
+      {signOutModal && (
+        <SignoutModal
+          isOpen={signOutModal}
+          onClose={() => setSignOutModal(false)}
+        />
+      )}
     </div>
   );
 };
