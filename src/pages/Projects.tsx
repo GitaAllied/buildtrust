@@ -30,16 +30,20 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { apiClient } from "@/lib/api";
+import SignoutModal from "@/components/ui/signoutModal";
 
 // Derive backend origin to resolve media URLs stored as "/uploads/...".
-const API_BASE = (import.meta.env.VITE_API_URL ?? 'https://buildtrust-backend.onrender.com/api').replace(/\/+$/, '');
-const API_ORIGIN = API_BASE.replace(/\/api$/, '');
+const API_BASE = (
+  import.meta.env.VITE_API_URL ?? "https://buildtrust-backend.onrender.com/api"
+).replace(/\/+$/, "");
+const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
 const Projects = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const [signOutModal, setSignOutModal] = useState(false);
 
   const [activeTab, setActiveTab] = useState("projects");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -64,8 +68,8 @@ const Projects = () => {
         });
         setProjects(mapped);
       } catch (err: any) {
-        console.error('Error fetching projects:', err);
-        setError(err.message || 'Failed to load projects');
+        console.error("Error fetching projects:", err);
+        setError(err.message || "Failed to load projects");
       } finally {
         setLoading(false);
       }
@@ -140,14 +144,13 @@ const Projects = () => {
       case "settings":
         navigate("/settings");
         break;
-        case "logout":
+      case "logout":
         handleLogout();
         break;
       default:
         navigate("/browse");
     }
   };
-
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -166,7 +169,9 @@ const Projects = () => {
     const matchesSearch =
       project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (project.developer_name || project.developer || "").toLowerCase().includes(searchTerm.toLowerCase());
+      (project.developer_name || project.developer || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
     const matchesFilter =
       filterStatus === "all" ||
       (project.status || "").toLowerCase().includes(filterStatus.toLowerCase());
@@ -175,11 +180,15 @@ const Projects = () => {
 
   // Calculate dynamic stats from real projects data
   const totalProjects = projects.length;
-  const inProgressCount = projects.filter(p => p.status === 'In Progress').length;
-  const completedCount = projects.filter(p => p.status === 'Completed').length;
-  const planningCount = projects.filter(p => p.status === 'Planning').length;
+  const inProgressCount = projects.filter(
+    (p) => p.status === "In Progress",
+  ).length;
+  const completedCount = projects.filter(
+    (p) => p.status === "Completed",
+  ).length;
+  const planningCount = projects.filter((p) => p.status === "Planning").length;
 
-  const PLACEHOLDER_IMAGE = 'https://placehold.net/main.svg';
+  const PLACEHOLDER_IMAGE = "https://placehold.net/main.svg";
 
   // Resolve media URL: handle absolute URLs, relative '/uploads/..', 'uploads/..', or media.filename
   const resolveMediaUrl = (media: any) => {
@@ -187,9 +196,9 @@ const Projects = () => {
     let url = media.url ?? media.filename ?? null;
     if (!url) return null;
     url = String(url);
-    if (url.startsWith('http')) return url;
+    if (url.startsWith("http")) return url;
     // ensure leading slash
-    if (!url.startsWith('/')) url = `/${url}`;
+    if (!url.startsWith("/")) url = `/${url}`;
     return `${API_ORIGIN}${url}`;
   };
 
@@ -205,7 +214,9 @@ const Projects = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center space-x-2 w-[20%]">
-          <Link to={'/'}><img src={Logo} alt="Build Trust Africa Logo" /></Link>
+          <Link to={"/"}>
+            <img src={Logo} alt="Build Trust Africa Logo" />
+          </Link>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -225,7 +236,7 @@ const Projects = () => {
           sidebarOpen ? "block" : "hidden"
         } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
       >
-        <div className=" h-full flex flex-col justify-between">
+        <div className=" h-full flex flex-col justify-start md:justify-between">
           <div>
             {/* logo */}
             <div className="p-4 sm:pb-2 sm:p-6 hidden md:block">
@@ -263,7 +274,7 @@ const Projects = () => {
           <div className="p-3 sm:p-4">
             <button
               onClick={() => {
-                handleLogout();
+                setSignOutModal(true);
               }}
               className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center text-red-500"
             >
@@ -327,7 +338,9 @@ const Projects = () => {
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8">
             <Card>
               <CardContent className="p-3 sm:p-4 md:p-6 text-center">
-                <p className="text-lg sm:text-2xl font-bold text-gray-900">{totalProjects}</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                  {totalProjects}
+                </p>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
                   Total Projects
                 </p>
@@ -335,7 +348,9 @@ const Projects = () => {
             </Card>
             <Card>
               <CardContent className="p-3 sm:p-4 md:p-6 text-center">
-                <p className="text-lg sm:text-2xl font-bold text-blue-600">{inProgressCount}</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-600">
+                  {inProgressCount}
+                </p>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
                   In Progress
                 </p>
@@ -374,7 +389,10 @@ const Projects = () => {
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <img
                       src={getProjectImageSrc(project)}
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          PLACEHOLDER_IMAGE;
+                      }}
                       alt={project.title}
                       className="w-full sm:w-24 md:w-32 h-40 sm:h-24 md:h-32 rounded-lg object-cover flex-shrink-0"
                     />
@@ -385,7 +403,7 @@ const Projects = () => {
                         </h3>
                         <Badge
                           className={`${getStatusColor(
-                            project.status
+                            project.status,
                           )} text-xs flex-shrink-0`}
                         >
                           {project.status}
@@ -399,12 +417,16 @@ const Projects = () => {
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                          <span className="truncate">{project.developer_name || project.developer}</span>
+                          <span className="truncate">
+                            {project.developer_name || project.developer}
+                          </span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                           <span className="truncate text-xs">
-                            {project.start_date || project.startDate} - {project.expected_completion || project.expectedCompletion}
+                            {project.start_date || project.startDate} -{" "}
+                            {project.expected_completion ||
+                              project.expectedCompletion}
                           </span>
                         </div>
                       </div>
@@ -426,8 +448,12 @@ const Projects = () => {
                       <p className="font-semibold text-sm sm:text-base text-green-600">
                         {(() => {
                           const b = project.budget;
-                          if (b === null || b === undefined || b === '') return '—';
-                          const s = typeof b === 'number' ? String(b) : String(b).trim();
+                          if (b === null || b === undefined || b === "")
+                            return "—";
+                          const s =
+                            typeof b === "number"
+                              ? String(b)
+                              : String(b).trim();
                           return /[Mm]/.test(s) ? s : `${s}M`;
                         })()}
                       </p>
@@ -443,7 +469,10 @@ const Projects = () => {
                   </div>
                   <div className="p-2 sm:p-3 bg-gray-50 rounded-lg">
                     <p className="text-xs sm:text-sm text-gray-600 text-center">
-                      <strong>Latest Update:</strong> {project.last_update || project.lastUpdate || 'No updates yet'}
+                      <strong>Latest Update:</strong>{" "}
+                      {project.last_update ||
+                        project.lastUpdate ||
+                        "No updates yet"}
                     </p>
                   </div>
                 </CardContent>
@@ -466,6 +495,12 @@ const Projects = () => {
           )}
         </div>
       </div>
+      {signOutModal && (
+        <SignoutModal
+          isOpen={signOutModal}
+          onClose={() => setSignOutModal(false)}
+        />
+      )}
     </div>
   );
 };

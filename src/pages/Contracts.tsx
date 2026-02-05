@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { apiClient } from "@/lib/api";
+import SignoutModal from "@/components/ui/signoutModal";
 
 // Derive backend origin to resolve media URLs stored as "/uploads/...".
 const API_BASE = (import.meta.env.VITE_API_URL ?? 'https://buildtrust-backend.onrender.com/api').replace(/\/+$/, '');
@@ -28,6 +29,7 @@ const Contracts = () => {
   const [activeTab, setActiveTab] = useState("contracts");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { signOut } = useAuth();
+  const [signOutModal, setSignOutModal] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -160,7 +162,7 @@ const Contracts = () => {
           sidebarOpen ? "block" : "hidden"
         } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
       >
-        <div className=" h-full flex flex-col justify-between">
+        <div className=" h-full flex flex-col justify-start md:justify-between">
           <div>
             {/* logo */}
             <div className="p-4 sm:pb-2 sm:p-6 hidden md:block">
@@ -198,7 +200,7 @@ const Contracts = () => {
           <div className="p-3 sm:p-4">
             <button
               onClick={() => {
-                handleLogout();
+                setSignOutModal(true);
               }}
               className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center text-red-500"
             >
@@ -313,6 +315,12 @@ const Contracts = () => {
           )}
         </div>
       </div>
+      {signOutModal && (
+        <SignoutModal
+          isOpen={signOutModal}
+          onClose={() => setSignOutModal(false)}
+        />
+      )}
     </div>
   );
 };
