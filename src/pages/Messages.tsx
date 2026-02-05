@@ -36,12 +36,8 @@ const Messages = () => {
   const [activeTab, setActiveTab] = useState("messages");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-<<<<<<< HEAD
   const { signOut, user } = useAuth();
-=======
-  const { signOut } = useAuth();
   const [signOutModal, setSignOutModal] = useState(false);
->>>>>>> 2607a9f9a34998b5b51a41d5f04ce771a99389d6
 
   const handleLogout = async () => {
     try {
