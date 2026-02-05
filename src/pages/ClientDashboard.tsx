@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Bell,
   MessageSquare,
@@ -34,7 +38,7 @@ import {
 } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 
-const PROJECT_PLACEHOLDER = 'https://placehold.net/main.svg';
+const PROJECT_PLACEHOLDER = "https://placehold.net/main.svg";
 
 const ClientDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -93,15 +97,15 @@ const ClientDashboard = () => {
 
         // Transform projects to match dashboard format
         const activeProjects = projectsData
-          .filter((p: any) => p.status === 'active' || p.status === 'open')
-            .map((p: any) => ({
+          .filter((p: any) => p.status === "active" || p.status === "open")
+          .map((p: any) => ({
             id: p.id,
             title: p.title,
-            location: p.location || 'TBD',
+            location: p.location || "TBD",
             progress: p.progress ?? 0, // From milestone calculation
-            developer: p.developer_name || 'Assigned Developer',
-              image: p.media?.url || PROJECT_PLACEHOLDER,
-            status: p.status === 'open' ? 'Pending' : 'In Progress',
+            developer: p.developer_name || "Assigned Developer",
+            image: p.media?.url || PROJECT_PLACEHOLDER,
+            status: p.status === "open" ? "Pending" : "In Progress",
           }));
 
         setActiveProjects(activeProjects);
@@ -212,7 +216,14 @@ const ClientDashboard = () => {
             fill="none"
             viewBox="0 0 24 24"
           >
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
             <path
               className="opacity-75"
               fill="currentColor"
@@ -274,7 +285,6 @@ const ClientDashboard = () => {
     { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
     { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
     { id: "settings", label: "Settings", icon: <FaGear /> },
-    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
   ];
 
   return (
@@ -282,7 +292,9 @@ const ClientDashboard = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center space-x-2 w-[20%]">
-          <Link to={'/'}><img src={Logo} alt="Build Trust Africa Logo" /></Link>
+          <Link to={"/"}>
+            <img src={Logo} alt="Build Trust Africa Logo" />
+          </Link>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -302,33 +314,53 @@ const ClientDashboard = () => {
           sidebarOpen ? "block" : "hidden"
         } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
       >
-        <div className="p-4 sm:p-6 border-b border-white/20 hidden md:block">
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
-          >
-            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
-          </button>
-        </div>
-        <nav className="p-3 sm:p-4 space-y-1">
-          {sidebarItems.map((item) => (
+        <div className=" h-full flex flex-col justify-between">
+          <div>
+            {/* logo */}
+            <div className="p-4 sm:pb-2 sm:p-6 hidden md:block">
+              <button
+                onClick={() => navigate("/")}
+                className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
+              >
+                <Link to={"/"}>
+                  <img src={Logo} alt="" className="w-[55%]" />
+                </Link>
+              </button>
+            </div>
+            {/* nav links */}
+            <nav className="p-3 sm:p-4 space-y-1">
+              {sidebarItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    handleNavigation(item.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
+                    activeTab === item.id
+                      ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
+                      : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+          {/* Signout Button */}
+          <div className="p-3 sm:p-4">
             <button
-              key={item.id}
               onClick={() => {
-                handleNavigation(item.id);
-                setSidebarOpen(false);
+                handleLogout();
               }}
-              className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
-                activeTab === item.id
-                  ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
-                  : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
-              }`}
+              className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center text-red-500"
             >
-              {item.icon}
-              {item.label}
+              <FaDoorOpen />
+              Sign Out
             </button>
-          ))}
-        </nav>
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -348,12 +380,16 @@ const ClientDashboard = () => {
                   Welcome, {user?.name || "Client"}
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-500 truncate">
-                  Managing {activeProjects.length} active project{activeProjects.length !== 1 ? 's' : ''}
+                  Managing {activeProjects.length} active project
+                  {activeProjects.length !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+              <Popover
+                open={notificationsOpen}
+                onOpenChange={setNotificationsOpen}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
@@ -362,13 +398,19 @@ const ClientDashboard = () => {
                   >
                     <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
                     <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
-                      {notifications.filter(n => n.unread).length}
+                      {notifications.filter((n) => n.unread).length}
                     </Badge>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-screen h-screen sm:w-80 sm:h-auto p-0 mt-2" side="bottom" align="end">
+                <PopoverContent
+                  className="w-screen h-screen sm:w-80 sm:h-auto p-0 mt-2"
+                  side="bottom"
+                  align="end"
+                >
                   <div className="p-4 border-b border-gray-200">
-                    <h3 className="font-semibold text-[#253E44]">Notifications</h3>
+                    <h3 className="font-semibold text-[#253E44]">
+                      Notifications
+                    </h3>
                   </div>
                   <div className="max-h-80 overflow-y-auto">
                     {notifications.length === 0 ? (
@@ -380,20 +422,24 @@ const ClientDashboard = () => {
                         <div
                           key={notification.id}
                           className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                            notification.unread ? 'bg-blue-50' : ''
+                            notification.unread ? "bg-blue-50" : ""
                           }`}
                           onClick={() => {
                             // Mark as read and close dropdown
-                            setNotifications(prev =>
-                              prev.map(n =>
-                                n.id === notification.id ? { ...n, unread: false } : n
-                              )
+                            setNotifications((prev) =>
+                              prev.map((n) =>
+                                n.id === notification.id
+                                  ? { ...n, unread: false }
+                                  : n,
+                              ),
                             );
                             setNotificationsOpen(false);
                             // Navigate based on notification type
                             if (notification.title === "New Message") {
                               navigate("/messages");
-                            } else if (notification.title === "Payment Reminder") {
+                            } else if (
+                              notification.title === "Payment Reminder"
+                            ) {
                               navigate("/payments");
                             } else {
                               navigate("/projects");
@@ -441,7 +487,7 @@ const ClientDashboard = () => {
                 className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-xs sm:text-sm shadow-md hover:shadow-lg transition-all"
               >
                 <p className=" hidden md:block">Browse Developers</p>
-                <FaSearchengin className=" md:hidden"/>
+                <FaSearchengin className=" md:hidden" />
               </Button>
             </div>
           </div>
@@ -459,10 +505,20 @@ const ClientDashboard = () => {
                 {activeProjects.length === 0 && !isLoading ? (
                   <Card className="bg-white/90 rounded-2xl border border-black/5">
                     <CardContent className="p-6 text-center">
-                      <h3 className="font-semibold text-sm text-[#253E44]">No active projects found</h3>
-                      <p className="text-xs text-gray-600 mt-2">You don't have any active projects right now. Browse developers to request a build or create a new project.</p>
+                      <h3 className="font-semibold text-sm text-[#253E44]">
+                        No active projects found
+                      </h3>
+                      <p className="text-xs text-gray-600 mt-2">
+                        You don't have any active projects right now. Browse
+                        developers to request a build or create a new project.
+                      </p>
                       <div className="mt-4">
-                        <Button onClick={() => navigate('/browse')} className="bg-gradient-to-r from-[#226F75] to-[#253E44] text-white">Browse Developers</Button>
+                        <Button
+                          onClick={() => navigate("/browse")}
+                          className="bg-gradient-to-r from-[#226F75] to-[#253E44] text-white"
+                        >
+                          Browse Developers
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -475,7 +531,11 @@ const ClientDashboard = () => {
                       >
                         <CardContent className="p-4 sm:p-2 md:p-3 flex flex-col md:flex-row gap-5">
                           <img
-                            src={project.image.length === 0 ? PROJECT_PLACEHOLDER : project.image}
+                            src={
+                              project.image.length === 0
+                                ? PROJECT_PLACEHOLDER
+                                : project.image
+                            }
                             alt={project.title}
                             onError={(e: any) => {
                               e.currentTarget.onerror = null;
