@@ -42,7 +42,6 @@ const SavedDevelopers = () => {
     { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
     { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
     { id: "settings", label: "Settings", icon: <FaGear /> },
-    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
   ];
 
   const handleNavigation = (itemId: string) => {
@@ -138,33 +137,53 @@ const SavedDevelopers = () => {
           sidebarOpen ? "block" : "hidden"
         } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
       >
-        <div className="p-4 sm:p-6 border-b border-white/20 hidden md:block">
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
-          >
-            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
-          </button>
-        </div>
-        <nav className="p-3 sm:p-4 space-y-1">
-          {sidebarItems.map((item) => (
+        <div className=" h-full flex flex-col justify-between">
+          <div>
+            {/* logo */}
+            <div className="p-4 sm:pb-2 sm:p-6 hidden md:block">
+              <button
+                onClick={() => navigate("/")}
+                className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
+              >
+                <Link to={"/"}>
+                  <img src={Logo} alt="" className="w-[55%]" />
+                </Link>
+              </button>
+            </div>
+            {/* nav links */}
+            <nav className="p-3 sm:p-4 space-y-1">
+              {sidebarItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    handleNavigation(item.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
+                    activeTab === item.id
+                      ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
+                      : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+          {/* Signout Button */}
+          <div className="p-3 sm:p-4">
             <button
-              key={item.id}
               onClick={() => {
-                handleNavigation(item.id);
-                setSidebarOpen(false);
+                handleLogout();
               }}
-              className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
-                activeTab === item.id
-                  ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
-                  : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
-              }`}
+              className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center text-red-500"
             >
-              {item.icon}
-              {item.label}
+              <FaDoorOpen />
+              Sign Out
             </button>
-          ))}
-        </nav>
+          </div>
+        </div>
       </div>
       <div className="w-full flex-1 md:pl-64 min-h-screen bg-gray-50">
         {/* Header */}
