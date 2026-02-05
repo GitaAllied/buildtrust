@@ -364,6 +364,25 @@ class ApiClient {
     });
   }
 
+  async getConversations() {
+    return this.request('/messages/conversations', { method: 'GET' });
+  }
+
+  async getConversationMessages(conversationId: number | string) {
+    return this.request(`/messages/${conversationId}`, { method: 'GET' });
+  }
+
+  async markConversationRead(conversationId: number | string) {
+    return this.request(`/messages/${conversationId}/read`, { method: 'POST' });
+  }
+
+  async sendMessage(recipientId: number, content: string, conversationId?: number) {
+    return this.request('/messages', {
+      method: 'POST',
+      body: JSON.stringify({ recipientId, content, conversationId }),
+    });
+  }
+
   async getUser(userId: number | string) {
     return this.request(`/users/${userId}`, {
       method: 'GET',
