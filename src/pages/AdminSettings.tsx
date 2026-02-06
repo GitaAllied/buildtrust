@@ -1,9 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  Mail,
+  Shield,
+  Lock,
+  Globe,
+  CreditCard,
+  Bell,
+  Settings,
+  Send,
+  Key,
+  AlertTriangle,
+  Database,
+  X,
+  Menu,
+  Loader,
+  Eye,
+  EyeOff,
+  DollarSign,
+  MessageSquare,
+  Smartphone,
+} from "lucide-react";
 import Logo from "../assets/Logo.png";
 import { useAuth } from "@/hooks/useAuth";
+import { apiClient } from "@/lib/api";
 import {
   FaBook,
   FaDoorOpen,
@@ -13,29 +47,55 @@ import {
   FaUser,
   FaUsers,
 } from "react-icons/fa6";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Camera } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Send, Settings, TestTube, ArrowLeft, Eye, EyeOff, Database, MessageSquare, Smartphone, Shield, Mail, Bell, Lock, Globe, X, Menu, AlertTriangle, CreditCard, DollarSign, Key} from "lucide-react";
-import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
 
 const AdminSettings = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("settings");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { toast } = useToast();
   const { signOut } = useAuth();
+  const [activeTab, setActiveTab] = useState("settings");
+  const [activeSection, setActiveSection] = useState("general");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signOutModal, setSignOutModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const handleLogout = async () => {
     try {
       await signOut();
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
+    }
+  };
+
+  // Load settings from API on mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const allSettings = await apiClient.getSettings();
+      
+      setGeneralSettings(allSettings.general || generalSettings);
+      setSecuritySettings(allSettings.security || securitySettings);
+      setEmailSettings(allSettings.email || emailSettings);
+      setPaymentSettings(allSettings.payment || paymentSettings);
+      setSettings(allSettings.notifications || settings);
+    } catch (err: any) {
+      console.error('Error loading settings:', err);
+      setError('Failed to load settings');
+      toast({
+        title: 'Error',
+        description: 'Failed to load settings',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
   const sidebarItems = [
@@ -155,8 +215,6 @@ const AdminSettings = () => {
     navigate(path);
   };
 
-  const [activeSection, setActiveSection] = useState("general");
-
   // GENERAL
   const [generalSettings, setGeneralSettings] = useState({
     siteName: "BuildTrust Africa",
@@ -183,10 +241,26 @@ const AdminSettings = () => {
     }));
   };
 
-  const handleGeneralSaveSettings = () => {
-    // In a real app, this would save to backend
-    console.log("Saving general settings:", settings);
-    alert("General settings saved successfully!");
+  const handleGeneralSaveSettings = async () => {
+    try {
+      setSaving("general");
+      setError(null);
+      await apiClient.updateGeneralSettings(generalSettings);
+      toast({
+        title: "Success",
+        description: "General settings saved successfully!",
+      });
+    } catch (err: any) {
+      console.error("Error saving general settings:", err);
+      setError(err?.message || "Failed to save settings");
+      toast({
+        title: "Error",
+        description: "Failed to save general settings",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(null);
+    }
   };
 
   // SECURITY
@@ -223,10 +297,26 @@ const AdminSettings = () => {
       }));
     };
   
-    const handleSecuritySaveSettings = () => {
-      // In a real app, this would save to backend
-      console.log("Saving security settings:", settings);
-      alert("Security settings saved successfully!");
+    const handleSecuritySaveSettings = async () => {
+      try {
+        setSaving("security");
+        setError(null);
+        await apiClient.updateSecuritySettings(securitySettings);
+        toast({
+          title: "Success",
+          description: "Security settings saved successfully!",
+        });
+      } catch (err: any) {
+        console.error("Error saving security settings:", err);
+        setError(err?.message || "Failed to save settings");
+        toast({
+          title: "Error",
+          description: "Failed to save security settings",
+          variant: "destructive",
+        });
+      } finally {
+        setSaving(null);
+      }
     };
   
     const toggleSecurityPasswordVisibility = (field: string) => {
@@ -250,7 +340,6 @@ const AdminSettings = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -310,28 +399,35 @@ const AdminSettings = () => {
       return;
     }
 
-    setIsLoading(true);
+    setSaving("password");
 
     try {
-      // In a real app, this would make an API call to change the password
-      console.log("Changing password:", {
+      await apiClient.updatePassword({
         currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword
+        newPassword: formData.newPassword,
       });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      toast({
+        title: "Success",
+        description: "Password changed successfully!",
+      });
 
-      alert("Password changed successfully! You will be logged out and need to log in with your new password.");
-
-      // In a real app, you would log out the user here
-      // navigate('/auth');
-
-    } catch (error) {
+      // Clear form
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error: any) {
       console.error("Error changing password:", error);
-      alert("Failed to change password. Please try again.");
+      setError(error?.message || "Failed to change password");
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to change password",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setSaving(null);
     }
   };
 
@@ -381,10 +477,26 @@ const AdminSettings = () => {
     }));
   };
 
-  const handleEmailSaveSettings = () => {
-    // In a real app, this would save to backend
-    console.log("Saving email settings:", settings);
-    alert("Email settings saved successfully!");
+  const handleEmailSaveSettings = async () => {
+    try {
+      setSaving("email");
+      setError(null);
+      await apiClient.updateEmailSettings(emailSettings);
+      toast({
+        title: "Success",
+        description: "Email settings saved successfully!",
+      });
+    } catch (err: any) {
+      console.error("Error saving email settings:", err);
+      setError(err?.message || "Failed to save settings");
+      toast({
+        title: "Error",
+        description: "Failed to save email settings",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(null);
+    }
   };
     const [showPassword, setShowPassword] = useState(false);
     const [testEmail, setTestEmail] = useState("");
@@ -438,10 +550,26 @@ const AdminSettings = () => {
     }));
   };
 
-  const handlePaymentSaveSettings = () => {
-    // In a real app, this would save to backend
-    console.log("Saving payment settings:", settings);
-    alert("Payment settings saved successfully!");
+  const handlePaymentSaveSettings = async () => {
+    try {
+      setSaving("payment");
+      setError(null);
+      await apiClient.updatePaymentSettings(paymentSettings);
+      toast({
+        title: "Success",
+        description: "Payment settings saved successfully!",
+      });
+    } catch (err: any) {
+      console.error("Error saving payment settings:", err);
+      setError(err?.message || "Failed to save settings");
+      toast({
+        title: "Error",
+        description: "Failed to save payment settings",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(null);
+    }
   };
 
   const toggleKeyVisibility = (key: string) => {
@@ -480,9 +608,26 @@ const AdminSettings = () => {
     }));
   };
 
-  const handleSaveSettings = () => {
-    console.log("Saving notification settings:", settings);
-    alert("Notification settings saved successfully!");
+  const handleSaveSettings = async () => {
+    try {
+      setSaving("notifications");
+      setError(null);
+      await apiClient.updateNotificationSettings(settings);
+      toast({
+        title: "Success",
+        description: "Notification settings saved successfully!",
+      });
+    } catch (err: any) {
+      console.error("Error saving notification settings:", err);
+      setError(err?.message || "Failed to save settings");
+      toast({
+        title: "Error",
+        description: "Failed to save notification settings",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(null);
+    }
   };
 
   return (
@@ -601,6 +746,19 @@ const AdminSettings = () => {
 
             {/* Main Content */}
             <div className="flex-1 w-full p-6">
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+                  {error}
+                </div>
+              )}
+
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader className="h-8 w-8 animate-spin text-gray-400" />
+                  <span className="ml-2 text-gray-600">Loading settings...</span>
+                </div>
+              ) : (
+              <>
               {/* GENERAL */}
               {activeSection === "general" && (
                 <div className="min-h-screen bg-gray-50">
@@ -969,9 +1127,17 @@ const AdminSettings = () => {
                     <div className="mt-8 flex justify-end">
                       <Button
                         onClick={handleGeneralSaveSettings}
+                        disabled={saving === "general"}
                         className="bg-[#253E44] hover:bg-[#253E44]/70"
                       >
-                        Save General Settings
+                        {saving === "general" ? (
+                          <>
+                            <Loader className="h-4 w-4 animate-spin mr-2" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save General Settings"
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -1387,9 +1553,17 @@ const AdminSettings = () => {
                     <div className="mt-8 flex justify-end">
                       <Button
                         onClick={handleSecuritySaveSettings}
-                        className="bg-[#253E44] hover:bg-[#253E44]/70"
+                        disabled={saving === "security"}
+                        className="bg-[#253E44] hover:bg-[#253E44]/70 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Save Security Settings
+                        {saving === "security" ? (
+                          <>
+                            <Loader className="h-4 w-4 animate-spin mr-2" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save Security Settings"
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -1609,11 +1783,16 @@ const AdminSettings = () => {
                             </Button>
                             <Button
                               type="submit"
-                              disabled={isLoading}
+                              disabled={saving === "password"}
                               className="bg-[#253E44] hover:bg-[#253E44]/70"
                             >
-                              {isLoading
-                                ? "Changing Password..."
+                              {saving === "password"
+                                ? (
+                                  <>
+                                    <Loader className="h-4 w-4 animate-spin mr-2" />
+                                    Changing Password...
+                                  </>
+                                )
                                 : "Change Password"}
                             </Button>
                           </div>
@@ -1966,7 +2145,7 @@ const AdminSettings = () => {
                       <Card>
                         <CardHeader>
                           <CardTitle className="flex items-center space-x-2">
-                            <TestTube className="h-5 w-5" />
+                            <Send className="h-5 w-5" />
                             <span>Testing & Advanced</span>
                           </CardTitle>
                         </CardHeader>
@@ -1991,7 +2170,7 @@ const AdminSettings = () => {
                                 onClick={handleTestEmail}
                                 variant="outline"
                               >
-                                <TestTube className="h-4 w-4 mr-2" />
+                                <Send className="h-4 w-4 mr-2" />
                                 Test
                               </Button>
                             </div>
@@ -2040,9 +2219,17 @@ const AdminSettings = () => {
                     <div className="mt-8 flex justify-end">
                       <Button
                         onClick={handleEmailSaveSettings}
-                        className="bg-[#253E44] hover:bg-[#253E44]/70"
+                        disabled={saving === "email"}
+                        className="bg-[#253E44] hover:bg-[#253E44]/70 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Save Email Settings
+                        {saving === "email" ? (
+                          <>
+                            <Loader className="h-4 w-4 animate-spin mr-2" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save Email Settings"
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -2594,9 +2781,17 @@ const AdminSettings = () => {
                     <div className="mt-8 flex justify-end">
                       <Button
                         onClick={handlePaymentSaveSettings}
-                        className="bg-[#253E44] hover:bg-[#253E44]/70"
+                        disabled={saving === "payment"}
+                        className="bg-[#253E44] hover:bg-[#253E44]/70 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Save Payment Settings
+                        {saving === "payment" ? (
+                          <>
+                            <Loader className="h-4 w-4 animate-spin mr-2" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save Payment Settings"
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -2861,13 +3056,23 @@ const AdminSettings = () => {
                   <div className="mt-8 flex justify-end">
                     <Button
                       onClick={handleSaveSettings}
-                      className="bg-[#253E44] hover:bg-[#253E44]/70"
+                      disabled={saving === "notifications"}
+                      className="bg-[#253E44] hover:bg-[#253E44]/70 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Save Notification Settings
+                      {saving === "notifications" ? (
+                        <>
+                          <Loader className="h-4 w-4 animate-spin mr-2" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Notification Settings"
+                      )}
                     </Button>
                   </div>
                 </div>
               </div>
+              )}
+              </>
               )}
             </div>
           </div>

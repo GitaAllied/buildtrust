@@ -7,6 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectRequestModal from "../components/ProjectRequestModal";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { apiClient } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { Heart } from "lucide-react";
 import Logo from '../assets/Logo.png'
 
 // Component for rotating project images
@@ -90,11 +93,15 @@ const ProjectImageCarousel = ({ project }: any) => {
 const DeveloperProfile = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [developer, setDeveloper] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Compute backend origin for image URLs
   const BACKEND_ORIGIN = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/api$/, '');
@@ -156,6 +163,79 @@ const DeveloperProfile = () => {
 
     fetchDeveloperData();
   }, [id]);
+
+  // Check if developer is saved when user logs in or developer changes
+  useEffect(() => {
+    const checkIfSaved = async () => {
+      if (!id || !user || user.role !== 'client') {
+        setIsSaved(false);
+        return;
+      }
+
+      try {
+        const result = await apiClient.checkIfDeveloperSaved(parseInt(id));
+        setIsSaved(result.is_saved || false);
+      } catch (err) {
+        console.error('Error checking if developer is saved:', err);
+        setIsSaved(false);
+      }
+    };
+
+    checkIfSaved();
+  }, [id, user]);
+
+  // Handle save/unsave developer
+  const handleSaveDeveloper = async () => {
+    if (!user) {
+      toast({
+        title: "Please Log In",
+        description: "You must be logged in to save developers.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (user.role !== 'client') {
+      toast({
+        title: "Not Available",
+        description: "Only clients can save developers.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!id) return;
+
+    try {
+      setIsSaving(true);
+      
+      if (isSaved) {
+        // Unsave developer
+        await apiClient.unsaveDeveloper(parseInt(id));
+        setIsSaved(false);
+        toast({
+          title: "Removed",
+          description: "Developer removed from your saved list.",
+        });
+      } else {
+        // Save developer
+        await apiClient.saveDeveloper(parseInt(id));
+        setIsSaved(true);
+        toast({
+          title: "Saved",
+          description: "Developer added to your saved list.",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to save developer",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Normalize cities covered into a consistent array for rendering
   const citiesCovered: string[] = (() => {
@@ -311,6 +391,22 @@ const DeveloperProfile = () => {
                 >
                   Request to Build
                 </Button>
+
+                {/* Save Developer Button - Only for logged in clients */}
+                {user && user.role === 'client' && (
+                  <Button
+                    onClick={handleSaveDeveloper}
+                    disabled={isSaving}
+                    variant={isSaved ? "default" : "outline"}
+                    className={`ml-3 ${isSaved ? 'bg-red-500 hover:bg-red-600 text-white' : 'border-gray-300'}`}
+                  >
+                    <Heart
+                      className={`mr-2 h-4 w-4 ${isSaved ? 'fill-white' : ''}`}
+                    />
+                    {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
+                  </Button>
+                )}
+
                 <p className="text-sm text-gray-500 mt-2 text-center">
                   Responds {developer.response_time || 'within 24 hours'}
                 </p>

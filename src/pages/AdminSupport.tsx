@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,15 +18,13 @@ import {
   User,
   Mail,
   Phone,
-  Shield,
-  AlertTriangle,
   X,
-  Send,
   Menu,
   Ticket,
   Settings,
   Pen,
   FileStack,
+  Loader,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,20 +46,126 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Tag } from "lucide-react";
+import { Plus, Edit, Trash2, Tag, Save } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Bell, Clock, Save } from "lucide-react";
+import { Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminSupport = () => {
   const navigate = useNavigate();
+  const { signOut, user } = useAuth();
+  const { toast } = useToast();
+
+  // UI State
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("support");
+  const [activeSection, setActiveSection] = useState("tickets");
+  const [signOutModal, setSignOutModal] = useState(false);
+
+  // Data States
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [supportSettings, setSupportSettings] = useState<any>(null);
+
+  // Filter States
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [activeTab, setActiveTab] = useState("support");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { signOut } = useAuth();
-  const [signOutModal, setSignOutModal] = useState(false);
+  const [selectedPriority, setSelectedPriority] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Loading States
+  const [loading, setLoading] = useState(false);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+
+  // Dialog States
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+
+  // Form States
+  const [formData, setFormData] = useState({
+    user_id: user?.id || 0,
+    subject: "",
+    description: "",
+    category_id: "",
+    priority: "medium",
+  });
+
+  const [newCategory, setNewCategory] = useState({
+    name: "",
+    description: "",
+    color: "#3B82F6",
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load data on mount
+  useEffect(() => {
+    loadTickets();
+    loadCategories();
+    loadSettings();
+  }, []);
+
+  // Load tickets with filters
+  const loadTickets = async () => {
+    try {
+      setTicketsLoading(true);
+      const response = await apiClient.getTickets({
+        category: selectedCategory !== "all" ? selectedCategory : undefined,
+        status: selectedStatus !== "all" ? selectedStatus : undefined,
+        priority: selectedPriority !== "all" ? selectedPriority : undefined,
+        search: searchTerm || undefined,
+      });
+      setTickets(response.tickets || []);
+    } catch (error: any) {
+      console.error("Error loading tickets:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load tickets",
+        variant: "destructive",
+      });
+    } finally {
+      setTicketsLoading(false);
+    }
+  };
+
+  // Load categories
+  const loadCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const response = await apiClient.getCategories();
+      setCategories(response || []);
+    } catch (error: any) {
+      console.error("Error loading categories:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load categories",
+        variant: "destructive",
+      });
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  // Load settings
+  const loadSettings = async () => {
+    try {
+      const response = await apiClient.getSupportSettings();
+      setSupportSettings(response);
+    } catch (error: any) {
+      console.error("Error loading settings:", error);
+    }
+  };
+
+  // Reload when filters change
+  useEffect(() => {
+    loadTickets();
+  }, [selectedCategory, selectedStatus, selectedPriority, searchTerm]);
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -70,6 +174,7 @@ const AdminSupport = () => {
       console.error("Logout error:", error);
     }
   };
+
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", icon: <FaUser /> },
     { id: "users", label: "User Management", icon: <FaUsers /> },
@@ -81,10 +186,17 @@ const AdminSupport = () => {
     { id: "settings", label: "Settings", icon: <FaGear /> },
     { id: "support", label: "Support", icon: <FaHandshake />, active: true },
   ];
+
+  const supportSections = [
+    { id: "tickets", label: "Tickets", icon: Ticket },
+    { id: "create", label: "Create Tickets", icon: Pen },
+    { id: "manage", label: "Manage Categories", icon: FileStack },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
+
   const handleNavigation = (itemId: string) => {
     switch (itemId) {
       case "dashboard":
-        setActiveTab(itemId);
         navigate("/super-admin-dashboard");
         break;
       case "users":
@@ -119,445 +231,394 @@ const AdminSupport = () => {
     }
   };
 
-  const [activeSection, setActiveSection] = useState("tickets");
-
-  const supportSections = [
-    { id: "tickets", label: "Tickets", icon: Ticket },
-    { id: "create", label: "Create Tickets", icon: Pen },
-    { id: "manage", label: "Manage Categories", icon: FileStack },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
-
-  const supportTickets = [
-    {
-      id: 1,
-      user: "John Developer",
-      email: "john@example.com",
-      subject: "Payment not received",
-      category: "Payment",
-      status: "Open",
-      priority: "High",
-      created: "2024-01-08 10:30",
-      lastUpdate: "2024-01-08 14:20",
-    },
-    {
-      id: 2,
-      user: "Sarah Client",
-      email: "sarah@example.com",
-      subject: "Unable to upload project files",
-      category: "Technical",
-      status: "In Progress",
-      priority: "Medium",
-      created: "2024-01-07 16:45",
-      lastUpdate: "2024-01-08 09:15",
-    },
-    {
-      id: 3,
-      user: "Mike Contractor",
-      email: "mike@example.com",
-      subject: "Account verification issue",
-      category: "Account",
-      status: "Resolved",
-      priority: "Low",
-      created: "2024-01-06 11:20",
-      lastUpdate: "2024-01-07 13:30",
-    },
-    {
-      id: 4,
-      user: "Admin User",
-      email: "admin@example.com",
-      subject: "System performance report",
-      category: "System",
-      status: "Open",
-      priority: "High",
-      created: "2024-01-08 08:00",
-      lastUpdate: "2024-01-08 08:00",
-    },
-  ];
-
-  const filteredTickets = supportTickets.filter((ticket) => {
-    const matchesCategory =
-      selectedCategory === "all" ||
-      ticket.category.toLowerCase() === selectedCategory;
-    const matchesStatus =
-      selectedStatus === "all" ||
-      ticket.status.toLowerCase().replace(" ", "") === selectedStatus;
-    return matchesCategory && matchesStatus;
-  });
-
+  // Ticket Status Badge
   const getStatusBadge = (status: string) => {
     const variants = {
-      Open: "destructive",
-      "In Progress": "default",
-      Resolved: "secondary",
+      open: "destructive",
+      in_progress: "default",
+      resolved: "secondary",
+      closed: "outline",
     } as const;
+    const displayStatus = status.replace("_", " ").toUpperCase();
     return (
       <Badge variant={variants[status as keyof typeof variants] || "outline"}>
-        {status}
+        {displayStatus}
       </Badge>
     );
   };
 
+  // Priority Badge
   const getPriorityBadge = (priority: string) => {
     const colors = {
-      High: "bg-red-100 text-red-800",
-      Medium: "bg-orange-100 text-orange-800",
-      Low: "bg-green-100 text-green-800",
+      urgent: "bg-red-100 text-red-800",
+      high: "bg-red-100 text-red-800",
+      medium: "bg-orange-100 text-orange-800",
+      low: "bg-green-100 text-green-800",
     };
     return (
-      <Badge className={colors[priority as keyof typeof colors] || ""}>
-        {priority}
+      <Badge
+        className={
+          colors[priority as keyof typeof colors] || "bg-gray-100 text-gray-800"
+        }
+      >
+        {priority.toUpperCase()}
       </Badge>
     );
   };
 
-  // CREATE
-  const [formData, setFormData] = useState({
-    userId: "",
-    userName: "",
-    userEmail: "",
-    subject: "",
-    category: "",
-    priority: "Medium",
-    description: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Mock user data for selection
-  const users = [
-    {
-      id: 101,
-      name: "John Developer",
-      email: "john@example.com",
-      role: "Developer",
-    },
-    {
-      id: 102,
-      name: "Sarah Client",
-      email: "sarah@example.com",
-      role: "Client",
-    },
-    {
-      id: 103,
-      name: "Mike Contractor",
-      email: "mike@example.com",
-      role: "Developer",
-    },
-    { id: 104, name: "Emily Chen", email: "emily@example.com", role: "Client" },
-  ];
-
-  const categories = [
-    "Account",
-    "Payment",
-    "Technical",
-    "Project",
-    "Verification",
-    "General",
-    "Other",
-  ];
-
-  const handleUserSelect = (userId: string) => {
-    const user = users.find((u) => u.id.toString() === userId);
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        userId,
-        userName: user.name,
-        userEmail: user.email,
-      }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Create Ticket Handler
+  const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !formData.userId ||
-      !formData.subject ||
-      !formData.category ||
-      !formData.description
-    ) {
-      alert("Please fill in all required fields");
+    if (!formData.subject || !formData.description || !formData.category_id) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // In a real app, this would make an API call
-      console.log("Creating support ticket:", formData);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Reset form
-      setFormData({
-        userId: "",
-        userName: "",
-        userEmail: "",
-        subject: "",
-        category: "",
-        priority: "Medium",
-        description: "",
+      await apiClient.createTicket({
+        user_id: user?.id || formData.user_id,
+        subject: formData.subject,
+        description: formData.description,
+        category_id: parseInt(formData.category_id),
+        priority: formData.priority,
       });
 
-      alert("Support ticket created successfully!");
-      navigate("/admin/support");
-    } catch (error) {
+      toast({
+        title: "Success",
+        description: "Ticket created successfully",
+      });
+
+      setFormData({
+        user_id: user?.id || 0,
+        subject: "",
+        description: "",
+        category_id: "",
+        priority: "medium",
+      });
+
+      loadTickets();
+    } catch (error: any) {
       console.error("Error creating ticket:", error);
-      alert("Failed to create ticket. Please try again.");
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to create ticket",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // CATEGORIES
-  interface SupportCategory {
-    id: number;
-    name: string;
-    description: string;
-    ticketCount: number;
-    isActive: boolean;
-    createdAt: string;
-    color: string;
-  }
-
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] =
-    useState<SupportCategory | null>(null);
-  const [newCategory, setNewCategory] = useState({
-    name: "",
-    description: "",
-    color: "#3B82F6",
-  });
-
-  // Mock categories data
-  const [categories2, setCategories2] = useState<SupportCategory[]>([
-    {
-      id: 1,
-      name: "Account",
-      description: "Account registration, login, and profile issues",
-      ticketCount: 45,
-      isActive: true,
-      createdAt: "2024-01-01",
-      color: "#3B82F6",
-    },
-    {
-      id: 2,
-      name: "Payment",
-      description: "Payment processing, refunds, and billing issues",
-      ticketCount: 32,
-      isActive: true,
-      createdAt: "2024-01-01",
-      color: "#10B981",
-    },
-    {
-      id: 3,
-      name: "Technical",
-      description: "Technical issues, bugs, and platform errors",
-      ticketCount: 67,
-      isActive: true,
-      createdAt: "2024-01-01",
-      color: "#F59E0B",
-    },
-    {
-      id: 4,
-      name: "Project",
-      description: "Project management, milestones, and deliverables",
-      ticketCount: 28,
-      isActive: true,
-      createdAt: "2024-01-01",
-      color: "#8B5CF6",
-    },
-    {
-      id: 5,
-      name: "Verification",
-      description: "Identity verification and document approval",
-      ticketCount: 15,
-      isActive: true,
-      createdAt: "2024-01-01",
-      color: "#EF4444",
-    },
-    {
-      id: 6,
-      name: "General",
-      description: "General inquiries and miscellaneous issues",
-      ticketCount: 23,
-      isActive: false,
-      createdAt: "2024-01-01",
-      color: "#6B7280",
-    },
-  ]);
-
+  // Create Category Handler
   const handleCreateCategory = async () => {
     if (!newCategory.name.trim()) {
-      alert("Please enter a category name");
+      toast({
+        title: "Error",
+        description: "Please enter a category name",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
-      // In a real app, this would make an API call
-      const category: SupportCategory = {
-        id: Math.max(...categories2.map((c) => c.id)) + 1,
+      await apiClient.createCategory({
         name: newCategory.name,
         description: newCategory.description,
-        ticketCount: 0,
-        isActive: true,
-        createdAt: new Date().toISOString().split("T")[0],
         color: newCategory.color,
-      };
+      });
 
-      setCategories2((prev) => [...prev, category]);
+      toast({
+        title: "Success",
+        description: "Category created successfully",
+      });
+
       setNewCategory({ name: "", description: "", color: "#3B82F6" });
       setIsCreateDialogOpen(false);
-
-      alert("Category created successfully!");
-    } catch (error) {
+      loadCategories();
+    } catch (error: any) {
       console.error("Error creating category:", error);
-      alert("Failed to create category. Please try again.");
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to create category",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleEditCategory = async () => {
+  // Update Category Handler
+  const handleUpdateCategory = async () => {
     if (!editingCategory || !editingCategory.name.trim()) {
-      alert("Please enter a category name");
+      toast({
+        title: "Error",
+        description: "Please enter a category name",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
-      // In a real app, this would make an API call
-      setCategories2((prev) =>
-        prev.map((cat) =>
-          cat.id === editingCategory.id ? { ...editingCategory } : cat,
-        ),
-      );
+      await apiClient.updateCategory(editingCategory.id, {
+        name: editingCategory.name,
+        description: editingCategory.description,
+        color: editingCategory.color,
+        is_active: editingCategory.is_active,
+      });
+
+      toast({
+        title: "Success",
+        description: "Category updated successfully",
+      });
 
       setIsEditDialogOpen(false);
       setEditingCategory(null);
-
-      alert("Category updated successfully!");
-    } catch (error) {
+      loadCategories();
+    } catch (error: any) {
       console.error("Error updating category:", error);
-      alert("Failed to update category. Please try again.");
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to update category",
+        variant: "destructive",
+      });
     }
   };
 
+  // Toggle Category Status
+  const handleToggleCategoryStatus = async (categoryId: number) => {
+    try {
+      await apiClient.toggleCategoryStatus(categoryId);
+      toast({
+        title: "Success",
+        description: "Category status toggled",
+      });
+      loadCategories();
+    } catch (error: any) {
+      console.error("Error toggling category:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to toggle category",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete Category Handler
   const handleDeleteCategory = async (categoryId: number) => {
-    const category = categories2.find((c) => c.id === categoryId);
+    const category = categories.find((c) => c.id === categoryId);
     if (!category) return;
 
-    if (category.ticketCount > 0) {
-      alert(
-        `Cannot delete category "${category.name}" because it has ${category.ticketCount} associated tickets. Please reassign or close all tickets first.`,
-      );
-      return;
-    }
-
     if (
+      category.ticket_count > 0 &&
       !confirm(
-        `Are you sure you want to delete the category "${category.name}"? This action cannot be undone.`,
+        `This category has ${category.ticket_count} associated tickets. Are you sure you want to delete it?`
       )
     ) {
       return;
     }
 
     try {
-      // In a real app, this would make an API call
-      setCategories2((prev) => prev.filter((cat) => cat.id !== categoryId));
-      alert("Category deleted successfully!");
-    } catch (error) {
+      await apiClient.deleteCategory(categoryId);
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
+      loadCategories();
+    } catch (error: any) {
       console.error("Error deleting category:", error);
-      alert("Failed to delete category. Please try again.");
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to delete category",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleToggleStatus = async (categoryId: number) => {
+  // Update Ticket Status
+  const handleUpdateTicketStatus = async (
+    ticketId: number,
+    status: string
+  ) => {
     try {
-      // In a real app, this would make an API call
-      setCategories2((prev) =>
-        prev.map((cat) =>
-          cat.id === categoryId ? { ...cat, isActive: !cat.isActive } : cat,
-        ),
-      );
-    } catch (error) {
-      console.error("Error updating category status:", error);
-      alert("Failed to update category status. Please try again.");
+      await apiClient.updateTicketStatus(ticketId, status);
+      toast({
+        title: "Success",
+        description: "Ticket status updated",
+      });
+      loadTickets();
+    } catch (error: any) {
+      console.error("Error updating ticket:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to update ticket",
+        variant: "destructive",
+      });
     }
   };
 
-  const openEditDialog = (category: SupportCategory) => {
-    setEditingCategory(category);
-    setIsEditDialogOpen(true);
+  // Update Ticket Priority
+  const handleUpdateTicketPriority = async (
+    ticketId: number,
+    priority: string
+  ) => {
+    try {
+      await apiClient.updateTicketPriority(ticketId, priority);
+      toast({
+        title: "Success",
+        description: "Ticket priority updated",
+      });
+      loadTickets();
+    } catch (error: any) {
+      console.error("Error updating ticket:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to update ticket",
+        variant: "destructive",
+      });
+    }
   };
 
-  // SETTINGS
-  const [settings, setSettings] = useState({
-    // General Settings
-    supportEmail: "support@buildtrust.com",
-    supportPhone: "+1 (555) 123-4567",
-    businessHours: "Mon-Fri 9AM-6PM EST",
-    autoResponseEnabled: true,
-    autoResponseMessage:
-      "Thank you for contacting BuildTrust support. We have received your message and will respond within 24 hours.",
-
-    // Ticket Settings
-    autoAssignTickets: true,
-    maxTicketsPerAgent: 10,
-    ticketEscalationHours: 48,
-    requireTicketApproval: false,
-
-    // Notification Settings
-    emailNotifications: true,
-    smsNotifications: false,
-    slackNotifications: true,
-    webhookUrl: "",
-
-    // SLA Settings
-    urgentResponseTime: 1, // hours
-    highResponseTime: 4, // hours
-    mediumResponseTime: 24, // hours
-    lowResponseTime: 72, // hours
-
-    // Security Settings
-    requireAuthentication: true,
-    allowFileUploads: true,
-    maxFileSize: 10, // MB
-    allowedFileTypes: ".pdf,.doc,.docx,.jpg,.png",
-
-    // Advanced Settings
-    enableChatbot: false,
-    enableKnowledgeBase: true,
-    enableTicketTemplates: true,
-    enableAnalytics: true,
-  });
-
-  const [isSaving, setIsSaving] = useState(false);
-
-  const handleSaveSettings = async () => {
-    setIsSaving(true);
+  // Delete Ticket
+  const handleDeleteTicket = async (ticketId: number) => {
+    if (!confirm("Are you sure you want to delete this ticket?")) {
+      return;
+    }
 
     try {
-      // In a real app, this would make an API call
-      console.log("Saving support settings:", settings);
+      await apiClient.deleteTicket(ticketId);
+      toast({
+        title: "Success",
+        description: "Ticket deleted successfully",
+      });
+      loadTickets();
+    } catch (error: any) {
+      console.error("Error deleting ticket:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to delete ticket",
+        variant: "destructive",
+      });
+    }
+  };
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      alert("Settings saved successfully!");
-    } catch (error) {
+  // Settings Handlers
+  const handleSaveGeneralSettings = async () => {
+    try {
+      const settings = supportSettings.general_settings || {};
+      await apiClient.updateSupportGeneralSettings(settings);
+      toast({
+        title: "Success",
+        description: "General settings saved",
+      });
+      loadSettings();
+    } catch (error: any) {
       console.error("Error saving settings:", error);
-      alert("Failed to save settings. Please try again.");
-    } finally {
-      setIsSaving(false);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to save settings",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
-    setSettings((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleSaveTicketSettings = async () => {
+    try {
+      const settings = supportSettings.ticket_settings || {};
+      await apiClient.updateSupportTicketSettings(settings);
+      toast({
+        title: "Success",
+        description: "Ticket settings saved",
+      });
+      loadSettings();
+    } catch (error: any) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to save settings",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveSLASettings = async () => {
+    try {
+      const settings = supportSettings.sla_settings || {};
+      await apiClient.updateSupportSLASettings(settings);
+      toast({
+        title: "Success",
+        description: "SLA settings saved",
+      });
+      loadSettings();
+    } catch (error: any) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to save settings",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveNotificationSettings = async () => {
+    try {
+      const settings = supportSettings.notification_settings || {};
+      await apiClient.updateSupportNotificationSettings(settings);
+      toast({
+        title: "Success",
+        description: "Notification settings saved",
+      });
+      loadSettings();
+    } catch (error: any) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to save settings",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveSecuritySettings = async () => {
+    try {
+      const settings = supportSettings.security_settings || {};
+      await apiClient.updateSupportSecuritySettings(settings);
+      toast({
+        title: "Success",
+        description: "Security settings saved",
+      });
+      loadSettings();
+    } catch (error: any) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to save settings",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveAdvancedSettings = async () => {
+    try {
+      const settings = supportSettings.advanced_settings || {};
+      await apiClient.updateSupportAdvancedSettings(settings);
+      toast({
+        title: "Success",
+        description: "Advanced settings saved",
+      });
+      loadSettings();
+    } catch (error: any) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to save settings",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -566,7 +627,7 @@ const AdminSupport = () => {
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
           <Link to={"/"}>
-            <img src={Logo} alt="" />
+            <img src={Logo} alt="Logo" />
           </Link>
         </div>
         <button
@@ -587,20 +648,18 @@ const AdminSupport = () => {
           sidebarOpen ? "block" : "hidden"
         } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
       >
-        <div className=" h-full flex flex-col justify-start md:justify-between">
+        <div className="h-full flex flex-col justify-start md:justify-between">
           <div>
-            {/* logo */}
             <div className="p-4 pb-0 sm:pb-0 sm:p-6 hidden md:block">
               <button
                 onClick={() => navigate("/")}
                 className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
               >
                 <Link to={"/"}>
-                  <img src={Logo} alt="" className="w-[55%]" />
+                  <img src={Logo} alt="Logo" className="w-[55%]" />
                 </Link>
               </button>
             </div>
-            {/* nav links */}
             <nav className="p-3 pb-0 sm:p-4 sm:pb-0 space-y-1">
               {sidebarItems.map((item) => (
                 <button
@@ -621,7 +680,6 @@ const AdminSupport = () => {
               ))}
             </nav>
           </div>
-          {/* Signout Button */}
           <div className="p-3 sm:p-4 pb-0 sm:pb-0">
             <button
               onClick={() => {
@@ -635,6 +693,7 @@ const AdminSupport = () => {
           </div>
         </div>
       </div>
+
       <div className="w-full flex-1 md:pl-64 min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
@@ -645,7 +704,7 @@ const AdminSupport = () => {
                   Support Center
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Manage support tickets and system alerts
+                  Manage support tickets and system settings
                 </p>
               </div>
             </div>
@@ -653,1108 +712,1015 @@ const AdminSupport = () => {
         </div>
 
         <div className="w-full flex-1 min-h-screen bg-gray-50 flex flex-col">
-          <div className="flex flex-col">
-            {/* Sidebar */}
-            <div className=" bg-[#226F75]/10 w-[95%] m-auto rounded-lg overflow-x-scroll scrollbar-custom my-5">
-              <nav className="p-2 text-sm flex justify-around items-center gap-2">
-                {supportSections.map((section) => {
-                  const Icon = section.icon;
-                  return (
-                    <button
-                      key={section.id}
-                      onClick={() => setActiveSection(section.id)}
-                      className={`w-full flex items-center space-x-3 justify-center px-4 py-3 rounded-lg transition-colors ${
-                        activeSection === section.id
-                          ? "bg-[#226F75]/10 text-[#253E44] font-medium"
-                          : "text-gray-600 hover:bg-[#226F75]/20"
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className=" text-nowrap">{section.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-            {/* Content */}
-            <div className="flex-1 w-full p-6">
-              {/* TICKET */}
-              {activeSection === "tickets" && (
-                <div className="min-h-screen bg-gray-50">
-                  <div className=" mx-auto pb-6">
-                    {/* Support Tickets */}
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center justify-between flex-col md:flex-row gap-4">
-                          <CardTitle className="flex items-center">
-                            <MessageSquare className="mr-2 h-5 w-5" />
-                            Support Tickets
-                          </CardTitle>
-                          <div className="flex items-center space-x-3 w-full md:w-fit">
-                            <Select
-                              value={selectedCategory}
-                              onValueChange={setSelectedCategory}
-                            >
-                              <SelectTrigger className="w-full sm:w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
-                                <SelectItem value="payment">Payment</SelectItem>
-                                <SelectItem value="technical">
-                                  Technical
-                                </SelectItem>
-                                <SelectItem value="account">Account</SelectItem>
-                                <SelectItem value="system">System</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Select
-                              value={selectedStatus}
-                              onValueChange={setSelectedStatus}
-                            >
-                              <SelectTrigger className="w-full sm:w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Status</SelectItem>
-                                <SelectItem value="open">Open</SelectItem>
-                                <SelectItem value="inprogress">
-                                  In Progress
-                                </SelectItem>
-                                <SelectItem value="resolved">
-                                  Resolved
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {filteredTickets.map((ticket) => (
-                            <div
-                              key={ticket.id}
-                              className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                            >
-                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center justify-between md:justify-start space-x-2 mb-2">
-                                    <h4 className="font-medium text-gray-900">
-                                      {ticket.subject}
-                                    </h4>
-                                    {getPriorityBadge(ticket.priority)}
-                                  </div>
-                                  <div className="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
-                                    <span className="flex items-center">
-                                      <User className="h-4 w-4 mr-1" />
-                                      {ticket.user}
-                                    </span>
-                                    <span className="flex items-center">
-                                      <Mail className="h-4 w-4 mr-1" />
-                                      {ticket.email}
-                                    </span>
-                                    <span>Category: {ticket.category}</span>
-                                  </div>
-                                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                    <span>Created: {ticket.created}</span>
-                                    <span>
-                                      Last update: {ticket.lastUpdate}
-                                    </span>
-                                  </div>
+          {/* Navigation Tabs */}
+          <div className="bg-[#226F75]/10 w-[95%] m-auto rounded-lg overflow-x-auto scrollbar-custom my-5">
+            <nav className="p-2 text-sm flex justify-around items-center gap-2">
+              {supportSections.map((section) => {
+                const Icon = section.icon;
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveSection(section.id)}
+                    className={`w-full flex items-center space-x-3 justify-center px-4 py-3 rounded-lg transition-colors ${
+                      activeSection === section.id
+                        ? "bg-[#226F75]/10 text-[#253E44] font-medium"
+                        : "text-gray-600 hover:bg-[#226F75]/20"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="text-nowrap">{section.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 w-full p-6">
+            {/* TICKETS SECTION */}
+            {activeSection === "tickets" && (
+              <div className="space-y-6">
+                {/* Filters */}
+                <div className="flex flex-col md:flex-row gap-4">
+                  <Input
+                    placeholder="Search tickets..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full md:flex-1"
+                  />
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Filter by category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id.toString()}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Filter by priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Priority</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Tickets List */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <MessageSquare className="mr-2 h-5 w-5" />
+                      Support Tickets
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {ticketsLoading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <Loader className="h-6 w-6 animate-spin" />
+                      </div>
+                    ) : tickets.length === 0 ? (
+                      <p className="text-center text-gray-500 py-8">
+                        No tickets found
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {tickets.map((ticket) => (
+                          <div
+                            key={ticket.id}
+                            className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-start justify-between flex-wrap gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="font-semibold text-gray-900 truncate">
+                                    #{ticket.id} - {ticket.subject}
+                                  </h4>
                                 </div>
-                                <div className="flex items-center justify-between md:justify-start space-x-2 mt-3 sm:mt-0">
+                                <p className="text-sm text-gray-600 mb-2">
+                                  {ticket.user_name || "Unknown"} (
+                                  {ticket.email || "N/A"})
+                                </p>
+                                <div className="flex gap-2 flex-wrap">
                                   {getStatusBadge(ticket.status)}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      navigate(
-                                        `/admin/support/ticket/${ticket.id}`,
-                                      )
-                                    }
-                                  >
-                                    View
-                                  </Button>
+                                  {getPriorityBadge(ticket.priority)}
+                                  <Badge variant="outline">
+                                    {ticket.category_name || "Uncategorized"}
+                                  </Badge>
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(ticket.created_at).toLocaleDateString()}
+                                  </span>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                    {/* Recent Activity */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Recent Activity</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3 text-sm">
-                          <div className="flex justify-between">
-                            <span>Ticket #123 resolved</span>
-                            <span className="text-gray-500">5 min ago</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>New ticket from John</span>
-                            <span className="text-gray-500">12 min ago</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Alert acknowledged</span>
-                            <span className="text-gray-500">1 hour ago</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>System backup completed</span>
-                            <span className="text-gray-500">2 hours ago</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              )}
-              {/* CREATE TICKET */}
-              {activeSection === "create" && (
-                <div className="min-h-screen bg-gray-50">
-                  <div className=" mx-auto pb-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <MessageSquare className="h-5 w-5" />
-                          <span>New Support Ticket</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                          {/* User Selection */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="userId">Select User *</Label>
-                              <Select
-                                value={formData.userId}
-                                onValueChange={handleUserSelect}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Choose a user" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {users.map((user) => (
-                                    <SelectItem
-                                      key={user.id}
-                                      value={user.id.toString()}
-                                    >
-                                      <div className="flex items-center space-x-2">
-                                        <User className="h-4 w-4" />
-                                        <span>
-                                          {user.name} ({user.role})
-                                        </span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="userEmail">User Email</Label>
-                              <Input
-                                id="userEmail"
-                                value={formData.userEmail}
-                                readOnly
-                                className="bg-gray-50"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Ticket Details */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="category">Category *</Label>
-                              <Select
-                                value={formData.category}
-                                onValueChange={(value) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    category: value,
-                                  }))
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {categories.map((category) => (
-                                    <SelectItem key={category} value={category}>
-                                      {category}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="priority">Priority</Label>
-                              <Select
-                                value={formData.priority}
-                                onValueChange={(value) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    priority: value,
-                                  }))
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Low">Low</SelectItem>
-                                  <SelectItem value="Medium">Medium</SelectItem>
-                                  <SelectItem value="High">High</SelectItem>
-                                  <SelectItem value="Urgent">Urgent</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          {/* Subject */}
-                          <div className="space-y-2">
-                            <Label htmlFor="subject">Subject *</Label>
-                            <Input
-                              id="subject"
-                              value={formData.subject}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  subject: e.target.value,
-                                }))
-                              }
-                              placeholder="Brief description of the issue"
-                              required
-                            />
-                          </div>
-
-                          {/* Description */}
-                          <div className="space-y-2">
-                            <Label htmlFor="description">Description *</Label>
-                            <Textarea
-                              id="description"
-                              value={formData.description}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  description: e.target.value,
-                                }))
-                              }
-                              placeholder="Detailed description of the issue and any relevant information..."
-                              rows={6}
-                              required
-                            />
-                          </div>
-
-                          {/* Priority Notice */}
-                          {formData.priority === "Urgent" && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                              <div className="flex items-center space-x-2">
-                                <AlertTriangle className="h-5 w-5 text-red-600" />
-                                <span className="text-sm font-medium text-red-800">
-                                  Urgent Priority
-                                </span>
-                              </div>
-                              <p className="text-sm text-red-700 mt-1">
-                                This ticket will be flagged as urgent and will
-                                receive immediate attention from the support
-                                team.
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Actions */}
-                          <div className="flex justify-end space-x-4 pt-6 border-t">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => navigate("/admin/support")}
-                              disabled={isSubmitting}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="submit"
-                              className="bg-[#253E44] hover:bg-[#253E44]/70"
-                              disabled={isSubmitting}
-                            >
-                              {isSubmitting ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                  Creating...
-                                </>
-                              ) : (
-                                <>
-                                  <Send className="h-4 w-4 mr-2" />
-                                  Create Ticket
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </form>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              )}
-              {/* MANAGE CATEGORIES */}
-              {activeSection === "manage" && (
-                <div className="min-h-screen bg-gray-50">
-                  {/* Header */}
-                  <div className="flex items-center space-x-4 w-full sm:w-auto">
-                    <Dialog
-                      open={isCreateDialogOpen}
-                      onOpenChange={setIsCreateDialogOpen}
-                    >
-                      <DialogTrigger asChild>
-                        <Button className="bg-[#253E44] hover:bg-[#253E44]/90 fixed bottom-6 right-6 z-50">
-                          <Plus className="h-4 w-4 mr-2" />
-                          <span className="hidden sm:inline">Add Category</span>
-                          <span className="sm:hidden">Add</span>
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="w-full max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Create New Category</DialogTitle>
-                          <DialogDescription>
-                            Add a new support ticket category to organize
-                            tickets better.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="name">Category Name *</Label>
-                            <Input
-                              id="name"
-                              value={newCategory.name}
-                              onChange={(e) =>
-                                setNewCategory((prev) => ({
-                                  ...prev,
-                                  name: e.target.value,
-                                }))
-                              }
-                              placeholder="Enter category name"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="description">Description</Label>
-                            <Input
-                              id="description"
-                              value={newCategory.description}
-                              onChange={(e) =>
-                                setNewCategory((prev) => ({
-                                  ...prev,
-                                  description: e.target.value,
-                                }))
-                              }
-                              placeholder="Brief description of the category"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="color">Color</Label>
-                            <Input
-                              id="color"
-                              type="color"
-                              value={newCategory.color}
-                              onChange={(e) =>
-                                setNewCategory((prev) => ({
-                                  ...prev,
-                                  color: e.target.value,
-                                }))
-                              }
-                            />
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button
-                            variant="outline"
-                            onClick={() => setIsCreateDialogOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            onClick={handleCreateCategory}
-                            className="bg-[#253E44] hover:bg-[#253E44]/90"
-                          >
-                            Create Category
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-
-                  <div className="mx-auto pb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                      {categories2.map((category) => (
-                        <Card
-                          key={category.id}
-                          className={`relative ${!category.isActive ? "opacity-60" : ""}`}
-                        >
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <div
-                                  className="w-4 h-4 rounded-full"
-                                  style={{ backgroundColor: category.color }}
-                                ></div>
-                                <CardTitle className="text-lg">
-                                  {category.name}
-                                </CardTitle>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEditDialog(category)}
+                              <div className="flex gap-2">
+                                <Select
+                                  value={ticket.status}
+                                  onValueChange={(value) =>
+                                    handleUpdateTicketStatus(ticket.id, value)
+                                  }
                                 >
-                                  <Edit className="h-4 w-4" />
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="open">Open</SelectItem>
+                                    <SelectItem value="in_progress">
+                                      In Progress
+                                    </SelectItem>
+                                    <SelectItem value="resolved">
+                                      Resolved
+                                    </SelectItem>
+                                    <SelectItem value="closed">Closed</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Select
+                                  value={ticket.priority}
+                                  onValueChange={(value) =>
+                                    handleUpdateTicketPriority(ticket.id, value)
+                                  }
+                                >
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                    <SelectItem value="urgent">Urgent</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => navigate(`/admin/support/ticket/${ticket.id}`)}
+                                >
+                                  View
                                 </Button>
                                 <Button
-                                  variant="ghost"
+                                  variant="destructive"
                                   size="sm"
-                                  onClick={() =>
-                                    handleDeleteCategory(category.id)
-                                  }
-                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => handleDeleteTicket(ticket.id)}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm text-gray-600 mb-4">
-                              {category.description}
-                            </p>
-
-                            <div className="flex items-center justify-between mb-4">
-                              <Badge
-                                variant={
-                                  category.isActive ? "default" : "secondary"
-                                }
-                              >
-                                {category.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                              <span className="text-sm text-gray-500">
-                                {category.ticketCount} tickets
-                              </span>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                              <span className="text-xs text-gray-500">
-                                Created: {category.createdAt}
-                              </span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleToggleStatus(category.id)}
-                                className="self-start sm:self-auto w-full sm:w-auto"
-                              >
-                                {category.isActive ? "Deactivate" : "Activate"}
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-
-                    {/* Edit Category Dialog */}
-                    <Dialog
-                      open={isEditDialogOpen}
-                      onOpenChange={setIsEditDialogOpen}
-                    >
-                      <DialogContent className="w-full max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Edit Category</DialogTitle>
-                          <DialogDescription>
-                            Update the category details and settings.
-                          </DialogDescription>
-                        </DialogHeader>
-                        {editingCategory && (
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="edit-name">Category Name *</Label>
-                              <Input
-                                id="edit-name"
-                                value={editingCategory.name}
-                                onChange={(e) =>
-                                  setEditingCategory((prev) =>
-                                    prev
-                                      ? { ...prev, name: e.target.value }
-                                      : null,
-                                  )
-                                }
-                                placeholder="Enter category name"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="edit-description">
-                                Description
-                              </Label>
-                              <Input
-                                id="edit-description"
-                                value={editingCategory.description}
-                                onChange={(e) =>
-                                  setEditingCategory((prev) =>
-                                    prev
-                                      ? { ...prev, description: e.target.value }
-                                      : null,
-                                  )
-                                }
-                                placeholder="Brief description of the category"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="edit-color">Color</Label>
-                              <Input
-                                id="edit-color"
-                                type="color"
-                                value={editingCategory.color}
-                                onChange={(e) =>
-                                  setEditingCategory((prev) =>
-                                    prev
-                                      ? { ...prev, color: e.target.value }
-                                      : null,
-                                  )
-                                }
-                              />
-                            </div>
                           </div>
-                        )}
-                        <DialogFooter>
-                          <Button
-                            variant="outline"
-                            onClick={() => setIsEditDialogOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            onClick={handleEditCategory}
-                            className="bg-[#253E44] hover:bg-[#253E44]/70"
-                          >
-                            Update Category
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-
-                    {categories.length === 0 && (
-                      <div className="text-center py-12">
-                        <Tag className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-sm font-medium text-gray-900">
-                          No categories found
-                        </h3>
-                        <p className="mt-1 text-sm text-gray-500">
-                          Get started by creating your first support category.
-                        </p>
+                        ))}
                       </div>
                     )}
-                  </div>
-                </div>
-              )}
-              {/* SETTINGS */}
-              {activeSection === "settings" && (
-                <div className="min-h-screen bg-gray-50">
-                  <div className="mx-auto pb-6 flex flex-col items-end">
-                    <div className="space-y-6 mb-6 w-full">
-                      {/* General Settings */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <Settings className="h-5 w-5" />
-                            <span>General Settings</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="supportEmail">
-                                Support Email
-                              </Label>
-                              <Input
-                                id="supportEmail"
-                                value={settings.supportEmail}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "supportEmail",
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="supportPhone">
-                                Support Phone
-                              </Label>
-                              <Input
-                                id="supportPhone"
-                                value={settings.supportPhone}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "supportPhone",
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
-                          <div className="space-y-2">
-                            <Label htmlFor="businessHours">
-                              Business Hours
-                            </Label>
-                            <Input
-                              id="businessHours"
-                              value={settings.businessHours}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "businessHours",
-                                  e.target.value,
-                                )
+            {/* CREATE TICKET SECTION */}
+            {activeSection === "create" && (
+              <div className="max-w-2xl">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Create New Support Ticket</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleCreateTicket} className="space-y-6">
+                      <div>
+                        <Label htmlFor="subject">Subject *</Label>
+                        <Input
+                          id="subject"
+                          value={formData.subject}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              subject: e.target.value,
+                            }))
+                          }
+                          placeholder="Brief description of the issue"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="category">Category *</Label>
+                        <Select
+                          value={formData.category_id}
+                          onValueChange={(value) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              category_id: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id.toString()}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="priority">Priority</Label>
+                        <Select
+                          value={formData.priority}
+                          onValueChange={(value) =>
+                            setFormData((prev) => ({ ...prev, priority: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="description">Description *</Label>
+                        <Textarea
+                          id="description"
+                          value={formData.description}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              description: e.target.value,
+                            }))
+                          }
+                          placeholder="Detailed description of the issue"
+                          rows={6}
+                          required
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="bg-[#253E44] hover:bg-[#253E44]/90"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader className="h-4 w-4 mr-2 animate-spin" />
+                            Creating...
+                          </>
+                        ) : (
+                          "Create Ticket"
+                        )}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* MANAGE CATEGORIES SECTION */}
+            {activeSection === "manage" && (
+              <div>
+                <Dialog
+                  open={isCreateDialogOpen}
+                  onOpenChange={setIsCreateDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button className="bg-[#253E44] hover:bg-[#253E44]/90 mb-6">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Category
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-full max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Create New Category</DialogTitle>
+                      <DialogDescription>
+                        Add a new support ticket category
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="name">Category Name *</Label>
+                        <Input
+                          id="name"
+                          value={newCategory.name}
+                          onChange={(e) =>
+                            setNewCategory((prev) => ({
+                              ...prev,
+                              name: e.target.value,
+                            }))
+                          }
+                          placeholder="e.g., Payment, Technical"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={newCategory.description}
+                          onChange={(e) =>
+                            setNewCategory((prev) => ({
+                              ...prev,
+                              description: e.target.value,
+                            }))
+                          }
+                          placeholder="Category description"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="color">Color</Label>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            id="color"
+                            type="color"
+                            value={newCategory.color}
+                            onChange={(e) =>
+                              setNewCategory((prev) => ({
+                                ...prev,
+                                color: e.target.value,
+                              }))
+                            }
+                            className="h-10 w-20"
+                          />
+                          <span className="text-sm text-gray-600">
+                            {newCategory.color}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsCreateDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="bg-[#253E44]"
+                        onClick={handleCreateCategory}
+                      >
+                        Create
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categoriesLoading ? (
+                    <div className="flex justify-center items-center col-span-full py-8">
+                      <Loader className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : categories.length === 0 ? (
+                    <div className="text-center col-span-full py-8">
+                      <Tag className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">
+                        No categories found
+                      </h3>
+                    </div>
+                  ) : (
+                    categories.map((category) => (
+                      <Card key={category.id}>
+                        <CardContent className="pt-6">
+                          <div className="mb-4">
+                            <div
+                              className="h-2 w-full rounded-full mb-2"
+                              style={{ backgroundColor: category.color }}
+                            ></div>
+                            <h3 className="font-semibold text-gray-900">
+                              {category.name}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {category.description}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-xs text-gray-500">
+                              {category.ticket_count || 0} tickets
+                            </span>
+                            <Switch
+                              checked={category.is_active}
+                              onCheckedChange={() =>
+                                handleToggleCategoryStatus(category.id)
                               }
                             />
                           </div>
-
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="autoResponse">
-                                Auto Response
-                              </Label>
-                              <Switch
-                                id="autoResponse"
-                                checked={settings.autoResponseEnabled}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange(
-                                    "autoResponseEnabled",
-                                    checked,
-                                  )
-                                }
-                              />
-                            </div>
-                            {settings.autoResponseEnabled && (
-                              <Textarea
-                                value={settings.autoResponseMessage}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "autoResponseMessage",
-                                    e.target.value,
-                                  )
-                                }
-                                placeholder="Auto response message"
-                                rows={3}
-                              />
-                            )}
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => {
+                                setEditingCategory(category);
+                                setIsEditDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleDeleteCategory(category.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
-
-                      {/* Ticket Settings */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <MessageSquare className="h-5 w-5" />
-                            <span>Ticket Settings</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Label htmlFor="autoAssign">
-                                  Auto Assign Tickets
-                                </Label>
-                                <Switch
-                                  id="autoAssign"
-                                  checked={settings.autoAssignTickets}
-                                  onCheckedChange={(checked) =>
-                                    handleInputChange(
-                                      "autoAssignTickets",
-                                      checked,
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Label htmlFor="requireApproval">
-                                  Require Ticket Approval
-                                </Label>
-                                <Switch
-                                  id="requireApproval"
-                                  checked={settings.requireTicketApproval}
-                                  onCheckedChange={(checked) =>
-                                    handleInputChange(
-                                      "requireTicketApproval",
-                                      checked,
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="maxTickets">
-                                Max Tickets per Agent
-                              </Label>
-                              <Input
-                                id="maxTickets"
-                                type="number"
-                                value={settings.maxTicketsPerAgent}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "maxTicketsPerAgent",
-                                    parseInt(e.target.value),
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="escalationHours">
-                                Escalation Hours
-                              </Label>
-                              <Input
-                                id="escalationHours"
-                                type="number"
-                                value={settings.ticketEscalationHours}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "ticketEscalationHours",
-                                    parseInt(e.target.value),
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* SLA Settings */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <Clock className="h-5 w-5" />
-                            <span>SLA Settings (Response Time in Hours)</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="urgentResponse">
-                                Urgent Priority
-                              </Label>
-                              <Input
-                                id="urgentResponse"
-                                type="number"
-                                value={settings.urgentResponseTime}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "urgentResponseTime",
-                                    parseInt(e.target.value),
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="highResponse">
-                                High Priority
-                              </Label>
-                              <Input
-                                id="highResponse"
-                                type="number"
-                                value={settings.highResponseTime}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "highResponseTime",
-                                    parseInt(e.target.value),
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="mediumResponse">
-                                Medium Priority
-                              </Label>
-                              <Input
-                                id="mediumResponse"
-                                type="number"
-                                value={settings.mediumResponseTime}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "mediumResponseTime",
-                                    parseInt(e.target.value),
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="lowResponse">Low Priority</Label>
-                              <Input
-                                id="lowResponse"
-                                type="number"
-                                value={settings.lowResponseTime}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "lowResponseTime",
-                                    parseInt(e.target.value),
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Notification Settings */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <Bell className="h-5 w-5" />
-                            <span>Notification Settings</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="emailNotif">
-                                Email Notifications
-                              </Label>
-                              <Switch
-                                id="emailNotif"
-                                checked={settings.emailNotifications}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange(
-                                    "emailNotifications",
-                                    checked,
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="smsNotif">
-                                SMS Notifications
-                              </Label>
-                              <Switch
-                                id="smsNotif"
-                                checked={settings.smsNotifications}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange("smsNotifications", checked)
-                                }
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="slackNotif">
-                                Slack Notifications
-                              </Label>
-                              <Switch
-                                id="slackNotif"
-                                checked={settings.slackNotifications}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange(
-                                    "slackNotifications",
-                                    checked,
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-
-                          {settings.slackNotifications && (
-                            <div className="space-y-2">
-                              <Label htmlFor="webhookUrl">
-                                Slack Webhook URL
-                              </Label>
-                              <Input
-                                id="webhookUrl"
-                                value={settings.webhookUrl}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "webhookUrl",
-                                    e.target.value,
-                                  )
-                                }
-                                placeholder="https://hooks.slack.com/services/..."
-                              />
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-
-                      {/* Security Settings */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <Shield className="h-5 w-5" />
-                            <span>Security Settings</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="requireAuth">
-                                Require Authentication
-                              </Label>
-                              <Switch
-                                id="requireAuth"
-                                checked={settings.requireAuthentication}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange(
-                                    "requireAuthentication",
-                                    checked,
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="allowUploads">
-                                Allow File Uploads
-                              </Label>
-                              <Switch
-                                id="allowUploads"
-                                checked={settings.allowFileUploads}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange("allowFileUploads", checked)
-                                }
-                              />
-                            </div>
-                          </div>
-
-                          {settings.allowFileUploads && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="maxFileSize">
-                                  Max File Size (MB)
-                                </Label>
-                                <Input
-                                  id="maxFileSize"
-                                  type="number"
-                                  value={settings.maxFileSize}
-                                  onChange={(e) =>
-                                    handleInputChange(
-                                      "maxFileSize",
-                                      parseInt(e.target.value),
-                                    )
-                                  }
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="allowedTypes">
-                                  Allowed File Types
-                                </Label>
-                                <Input
-                                  id="allowedTypes"
-                                  value={settings.allowedFileTypes}
-                                  onChange={(e) =>
-                                    handleInputChange(
-                                      "allowedFileTypes",
-                                      e.target.value,
-                                    )
-                                  }
-                                  placeholder=".pdf,.doc,.jpg,..."
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-
-                      {/* Advanced Settings */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <AlertTriangle className="h-5 w-5" />
-                            <span>Advanced Settings</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="enableChatbot">
-                                Enable Chatbot
-                              </Label>
-                              <Switch
-                                id="enableChatbot"
-                                checked={settings.enableChatbot}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange("enableChatbot", checked)
-                                }
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="enableKB">
-                                Enable Knowledge Base
-                              </Label>
-                              <Switch
-                                id="enableKB"
-                                checked={settings.enableKnowledgeBase}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange(
-                                    "enableKnowledgeBase",
-                                    checked,
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="enableTemplates">
-                                Enable Ticket Templates
-                              </Label>
-                              <Switch
-                                id="enableTemplates"
-                                checked={settings.enableTicketTemplates}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange(
-                                    "enableTicketTemplates",
-                                    checked,
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="enableAnalytics">
-                                Enable Analytics
-                              </Label>
-                              <Switch
-                                id="enableAnalytics"
-                                checked={settings.enableAnalytics}
-                                onCheckedChange={(checked) =>
-                                  handleInputChange("enableAnalytics", checked)
-                                }
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                    <Button
-                      onClick={handleSaveSettings}
-                      className="bg-[#253E44] hover:bg-[#253E44]/90 w-fit"
-                      disabled={isSaving}
-                    >
-                      {isSaving ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Save Settings
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                    ))
+                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Edit Category Dialog */}
+                <Dialog
+                  open={isEditDialogOpen}
+                  onOpenChange={setIsEditDialogOpen}
+                >
+                  <DialogContent className="w-full max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Edit Category</DialogTitle>
+                    </DialogHeader>
+                    {editingCategory && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="edit-name">Category Name *</Label>
+                          <Input
+                            id="edit-name"
+                            value={editingCategory.name}
+                            onChange={(e) =>
+                              setEditingCategory((prev) => ({
+                                ...prev,
+                                name: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-description">Description</Label>
+                          <Textarea
+                            id="edit-description"
+                            value={editingCategory.description}
+                            onChange={(e) =>
+                              setEditingCategory((prev) => ({
+                                ...prev,
+                                description: e.target.value,
+                              }))
+                            }
+                            rows={3}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-color">Color</Label>
+                          <div className="flex gap-2 items-center">
+                            <input
+                              id="edit-color"
+                              type="color"
+                              value={editingCategory.color}
+                              onChange={(e) =>
+                                setEditingCategory((prev) => ({
+                                  ...prev,
+                                  color: e.target.value,
+                                }))
+                              }
+                              className="h-10 w-20"
+                            />
+                            <span className="text-sm text-gray-600">
+                              {editingCategory.color}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsEditDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="bg-[#253E44]"
+                        onClick={handleUpdateCategory}
+                      >
+                        Save Changes
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+
+            {/* SETTINGS SECTION */}
+            {activeSection === "settings" && (
+              <div className="space-y-6 pb-6">
+                {!supportSettings ? (
+                  <div className="flex justify-center items-center py-8">
+                    <Loader className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    {/* General Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <MessageSquare className="h-5 w-5" />
+                          <span>General Settings</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="email">Support Email</Label>
+                          <Input
+                            id="email"
+                            value={
+                              supportSettings.general_settings?.supportEmail || ""
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                general_settings: {
+                                  ...prev.general_settings,
+                                  supportEmail: e.target.value,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="phone">Support Phone</Label>
+                          <Input
+                            id="phone"
+                            value={
+                              supportSettings.general_settings?.supportPhone || ""
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                general_settings: {
+                                  ...prev.general_settings,
+                                  supportPhone: e.target.value,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="hours">Business Hours</Label>
+                          <Input
+                            id="hours"
+                            value={
+                              supportSettings.general_settings?.businessHours ||
+                              ""
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                general_settings: {
+                                  ...prev.general_settings,
+                                  businessHours: e.target.value,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Label htmlFor="auto-response">
+                            Enable Auto Response
+                          </Label>
+                          <Switch
+                            checked={
+                              supportSettings.general_settings
+                                ?.autoResponseEnabled || false
+                            }
+                            onCheckedChange={(checked) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                general_settings: {
+                                  ...prev.general_settings,
+                                  autoResponseEnabled: checked,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="auto-message">Auto Response Message</Label>
+                          <Textarea
+                            id="auto-message"
+                            value={
+                              supportSettings.general_settings
+                                ?.autoResponseMessage || ""
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                general_settings: {
+                                  ...prev.general_settings,
+                                  autoResponseMessage: e.target.value,
+                                },
+                              }))
+                            }
+                            rows={3}
+                          />
+                        </div>
+                        <Button
+                          className="bg-[#253E44]"
+                          onClick={handleSaveGeneralSettings}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Save General Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Ticket Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Ticket Settings</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <Label htmlFor="auto-assign">Auto Assign Tickets</Label>
+                          <Switch
+                            checked={
+                              supportSettings.ticket_settings?.autoAssignTickets ||
+                              false
+                            }
+                            onCheckedChange={(checked) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                ticket_settings: {
+                                  ...prev.ticket_settings,
+                                  autoAssignTickets: checked,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="max-tickets">
+                            Max Tickets Per Agent
+                          </Label>
+                          <Input
+                            id="max-tickets"
+                            type="number"
+                            value={
+                              supportSettings.ticket_settings
+                                ?.maxTicketsPerAgent || 10
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                ticket_settings: {
+                                  ...prev.ticket_settings,
+                                  maxTicketsPerAgent: parseInt(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="escalation">
+                            Ticket Escalation Hours
+                          </Label>
+                          <Input
+                            id="escalation"
+                            type="number"
+                            value={
+                              supportSettings.ticket_settings
+                                ?.ticketEscalationHours || 48
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                ticket_settings: {
+                                  ...prev.ticket_settings,
+                                  ticketEscalationHours: parseInt(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <Button
+                          className="bg-[#253E44]"
+                          onClick={handleSaveTicketSettings}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Ticket Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* SLA Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>SLA Settings (Response Times in Hours)</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="urgent">Urgent</Label>
+                          <Input
+                            id="urgent"
+                            type="number"
+                            value={
+                              supportSettings.sla_settings?.urgentResponseTime ||
+                              1
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                sla_settings: {
+                                  ...prev.sla_settings,
+                                  urgentResponseTime: parseInt(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="high">High</Label>
+                          <Input
+                            id="high"
+                            type="number"
+                            value={
+                              supportSettings.sla_settings?.highResponseTime || 4
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                sla_settings: {
+                                  ...prev.sla_settings,
+                                  highResponseTime: parseInt(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="medium">Medium</Label>
+                          <Input
+                            id="medium"
+                            type="number"
+                            value={
+                              supportSettings.sla_settings?.mediumResponseTime ||
+                              24
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                sla_settings: {
+                                  ...prev.sla_settings,
+                                  mediumResponseTime: parseInt(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="low">Low</Label>
+                          <Input
+                            id="low"
+                            type="number"
+                            value={
+                              supportSettings.sla_settings?.lowResponseTime || 72
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                sla_settings: {
+                                  ...prev.sla_settings,
+                                  lowResponseTime: parseInt(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <Button
+                          className="bg-[#253E44]"
+                          onClick={handleSaveSLASettings}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Save SLA Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Notification Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Notification Settings</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <Label htmlFor="email-notify">
+                            Email Notifications
+                          </Label>
+                          <Switch
+                            checked={
+                              supportSettings.notification_settings
+                                ?.emailNotifications || false
+                            }
+                            onCheckedChange={(checked) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                notification_settings: {
+                                  ...prev.notification_settings,
+                                  emailNotifications: checked,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Label htmlFor="slack-notify">
+                            Slack Notifications
+                          </Label>
+                          <Switch
+                            checked={
+                              supportSettings.notification_settings
+                                ?.slackNotifications || false
+                            }
+                            onCheckedChange={(checked) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                notification_settings: {
+                                  ...prev.notification_settings,
+                                  slackNotifications: checked,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <Button
+                          className="bg-[#253E44]"
+                          onClick={handleSaveNotificationSettings}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Notification Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Security Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Security Settings</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <Label htmlFor="require-auth">
+                            Require Authentication
+                          </Label>
+                          <Switch
+                            checked={
+                              supportSettings.security_settings
+                                ?.requireAuthentication || false
+                            }
+                            onCheckedChange={(checked) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                security_settings: {
+                                  ...prev.security_settings,
+                                  requireAuthentication: checked,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Label htmlFor="allow-uploads">Allow File Uploads</Label>
+                          <Switch
+                            checked={
+                              supportSettings.security_settings
+                                ?.allowFileUploads || false
+                            }
+                            onCheckedChange={(checked) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                security_settings: {
+                                  ...prev.security_settings,
+                                  allowFileUploads: checked,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="max-file">Max File Size (MB)</Label>
+                          <Input
+                            id="max-file"
+                            type="number"
+                            value={
+                              supportSettings.security_settings?.maxFileSize || 10
+                            }
+                            onChange={(e) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                security_settings: {
+                                  ...prev.security_settings,
+                                  maxFileSize: parseInt(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <Button
+                          className="bg-[#253E44]"
+                          onClick={handleSaveSecuritySettings}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Security Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Advanced Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Advanced Settings</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <Label htmlFor="enable-kb">
+                            Enable Knowledge Base
+                          </Label>
+                          <Switch
+                            checked={
+                              supportSettings.advanced_settings
+                                ?.enableKnowledgeBase || false
+                            }
+                            onCheckedChange={(checked) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                advanced_settings: {
+                                  ...prev.advanced_settings,
+                                  enableKnowledgeBase: checked,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Label htmlFor="enable-templates">
+                            Enable Ticket Templates
+                          </Label>
+                          <Switch
+                            checked={
+                              supportSettings.advanced_settings
+                                ?.enableTicketTemplates || false
+                            }
+                            onCheckedChange={(checked) =>
+                              setSupportSettings((prev) => ({
+                                ...prev,
+                                advanced_settings: {
+                                  ...prev.advanced_settings,
+                                  enableTicketTemplates: checked,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <Button
+                          className="bg-[#253E44]"
+                          onClick={handleSaveAdvancedSettings}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Advanced Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
       {signOutModal && (
         <SignoutModal
           isOpen={signOutModal}

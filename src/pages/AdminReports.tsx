@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -19,10 +19,12 @@ import {
   Users,
   DollarSign,
   X,
-  Menu
+  Menu,
+  Loader
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import { useAuth } from "@/hooks/useAuth";
+import { apiClient } from "@/lib/api";
 import {
   FaBook,
   FaDoorOpen,
@@ -34,6 +36,25 @@ import {
 } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
+
+interface ReportType {
+  id: string;
+  title: string;
+  description: string;
+  icon: any;
+  lastGenerated?: string;
+  status: "Ready" | "Processing";
+}
+
+interface ReportData {
+  id: number;
+  name: string;
+  type: string;
+  generated: string;
+  size: string;
+  downloads: number;
+  data?: any;
+}
 
 const AdminReports = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("monthly");
@@ -100,138 +121,119 @@ const AdminReports = () => {
     }
   };
 
-  const [reportTypes, setReportTypes] = useState([
-    {
-      id: "financial",
-      title: "Financial Report",
-      description: "Revenue, payments, and financial metrics",
-      icon: DollarSign,
-      lastGenerated: "2024-01-08",
-      status: "Ready",
-    },
-    {
-      id: "user",
-      title: "User Activity Report",
-      description: "User registrations, engagement, and demographics",
-      icon: Users,
-      lastGenerated: "2024-01-08",
-      status: "Ready",
-    },
-    {
-      id: "project",
-      title: "Project Performance Report",
-      description: "Project completion rates, timelines, and quality metrics",
-      icon: TrendingUp,
-      lastGenerated: "2024-01-07",
-      status: "Ready",
-    },
-  ]);
+  const [reportTypes, setReportTypes] = useState<ReportType[]>([]);
+  const [recentReports, setRecentReports] = useState<ReportData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [recentReports, setRecentReports] = useState([
-    {
-      id: 1,
-      name: "Monthly Financial Report - December 2024",
-      type: "Financial",
-      generated: "2024-01-08 14:30",
-      size: "2.4 MB",
-      downloads: 12,
-    },
-    {
-      id: 2,
-      name: "User Activity Report - December 2024",
-      type: "User",
-      generated: "2024-01-08 12:15",
-      size: "1.8 MB",
-      downloads: 8,
-    },
-    {
-      id: 3,
-      name: "Project Performance Q4 2024",
-      type: "Project",
-      generated: "2024-01-07 16:45",
-      size: "3.1 MB",
-      downloads: 15,
-    },
-  ]);
+  // Load report types on mount
+  useEffect(() => {
+    loadReportTypes();
+  }, []);
+
+  const loadReportTypes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const types = await apiClient.getReportTypes();
+      
+      // Map icon components
+      const iconMap: Record<string, any> = {
+        DollarSign,
+        Users,
+        TrendingUp,
+      };
+
+      const mappedTypes = types.map((type: any) => ({
+        ...type,
+        icon: iconMap[type.icon] || FileText,
+        status: 'Ready' as const,
+      }));
+
+      setReportTypes(mappedTypes);
+    } catch (err: any) {
+      console.error('Error loading report types:', err);
+      setError('Failed to load report types');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const { toast } = useToast();
 
-  const handleGenerateReport = (reportTypeId: string) => {
-    // Update status to Processing
-    setReportTypes((prev) =>
-      prev.map((r) =>
-        r.id === reportTypeId ? { ...r, status: "Processing" } : r
-      )
-    );
+  const handleGenerateReport = async (reportTypeId: string) => {
+    try {
+      setGeneratingReport(reportTypeId);
+      setError(null);
 
-    toast({
-      title: "Report generation started",
-      description: "The report will be ready shortly.",
-    });
+      let response: any;
+      if (reportTypeId === 'financial') {
+        response = await apiClient.generateFinancialReport(selectedPeriod);
+      } else if (reportTypeId === 'user') {
+        response = await apiClient.generateUserReport(selectedPeriod);
+      } else if (reportTypeId === 'project') {
+        response = await apiClient.generateProjectReport(selectedPeriod);
+      }
 
-    // Simulate async generation
-    setTimeout(() => {
-      const generatedAt = new Date().toLocaleString();
+      // Update status to Ready
       setReportTypes((prev) =>
         prev.map((r) =>
-          r.id === reportTypeId
-            ? { ...r, status: "Ready", lastGenerated: generatedAt }
+          r.id === reportTypeId 
+            ? { 
+                ...r, 
+                status: 'Ready' as const, 
+                lastGenerated: new Date().toLocaleString() 
+              } 
             : r
         )
       );
 
-      // Add to recentReports
-      setRecentReports((prev) => [
-        {
-          id: prev.length ? Math.max(...prev.map((p) => p.id)) + 1 : 1,
-          name: `${
-            reportTypes.find((r) => r.id === reportTypeId)?.title ?? "Report"
-          } - ${generatedAt.split(",")[0]}`,
-          type:
-            reportTypes
-              .find((r) => r.id === reportTypeId)
-              ?.title?.split(" ")[0] ?? "Report",
-          generated: generatedAt,
-          size: `${(1 + Math.random() * 3).toFixed(1)} MB`,
-          downloads: 0,
-        },
-        ...prev,
-      ]);
+      // Add to recent reports
+      if (response) {
+        setRecentReports((prev) => [response, ...prev]);
+      }
 
       toast({
         title: "Report ready",
         description: "The report is ready for download.",
       });
-    }, 2000);
+    } catch (err: any) {
+      console.error('Error generating report:', err);
+      setError(err?.message || 'Failed to generate report');
+      toast({
+        title: "Error",
+        description: "Failed to generate report",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingReport(null);
+    }
   };
 
-  const handleDownloadReport = (reportId: number) => {
-    const report = recentReports.find((r) => r.id === reportId);
-    if (!report) return;
+  const handleDownloadReport = async (reportId: number, type: string) => {
+    try {
+      await apiClient.downloadReport(reportId, type);
 
-    // Create a small CSV/summary for demo purposes
-    const csv = `Report Name,Type,Generated,Size\n"${report.name}","${report.type}","${report.generated}","${report.size}"`;
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${report.name.replace(/\s+/g, "_")}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+      // Increment download counter
+      setRecentReports((prev) =>
+        prev.map((r) =>
+          r.id === reportId ? { ...r, downloads: r.downloads + 1 } : r
+        )
+      );
 
-    // Increment download counter
-    setRecentReports((prev) =>
-      prev.map((r) =>
-        r.id === reportId ? { ...r, downloads: r.downloads + 1 } : r
-      )
-    );
-
-    toast({
-      title: "Download started",
-      description: `${report.name} is being downloaded.`,
-    });
+      toast({
+        title: "Download started",
+        description: "Report is being downloaded.",
+      });
+    } catch (err: any) {
+      console.error('Error downloading report:', err);
+      toast({
+        title: "Error",
+        description: "Failed to download report",
+        variant: "destructive",
+      });
+    }
   };
 
   const visibleReportTypes = reportTypes.filter(
@@ -357,6 +359,19 @@ const AdminReports = () => {
 
         {/* Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col">
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader className="h-8 w-8 animate-spin text-gray-400" />
+              <span className="ml-2 text-gray-600">Loading reports...</span>
+            </div>
+          ) : (
+            <>
           {/* Report Types */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 mb-8 auto-rows-fr flex-1 min-h-[220px]">
             {visibleReportTypes.length ? (
@@ -370,12 +385,14 @@ const AdminReports = () => {
                       <report.icon className="h-8 w-8 text-gray-400" />
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${
-                          report.status === "Ready"
+                          generatingReport === report.id
+                            ? "bg-orange-100 text-orange-800"
+                            : report.status === "Ready"
                             ? "bg-green-100 text-green-800"
                             : "bg-orange-100 text-orange-800"
                         }`}
                       >
-                        {report.status}
+                        {generatingReport === report.id ? "Processing..." : report.status}
                       </span>
                     </div>
                     <h3 className="font-semibold text-gray-900 mb-2">
@@ -385,17 +402,22 @@ const AdminReports = () => {
                       {report.description}
                     </p>
                     <div className="text-xs text-gray-500 mb-4">
-                      Last generated: {report.lastGenerated}
+                      Last generated: {report.lastGenerated || "Never"}
                     </div>
                     <Button
                       className="mt-auto w-full"
                       variant="outline"
                       onClick={() => handleGenerateReport(report.id)}
-                      disabled={report.status === "Processing"}
+                      disabled={generatingReport === report.id}
                     >
-                      {report.status === "Processing"
-                        ? "Generating..."
-                        : "Generate Report"}
+                      {generatingReport === report.id ? (
+                        <>
+                          <Loader className="h-4 w-4 animate-spin mr-2" />
+                          Generating...
+                        </>
+                      ) : (
+                        "Generate Report"
+                      )}
                     </Button>
                   </CardContent>
                 </Card>
@@ -436,10 +458,10 @@ const AdminReports = () => {
                       key={report.id}
                       className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3"
                     >
-                      <div className="flex items-start sm:items-center space-x-4">
-                        <FileText className="h-8 w-8 text-gray-400" />
-                        <div>
-                          <h4 className="font-medium text-gray-900">
+                      <div className="flex items-start sm:items-center space-x-4 flex-1 min-w-0">
+                        <FileText className="h-8 w-8 text-gray-400 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <h4 className="font-medium text-gray-900 truncate">
                             {report.name}
                           </h4>
                           <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
@@ -452,8 +474,8 @@ const AdminReports = () => {
                       </div>
                       <Button
                         variant="outline"
-                        onClick={() => handleDownloadReport(report.id)}
-                        className="w-full sm:w-auto"
+                        onClick={() => handleDownloadReport(report.id, report.type.toLowerCase())}
+                        className="w-full sm:w-auto flex-shrink-0"
                       >
                         <Download className="mr-2 h-4 w-4" />
                         Download
@@ -468,6 +490,8 @@ const AdminReports = () => {
               </div>
             </CardContent>
           </Card>
+            </>
+          )}
         </div>
       </div>
       {signOutModal && (
