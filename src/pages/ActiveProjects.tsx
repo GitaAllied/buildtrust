@@ -267,13 +267,13 @@ const ActiveProjects = () => {
                 </p>
               </div>
             </div>
-            <Button
+            {/* <Button
               className="bg-[#253E44] hover:bg-[#253E44]/90 text-xs sm:text-sm w-full sm:w-auto"
               onClick={() => navigate("/browse")}
             >
               <Plus className="mr-2 h-4 w-4" />
               Start New Project
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -406,14 +406,14 @@ const ActiveProjects = () => {
                         {project.budget}
                       </p>
                     </div>
-                    <Button
+                    {/* <Button
                       variant="outline"
                       size="sm"
                       className="text-xs w-full sm:w-auto"
                       onClick={() => navigate(`/project/${project.id}`)}
                     >
                       View Details
-                    </Button>
+                    </Button> */}
                   </div>
                   <div className="p-2 sm:p-3 bg-gray-50 rounded-lg">
                     <p className="text-xs sm:text-sm text-gray-600 text-center">
