@@ -453,7 +453,12 @@ const AdminMessages = () => {
     try {
       // Try to send to backend first
       try {
-        const resp: any = await apiClient.sendMessage(selectedConversation.userId, msg.content, selectedConversation.conversation_id);
+        // Always send recipientId and conversation_id (if available) to backend
+        const resp: any = await apiClient.sendMessage(
+          selectedConversation.userId, 
+          msg.content, 
+          selectedConversation.conversation_id || undefined
+        );
         
         // Update local state with backend message data
         const backendMsg: Message = {
@@ -481,7 +486,7 @@ const AdminMessages = () => {
                   ...conv,
                   lastMessage: msg.content,
                   lastMessageTime: msg.timestamp,
-                  conversation_id: resp.conversation_id,
+                  conversation_id: resp.conversation_id || selectedConversation.conversation_id,
                 }
               : conv
           )
@@ -494,6 +499,7 @@ const AdminMessages = () => {
         
         setNewMessage("");
       } catch (e) {
+        console.error('Message sending error:', e);
         alert('Message sending failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
       }
     } catch (error) {
