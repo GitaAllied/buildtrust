@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,10 @@ import {
   HelpCircle,
   Menu,
   X,
+  Loader2,
 } from "lucide-react";
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import Logo from "../assets/Logo.png";
 import {
   FaBriefcase,
@@ -35,8 +38,51 @@ const Support = () => {
   const navigate = useNavigate();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const { signOut } = useAuth();
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const { signOut, user } = useAuth();
+  const { toast } = useToast();
   const [signOutModal, setSignOutModal] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [faqItems, setFaqItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Fetch support categories and FAQ on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch categories
+        const categoriesData = await apiClient.getCategories();
+        setCategories(categoriesData || []);
+        
+        // Set first category as default if available
+        if (categoriesData && categoriesData.length > 0) {
+          setCategoryId(categoriesData[0].id);
+        }
+        
+        // Fetch support settings for FAQ
+        try {
+          const settings = await apiClient.getSupportSettings();
+          if (settings && settings.general_settings) {
+            const generalSettings = JSON.parse(settings.general_settings);
+            if (generalSettings.faq && Array.isArray(generalSettings.faq)) {
+              setFaqItems(generalSettings.faq);
+            }
+          }
+        } catch (e) {
+          console.log('Using default FAQ');
+        }
+      } catch (err: any) {
+        console.error('Error fetching support data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -44,6 +90,71 @@ const Support = () => {
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
+    }
+  };
+
+  // Handle ticket submission
+  const handleSubmitTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!subject.trim() || !message.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in both subject and message",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!categoryId) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a category",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user || !user.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      setSubmitting(true);
+      
+      await apiClient.createTicket({
+        user_id: user.id,
+        subject: subject.trim(),
+        description: message.trim(),
+        category_id: categoryId,
+      });
+      
+      // Success
+      toast({
+        title: "Success",
+        description: "Support ticket created successfully. We'll get back to you soon.",
+      });
+      
+      // Clear form
+      setSubject("");
+      setMessage("");
+      if (categories.length > 0) {
+        setCategoryId(categories[0].id);
+      }
+    } catch (err: any) {
+      console.error('Error creating ticket:', err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to create support ticket",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -98,23 +209,6 @@ const Support = () => {
     }
   };
 
-  const faqItems = [
-    {
-      question: "How do I submit a progress update?",
-      answer:
-        "Go to 'Upload Update' in your dashboard, select your project, add description and upload photos/videos.",
-    },
-    {
-      question: "When do I receive payments?",
-      answer:
-        "Payments are released automatically when milestones are approved by the client.",
-    },
-    {
-      question: "How can I increase my trust score?",
-      answer:
-        "Complete projects on time, maintain good communication, and collect positive reviews from clients.",
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
@@ -216,31 +310,64 @@ const Support = () => {
                   Contact Support
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input
-                    id="subject"
-                    placeholder="Brief description of your issue"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                  />
-                </div>
+              <CardContent>
+                <form onSubmit={handleSubmitTicket} className="space-y-4">
+                  <div>
+                    <Label htmlFor="category">Category</Label>
+                    <select
+                      id="category"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#226F75]"
+                      value={categoryId || ""}
+                      onChange={(e) => setCategoryId(e.target.value ? parseInt(e.target.value) : null)}
+                      disabled={loading}
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <Label htmlFor="message">Message</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Describe your issue in detail..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    rows={5}
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="subject">Subject</Label>
+                    <Input
+                      id="subject"
+                      placeholder="Brief description of your issue"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      disabled={submitting}
+                    />
+                  </div>
 
-                <Button className="w-full bg-[#253E44] hover:bg-[#253E44]/70">
-                  Send Message
-                </Button>
+                  <div>
+                    <Label htmlFor="message">Message</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Describe your issue in detail..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={5}
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-[#253E44] hover:bg-[#253E44]/70"
+                    disabled={submitting || loading}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      "Send Message"
+                    )}
+                  </Button>
+                </form>
               </CardContent>
             </Card>
 
@@ -301,14 +428,38 @@ const Support = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {faqItems.map((item, index) => (
-                  <div key={index} className="border-b pb-4 last:border-b-0">
-                    <h3 className="font-medium mb-2">{item.question}</h3>
-                    <p className="text-sm text-gray-600">{item.answer}</p>
-                  </div>
-                ))}
-              </div>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-[#226F75]" />
+                  <span className="ml-2 text-gray-600">Loading FAQ...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {faqItems.length > 0 ? (
+                    faqItems.map((item, index) => (
+                      <div key={index} className="border-b pb-4 last:border-b-0">
+                        <h3 className="font-medium mb-2">{item.question}</h3>
+                        <p className="text-sm text-gray-600">{item.answer}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <div className="border-b pb-4">
+                        <h3 className="font-medium mb-2">How do I submit a progress update?</h3>
+                        <p className="text-sm text-gray-600">Go to 'Upload Update' in your dashboard, select your project, add description and upload photos/videos.</p>
+                      </div>
+                      <div className="border-b pb-4">
+                        <h3 className="font-medium mb-2">When do I receive payments?</h3>
+                        <p className="text-sm text-gray-600">Payments are released automatically when milestones are approved by the client.</p>
+                      </div>
+                      <div className="pb-4">
+                        <h3 className="font-medium mb-2">How can I increase my trust score?</h3>
+                        <p className="text-sm text-gray-600">Complete projects on time, maintain good communication, and collect positive reviews from clients.</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

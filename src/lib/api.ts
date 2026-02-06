@@ -495,6 +495,305 @@ class ApiClient {
     return this.request(`/projects/admin/${projectId}`, {
       method: 'DELETE',
     });
-  }}
+  }
+
+  async getReportTypes() {
+    return this.request('/reports/types', {
+      method: 'GET',
+    });
+  }
+
+  async generateFinancialReport(period: string = 'monthly') {
+    return this.request('/reports/financial', {
+      method: 'POST',
+      body: JSON.stringify({ period }),
+    });
+  }
+
+  async generateUserReport(period: string = 'monthly') {
+    return this.request('/reports/user', {
+      method: 'POST',
+      body: JSON.stringify({ period }),
+    });
+  }
+
+  async generateProjectReport(period: string = 'monthly') {
+    return this.request('/reports/project', {
+      method: 'POST',
+      body: JSON.stringify({ period }),
+    });
+  }
+
+  async getRecentReports() {
+    return this.request('/reports/recent', {
+      method: 'GET',
+    });
+  }
+
+  async downloadReport(reportId: number, type: string) {
+    const response = await fetch(
+      `${this.baseUrl}/reports/download/${reportId}/${type}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report_${reportId}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async getSettings() {
+    return this.request('/settings', {
+      method: 'GET',
+    });
+  }
+
+  async updateGeneralSettings(general: Record<string, unknown>) {
+    return this.request('/settings/general', {
+      method: 'POST',
+      body: JSON.stringify({ general }),
+    });
+  }
+
+  async updateSecuritySettings(security: Record<string, unknown>) {
+    return this.request('/settings/security', {
+      method: 'POST',
+      body: JSON.stringify({ security }),
+    });
+  }
+
+  async updateEmailSettings(email: Record<string, unknown>) {
+    return this.request('/settings/email', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async updatePaymentSettings(payment: Record<string, unknown>) {
+    return this.request('/settings/payment', {
+      method: 'POST',
+      body: JSON.stringify({ payment }),
+    });
+  }
+
+  async updateNotificationSettings(notifications: Record<string, unknown>) {
+    return this.request('/settings/notifications', {
+      method: 'POST',
+      body: JSON.stringify({ notifications }),
+    });
+  }
+
+  async updatePassword(data: { currentPassword: string; newPassword: string }) {
+    return this.request('/settings/password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Support Tickets API
+  async getTickets(filters?: { category?: string; status?: string; priority?: string; search?: string; page?: number; limit?: number }) {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) params.append(key, String(value));
+      });
+    }
+    return this.request(`/support/tickets?${params.toString()}`, {
+      method: 'GET',
+    });
+  }
+
+  async getTicket(id: number) {
+    return this.request(`/support/tickets/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async createTicket(data: { user_id: number; subject: string; description: string; category_id: number; priority?: string }) {
+    return this.request('/support/tickets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateTicketStatus(id: number, status: string) {
+    return this.request(`/support/tickets/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async updateTicketPriority(id: number, priority: string) {
+    return this.request(`/support/tickets/${id}/priority`, {
+      method: 'PATCH',
+      body: JSON.stringify({ priority }),
+    });
+  }
+
+  async updateTicketCategory(id: number, category_id: number) {
+    return this.request(`/support/tickets/${id}/category`, {
+      method: 'PATCH',
+      body: JSON.stringify({ category_id }),
+    });
+  }
+
+  async deleteTicket(id: number) {
+    return this.request(`/support/tickets/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Support Categories API
+  async getCategories() {
+    return this.request('/support/categories', {
+      method: 'GET',
+    });
+  }
+
+  async getCategory(id: number) {
+    return this.request(`/support/categories/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async createCategory(data: { name: string; description?: string; color?: string }) {
+    return this.request('/support/categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCategory(id: number, data: { name?: string; description?: string; color?: string; is_active?: boolean }) {
+    return this.request(`/support/categories/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async toggleCategoryStatus(id: number) {
+    return this.request(`/support/categories/${id}/toggle`, {
+      method: 'PATCH',
+    });
+  }
+
+  async deleteCategory(id: number) {
+    return this.request(`/support/categories/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Support Messages API
+  async getTicketMessages(ticketId: number, page?: number, limit?: number) {
+    const params = new URLSearchParams();
+    if (page) params.append('page', String(page));
+    if (limit) params.append('limit', String(limit));
+    return this.request(`/support/tickets/${ticketId}/messages?${params.toString()}`, {
+      method: 'GET',
+    });
+  }
+
+  async sendTicketMessage(ticketId: number, data: { sender_id: number; content: string; is_internal?: boolean; attachments?: any }) {
+    return this.request(`/support/tickets/${ticketId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteMessage(messageId: number) {
+    return this.request(`/support/messages/${messageId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Support Settings API
+  async getSupportSettings() {
+    return this.request('/support/settings', {
+      method: 'GET',
+    });
+  }
+
+  async updateSupportGeneralSettings(data: Record<string, unknown>) {
+    return this.request('/support/settings/general', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSupportTicketSettings(data: Record<string, unknown>) {
+    return this.request('/support/settings/tickets', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSupportSLASettings(data: Record<string, unknown>) {
+    return this.request('/support/settings/sla', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSupportNotificationSettings(data: Record<string, unknown>) {
+    return this.request('/support/settings/notifications', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSupportSecuritySettings(data: Record<string, unknown>) {
+    return this.request('/support/settings/security', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSupportAdvancedSettings(data: Record<string, unknown>) {
+    return this.request('/support/settings/advanced', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Save Developer API
+  async saveDeveloper(developerId: number) {
+    return this.request('/developers/save', {
+      method: 'POST',
+      body: JSON.stringify({ developer_id: developerId }),
+    });
+  }
+
+  async unsaveDeveloper(developerId: number) {
+    return this.request('/developers/unsave', {
+      method: 'POST',
+      body: JSON.stringify({ developer_id: developerId }),
+    });
+  }
+
+  async checkIfDeveloperSaved(developerId: number) {
+    return this.request(`/developers/${developerId}/is-saved`, {
+      method: 'GET',
+    });
+  }
+
+  async getSavedDevelopers() {
+    return this.request('/developers/saved', {
+      method: 'GET',
+    });
+  }
+}
 
 export const apiClient = new ApiClient(API_BASE_URL);

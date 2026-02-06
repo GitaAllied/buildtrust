@@ -326,13 +326,7 @@ const App = () => (
           />
           <Route
             path="/active-projects"
-            element={
-              <EmailVerificationGuard>
-                <ProtectedRoute>
-                  <ActiveProjects />
-                </ProtectedRoute>
-              </EmailVerificationGuard>
-            }
+            element={<ActiveProjects />}
           />
           <Route
             path="/developer-messages"
