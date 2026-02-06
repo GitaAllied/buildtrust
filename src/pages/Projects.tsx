@@ -298,13 +298,13 @@ const Projects = () => {
                 </p>
               </div>
             </div>
-            <Button
+            {/* <Button
               className="bg-[#253E44] hover:bg-[#253E44]/90 text-xs sm:text-sm w-full sm:w-auto"
               onClick={() => navigate("/browse")}
             >
               <Plus className="mr-2 h-4 w-4" />
               Start New Project
-            </Button>
+            </Button> */}
           </div>
         </div>
 

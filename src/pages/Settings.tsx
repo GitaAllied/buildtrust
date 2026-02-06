@@ -469,7 +469,7 @@ const Settings = () => {
                         onChange={(e) =>
                           handleProfileInputChange("email", e.target.value)
                         }
-                        disabled={profileLoading}
+                        disabled={true}
                       />
                     </div>
 
