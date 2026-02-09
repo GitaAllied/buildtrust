@@ -83,6 +83,27 @@ const ClientDashboard = () => {
       time: "3 days ago",
       unread: false,
     },
+    {
+      id: 4,
+      title: "Project Update",
+      message: "Foundation work completed on Modern Duplex",
+      time: "2 hours ago",
+      unread: true,
+    },
+    {
+      id: 5,
+      title: "Payment Reminder",
+      message: "Milestone payment due for Commercial Plaza",
+      time: "1 day ago",
+      unread: false,
+    },
+    {
+      id: 6,
+      title: "New Message",
+      message: "Engr. Adewale sent you a message",
+      time: "3 days ago",
+      unread: false,
+    },
   ]);
 
   // Mock data for testing when API is not connected
@@ -581,12 +602,8 @@ const ClientDashboard = () => {
                     <Button
                       variant="ghost"
                       className="w-full text-xs text-[#226F75] hover:bg-[#226F75]/10"
-                      onClick={() => {
-                        setNotificationsOpen(false);
-                        navigate("/messages"); // Or a dedicated notifications page
-                      }}
                     >
-                      View All Notifications
+                      Mark All As Read
                     </Button>
                   </div>
                 </PopoverContent>
