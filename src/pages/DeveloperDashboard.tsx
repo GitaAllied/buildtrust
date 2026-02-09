@@ -10,6 +10,11 @@ import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Star,
   Upload,
   MessageSquare,
@@ -46,6 +51,51 @@ const DeveloperDashboard = () => {
   const navigate = useNavigate();
   const { user, signOut, loading } = useAuth();
   const [signOutModal, setSignOutModal] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      title: "Project Update",
+      message: "Foundation work completed on Modern Duplex",
+      time: "2 hours ago",
+      unread: true,
+    },
+    {
+      id: 2,
+      title: "Payment Reminder",
+      message: "Milestone payment due for Commercial Plaza",
+      time: "1 day ago",
+      unread: true,
+    },
+    {
+      id: 3,
+      title: "New Message",
+      message: "Engr. Adewale sent you a message",
+      time: "3 days ago",
+      unread: false,
+    },
+    {
+      id: 4,
+      title: "Project Update",
+      message: "Foundation work completed on Modern Duplex",
+      time: "2 hours ago",
+      unread: true,
+    },
+    {
+      id: 5,
+      title: "Payment Reminder",
+      message: "Milestone payment due for Commercial Plaza",
+      time: "1 day ago",
+      unread: false,
+    },
+    {
+      id: 6,
+      title: "New Message",
+      message: "Engr. Adewale sent you a message",
+      time: "3 days ago",
+      unread: false,
+    },
+  ]);
 
   const handleLogout = async () => {
     try {
@@ -250,7 +300,14 @@ const DeveloperDashboard = () => {
             fill="none"
             viewBox="0 0 24 24"
           >
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
             <path
               className="opacity-75"
               fill="currentColor"
@@ -268,7 +325,9 @@ const DeveloperDashboard = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
-          <Link to={'/'}><img src={Logo} alt="" /></Link>
+          <Link to={"/"}>
+            <img src={Logo} alt="" />
+          </Link>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -344,7 +403,7 @@ const DeveloperDashboard = () => {
           <div className="flex sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
               <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
-                <AvatarImage src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop" />
+                <AvatarImage src="https://placehold.net/avatar-4.svg" />
                 <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
                   EA
                 </AvatarFallback>
@@ -363,16 +422,98 @@ const DeveloperDashboard = () => {
                 </div>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 hover:bg-[#226F75]/10"
+            <Popover
+              open={notificationsOpen}
+              onOpenChange={setNotificationsOpen}
             >
-              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
-                3
-              </Badge>
-            </Button>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 hover:bg-[#226F75]/10"
+                >
+                  <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
+                    {notifications.filter((n) => n.unread).length}
+                  </Badge>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-screen h-screen sm:w-80 sm:h-auto p-0 mt-2"
+                side="bottom"
+                align="end"
+              >
+                <div className="p-4 border-b border-gray-200">
+                  <h3 className="font-semibold text-[#253E44]">
+                    Notifications
+                  </h3>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                      No notifications
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
+                          notification.unread ? "bg-blue-50" : ""
+                        }`}
+                        onClick={() => {
+                          // Mark as read and close dropdown
+                          setNotifications((prev) =>
+                            prev.map((n) =>
+                              n.id === notification.id
+                                ? { ...n, unread: false }
+                                : n,
+                            ),
+                          );
+                          setNotificationsOpen(false);
+                          // Navigate based on notification type
+                          if (notification.title === "New Message") {
+                            navigate("/messages");
+                          } else if (
+                            notification.title === "Payment Reminder"
+                          ) {
+                            navigate("/payments");
+                          } else {
+                            navigate("/projects");
+                          }
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0">
+                            {notification.unread && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-[#253E44] truncate">
+                              {notification.title}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {notification.time}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="p-3 border-t border-gray-200">
+                  <Button
+                    variant="ghost"
+                    className="w-full text-xs text-[#226F75] hover:bg-[#226F75]/10"
+                  >
+                    Mark All As Read
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
