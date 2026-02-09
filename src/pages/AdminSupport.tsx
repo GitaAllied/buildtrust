@@ -81,6 +81,95 @@ const AdminSupport = () => {
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
 
+  // Mock data for when API is not connected
+  const mockTickets = [
+    {
+      id: 1,
+      subject: "Payment Processing Issue",
+      description: "Unable to process payment for project completion",
+      user_id: 1,
+      user_name: "Ade Johnson",
+      category_id: 1,
+      category_name: "Billing",
+      priority: "high",
+      status: "open",
+      created_at: "2025-02-09 10:30:00",
+      updated_at: "2025-02-09 10:30:00",
+    },
+    {
+      id: 2,
+      subject: "Account Verification Delay",
+      description: "My account verification is taking longer than expected",
+      user_id: 2,
+      user_name: "Chioma Okafor",
+      category_id: 2,
+      category_name: "Account",
+      priority: "medium",
+      status: "in_progress",
+      created_at: "2025-02-08 14:20:00",
+      updated_at: "2025-02-09 08:15:00",
+    },
+    {
+      id: 3,
+      subject: "Project Timeline Concern",
+      description: "Worried about project deadline - need to reschedule",
+      user_id: 3,
+      user_name: "Ibrahim Ahmed",
+      category_id: 3,
+      category_name: "Projects",
+      priority: "medium",
+      status: "open",
+      created_at: "2025-02-07 09:45:00",
+      updated_at: "2025-02-07 09:45:00",
+    },
+    {
+      id: 4,
+      subject: "Contract Review Question",
+      description: "Need clarification on contract terms",
+      user_id: 4,
+      user_name: "Grace Oluwaseun",
+      category_id: 4,
+      category_name: "Contracts",
+      priority: "low",
+      status: "resolved",
+      created_at: "2025-02-05 11:20:00",
+      updated_at: "2025-02-06 16:30:00",
+    },
+  ];
+
+  const mockCategories = [
+    {
+      id: 1,
+      name: "Billing",
+      description: "Payment and billing related issues",
+      color: "#EF4444",
+    },
+    {
+      id: 2,
+      name: "Account",
+      description: "Account and profile related issues",
+      color: "#3B82F6",
+    },
+    {
+      id: 3,
+      name: "Projects",
+      description: "Project and timeline related issues",
+      color: "#10B981",
+    },
+    {
+      id: 4,
+      name: "Contracts",
+      description: "Contract and agreement related issues",
+      color: "#F59E0B",
+    },
+    {
+      id: 5,
+      name: "Technical",
+      description: "Technical and platform issues",
+      color: "#8B5CF6",
+    },
+  ];
+
   // Dialog States
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -123,10 +212,13 @@ const AdminSupport = () => {
       setTickets(response.tickets || []);
     } catch (error: any) {
       console.error("Error loading tickets:", error);
+      console.warn('Using mock data due to API connection issue');
+      // Use mock data when API fails
+      setTickets(mockTickets);
       toast({
-        title: "Error",
-        description: "Failed to load tickets",
-        variant: "destructive",
+        title: "Demo Mode",
+        description: "Showing demo data - API connection unavailable",
+        variant: "default",
       });
     } finally {
       setTicketsLoading(false);
@@ -141,10 +233,13 @@ const AdminSupport = () => {
       setCategories(response || []);
     } catch (error: any) {
       console.error("Error loading categories:", error);
+      console.warn('Using mock data due to API connection issue');
+      // Use mock data when API fails
+      setCategories(mockCategories);
       toast({
-        title: "Error",
-        description: "Failed to load categories",
-        variant: "destructive",
+        title: "Demo Mode",
+        description: "Showing demo data - API connection unavailable",
+        variant: "default",
       });
     } finally {
       setCategoriesLoading(false);
