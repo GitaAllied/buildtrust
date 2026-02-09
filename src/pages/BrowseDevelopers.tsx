@@ -109,6 +109,213 @@ const BrowseDevelopers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Mock data for when API is not connected
+  const mockDevelopers = [
+    {
+      id: 1,
+      name: "Engr. Adewale Construction",
+      location: "Lagos",
+      trust_score: 92,
+      years_experience: 12,
+      rating: 4.8,
+      completed_projects: 24,
+      bio: "Expert in modern residential and commercial construction with over a decade of experience.",
+      is_verified: true,
+      profile_image: "https://ui-avatars.com/api/?name=Engr+Adewale&background=226F75&color=fff",
+      projects: [
+        {
+          id: 101,
+          title: "Modern Duplex Development",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 102,
+          title: "Luxury Villa",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1570129477992-45a003ff3271?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 103,
+          title: "Estate Gates",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=150&h=150&fit=crop" }
+          ]
+        }
+      ]
+    },
+    {
+      id: 2,
+      name: "Prime Build Ltd",
+      location: "Lagos",
+      trust_score: 88,
+      years_experience: 9,
+      rating: 4.6,
+      completed_projects: 18,
+      bio: "Specializing in commercial plazas and mixed-use development projects.",
+      is_verified: true,
+      profile_image: "https://ui-avatars.com/api/?name=Prime+Build&background=253E44&color=fff",
+      projects: [
+        {
+          id: 201,
+          title: "Commercial Plaza Project",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 202,
+          title: "Shopping Complex",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1536367567313-e1831ff27c1f?w=150&h=150&fit=crop" }
+          ]
+        }
+      ]
+    },
+    {
+      id: 3,
+      name: "Covenant Builders Nigeria",
+      location: "Abuja",
+      trust_score: 85,
+      years_experience: 11,
+      rating: 4.7,
+      completed_projects: 21,
+      bio: "Leading construction firm in Northern Nigeria with expertise in residential estate development.",
+      is_verified: true,
+      profile_image: "https://ui-avatars.com/api/?name=Covenant+Builders&background=6C5B7F&color=fff",
+      projects: [
+        {
+          id: 301,
+          title: "Residential Estate Expansion",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 302,
+          title: "Gated Community Development",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 303,
+          title: "Townhouse Complex",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1512207736139-c2b276e76403?w=150&h=150&fit=crop" }
+          ]
+        }
+      ]
+    },
+    {
+      id: 4,
+      name: "BuildRight Enterprises",
+      location: "Lagos",
+      trust_score: 90,
+      years_experience: 14,
+      rating: 4.9,
+      completed_projects: 31,
+      bio: "Premium construction services with focus on luxury residential and office complexes.",
+      is_verified: true,
+      profile_image: "https://ui-avatars.com/api/?name=BuildRight&background=D4AF37&color=000",
+      projects: [
+        {
+          id: 401,
+          title: "Office Complex Construction",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 402,
+          title: "Corporate Headquarters",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 403,
+          title: "Luxury Penthouse",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1542314503-37143f4f6e64?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 404,
+          title: "Hotel Development",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=150&h=150&fit=crop" }
+          ]
+        }
+      ]
+    },
+    {
+      id: 5,
+      name: "SafeHaven Construction",
+      location: "Port Harcourt",
+      trust_score: 82,
+      years_experience: 8,
+      rating: 4.5,
+      completed_projects: 15,
+      bio: "Trusted builder for residential properties with excellent safety and quality standards.",
+      is_verified: true,
+      profile_image: "https://ui-avatars.com/api/?name=SafeHaven&background=47B881&color=fff",
+      projects: [
+        {
+          id: 501,
+          title: "Residential Complex",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1570129477992-45a003ff3271?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 502,
+          title: "Family Homes Project",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=150&h=150&fit=crop" }
+          ]
+        }
+      ]
+    },
+    {
+      id: 6,
+      name: "Heritage Builders Ltd",
+      location: "Lagos",
+      trust_score: 87,
+      years_experience: 13,
+      rating: 4.8,
+      completed_projects: 28,
+      bio: "Specialists in bungalow and duplex construction with attention to architectural detail.",
+      is_verified: true,
+      profile_image: "https://ui-avatars.com/api/?name=Heritage+Builders&background=8B4513&color=fff",
+      projects: [
+        {
+          id: 601,
+          title: "Classic Bungalow Design",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 602,
+          title: "Modern Duplex Series",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1512207736139-c2b276e76403?w=150&h=150&fit=crop" }
+          ]
+        },
+        {
+          id: 603,
+          title: "Architectural Showcase",
+          project_media: [
+            { url: "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=150&h=150&fit=crop" }
+          ]
+        }
+      ]
+    }
+  ];
+
   useEffect(() => {
     const fetchDevelopers = async () => {
       try {
@@ -154,8 +361,11 @@ const BrowseDevelopers = () => {
         console.log('Final normalized developers:', normalized);
         setDevelopers(normalized || []);
       } catch (err: any) {
-        setError(err.message || "Failed to load developers");
-        setDevelopers([]);
+        console.error("Error fetching developers from API:", err.message);
+        console.warn("Using mock data due to API connection issue");
+        // Use mock data when API fails
+        setDevelopers(mockDevelopers);
+        setError("Using demo data - API connection unavailable");
       } finally {
         setLoading(false);
       }

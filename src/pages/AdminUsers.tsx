@@ -90,6 +90,75 @@ const AdminUsers = () => {
   const { toast } = useToast();
   const [signOutModal, setSignOutModal] = useState(false);
 
+  // Mock data for when API is not connected
+  const mockUsers = [
+    {
+      id: 1,
+      name: "Ade Johnson",
+      email: "ade.johnson@example.com",
+      role: "Client",
+      status: "Verified",
+      joined: "Jan 15, 2025",
+      phone: "+234 812 345 6789",
+      location: "Lagos, Nigeria",
+      rating: 4.8,
+      projects: 5,
+      is_active: true,
+    },
+    {
+      id: 2,
+      name: "Chioma Okafor",
+      email: "chioma.okafor@example.com",
+      role: "Developer",
+      status: "Verified",
+      joined: "Dec 20, 2024",
+      phone: "+234 801 234 5678",
+      location: "Abuja, Nigeria",
+      rating: 4.9,
+      projects: 8,
+      is_active: true,
+    },
+    {
+      id: 3,
+      name: "Ibrahim Ahmed",
+      email: "ibrahim.ahmed@example.com",
+      role: "Client",
+      status: "Pending",
+      joined: "Feb 8, 2025",
+      phone: "+234 803 456 7890",
+      location: "Kano, Nigeria",
+      rating: null,
+      projects: 0,
+      is_active: true,
+    },
+    {
+      id: 4,
+      name: "Grace Oluwaseun",
+      email: "grace.oluwaseun@example.com",
+      role: "Developer",
+      status: "Pending",
+      joined: "Feb 1, 2025",
+      phone: "+234 805 789 0123",
+      location: "Port Harcourt, Nigeria",
+      rating: null,
+      projects: 0,
+      is_active: true,
+    },
+    {
+      id: 5,
+      name: "David Chen",
+      email: "david.chen@example.com",
+      role: "Client",
+      status: "Verified",
+      joined: "Nov 10, 2024",
+      phone: "+234 807 234 5678",
+      location: "Lagos, Nigeria",
+      rating: 4.7,
+      projects: 3,
+      is_active: true,
+    },
+  ];
+
   // Fetch users on component mount
   useEffect(() => {
     loadUsers();
@@ -133,8 +202,11 @@ const AdminUsers = () => {
       setUsers(mappedUsers);
     } catch (error) {
       console.error('Failed to load users:', error);
-      setUsersError((error as any)?.message || 'Failed to load users');
-      toast({ title: 'Error', description: 'Could not load users', variant: 'destructive' });
+      console.warn('Using mock data due to API connection issue');
+      // Use mock data when API fails
+      setUsers(mockUsers);
+      setUsersError(null); // Don't show error, just display mock data
+      toast({ title: 'Demo Mode', description: 'Showing demo data - API connection unavailable', variant: 'default' });
     } finally {
       setUsersLoading(false);
     }

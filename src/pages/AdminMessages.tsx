@@ -157,6 +157,75 @@ const AdminMessages = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
 
+  // Mock conversations for when API is not connected
+  const mockConversations: Conversation[] = [
+    {
+      id: 1,
+      userId: 1,
+      userName: "Ade Johnson",
+      userRole: "client",
+      userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop",
+      lastMessage: "Great! The project is progressing well. When can we expect the next update?",
+      lastMessageTime: "2025-02-09 10:30",
+      userOnline: true,
+      lastSeen: new Date().toISOString(),
+      unreadCount: 0,
+      status: "active",
+    },
+    {
+      id: 2,
+      userId: 2,
+      userName: "Chioma Okafor",
+      userRole: "developer",
+      userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=40&h=40&fit=crop",
+      lastMessage: "The foundation work is complete. Sending progress photos shortly.",
+      lastMessageTime: "2025-02-09 08:15",
+      userOnline: true,
+      lastSeen: new Date().toISOString(),
+      unreadCount: 1,
+      status: "active",
+    },
+    {
+      id: 3,
+      userId: 3,
+      userName: "Ibrahim Ahmed",
+      userRole: "client",
+      userAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop",
+      lastMessage: "Need to discuss budget adjustments for the project",
+      lastMessageTime: "2025-02-08 16:45",
+      userOnline: false,
+      lastSeen: "2025-02-08 16:45:00",
+      unreadCount: 3,
+      status: "active",
+    },
+    {
+      id: 4,
+      userId: 4,
+      userName: "Grace Oluwaseun",
+      userRole: "developer",
+      userAvatar: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=40&h=40&fit=crop",
+      lastMessage: "Can we push the deadline by two weeks?",
+      lastMessageTime: "2025-02-07 13:20",
+      userOnline: false,
+      lastSeen: "2025-02-07 15:30:00",
+      unreadCount: 0,
+      status: "active",
+    },
+    {
+      id: 5,
+      userId: 5,
+      userName: "David Chen",
+      userRole: "client",
+      userAvatar: "https://images.unsplash.com/photo-1519085360771-9852ef158dba?w=40&h=40&fit=crop",
+      lastMessage: "Thank you for the excellent work on the project!",
+      lastMessageTime: "2025-02-05 11:10",
+      userOnline: false,
+      lastSeen: "2025-02-05 14:22:00",
+      unreadCount: 0,
+      status: "active",
+    },
+  ];
+
   // No static mock messages — messages come from backend or localStorage
 
   // Load users from API and map to conversations using DATABASE messages, with polling for online status
@@ -270,21 +339,10 @@ const AdminMessages = () => {
         }
       } catch (err: any) {
         setUsersError(err?.message || 'Failed to load users');
-        // Fallback to an example conversation if API fails
-        if (mounted && conversations.length === 0) {
-          setConversations([
-            {
-              id: 101,
-              userId: 101,
-              userName: 'John Smith',
-              userRole: 'client',
-              userAvatar: '/api/placeholder/40/40',
-              lastMessage: 'Hi admin, I need help with my project requirements...',
-              lastMessageTime: '2024-01-09 14:30',
-              unreadCount: 2,
-              status: 'active',
-            },
-          ]);
+        console.warn('Using mock data due to API connection issue');
+        // Fallback to mock conversations if API fails
+        if (mounted) {
+          setConversations(mockConversations);
         }
       } finally {
         if (mounted) setUsersLoading(false);
