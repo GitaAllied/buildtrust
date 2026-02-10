@@ -3,6 +3,8 @@ import { Card } from "./card";
 import { FaDoorOpen } from "react-icons/fa6";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { UseSelector, useDispatch, useSelector } from "react-redux";
+import { openSignoutModal } from "@/redux/action";
 
 interface SignoutModalProps {
   isOpen: boolean;
@@ -12,6 +14,8 @@ interface SignoutModalProps {
 const signoutModal = ({ isOpen, onClose }: SignoutModalProps) => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useDispatch()
+  const active = useSelector((state:any) => state.signout)
 
   const handleLogout = async () => {
     try {

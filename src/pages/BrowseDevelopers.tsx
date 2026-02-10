@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { apiClient } from "@/lib/api";
 import Logo from "../assets/Logo.png";
+import { FaHeart } from "react-icons/fa6";
 
 // Complete list of African cities - synchronized with PersonalInfo.tsx
 const AFRICAN_CITIES = [
@@ -131,23 +132,28 @@ const ProjectImageBadge = ({ project, idx }: any) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Extract media array from project
-  const mediaArray = Array.isArray(project.project_media) ? project.project_media : 
-                     Array.isArray(project.media) ? project.media : [];
+  const mediaArray = Array.isArray(project.project_media)
+    ? project.project_media
+    : Array.isArray(project.media)
+      ? project.media
+      : [];
 
   // Get current image URL
   let currentImageUrl: string | null = null;
   if (mediaArray.length > 0) {
     const currentMedia = mediaArray[currentImageIndex];
-    if (currentMedia && typeof currentMedia === 'object' && currentMedia.url) {
+    if (currentMedia && typeof currentMedia === "object" && currentMedia.url) {
       currentImageUrl = currentMedia.url;
-    } else if (typeof currentMedia === 'string') {
+    } else if (typeof currentMedia === "string") {
       currentImageUrl = currentMedia;
     }
   }
 
   // Construct full display URL
-  const displayUrl = currentImageUrl 
-    ? (currentImageUrl.startsWith('http') ? currentImageUrl : `${BACKEND_ORIGIN}${currentImageUrl}`)
+  const displayUrl = currentImageUrl
+    ? currentImageUrl.startsWith("http")
+      ? currentImageUrl
+      : `${BACKEND_ORIGIN}${currentImageUrl}`
     : null;
 
   // Rotate images every 30 seconds
@@ -166,7 +172,7 @@ const ProjectImageBadge = ({ project, idx }: any) => {
     console.log(`Project ${project.id} image rotation:`, {
       currentIndex: currentImageIndex,
       totalImages: mediaArray.length,
-      currentUrl: displayUrl
+      currentUrl: displayUrl,
     });
   }
 
@@ -174,21 +180,22 @@ const ProjectImageBadge = ({ project, idx }: any) => {
     <div
       className="h-[1.5rem] w-[1.5rem] rounded-full border-2 border-gray-300 -ml-2 flex items-center justify-center bg-white overflow-hidden flex-shrink-0 relative group"
       key={`${project.id}-${idx}`}
-      title={project.title || 'Project'}
+      title={project.title || "Project"}
     >
       {displayUrl ? (
         <>
-          <img 
-            src={displayUrl} 
-            alt={project.title || 'Project'} 
+          <img
+            src={displayUrl}
+            alt={project.title || "Project"}
             className="w-full h-full object-cover transition-opacity duration-500"
             loading="lazy"
             onError={(e) => {
               // Fallback to gradient if image fails to load
-              (e.target as HTMLImageElement).style.display = 'none';
+              (e.target as HTMLImageElement).style.display = "none";
               const parent = (e.target as HTMLImageElement).parentElement;
               if (parent) {
-                parent.style.background = 'linear-gradient(135deg, rgb(209, 213, 219), rgb(156, 163, 175))';
+                parent.style.background =
+                  "linear-gradient(135deg, rgb(209, 213, 219), rgb(156, 163, 175))";
               }
             }}
           />
@@ -197,7 +204,7 @@ const ProjectImageBadge = ({ project, idx }: any) => {
       ) : (
         // Placeholder for projects without media
         <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-xs font-bold text-gray-500">
-          {project.source === 'portfolio' ? 'P' : '•'}
+          {project.source === "portfolio" ? "P" : "•"}
         </div>
       )}
     </div>
@@ -231,30 +238,37 @@ const BrowseDevelopers = () => {
       completed_projects: 24,
       bio: "Expert in modern residential and commercial construction with over a decade of experience.",
       is_verified: true,
-      profile_image: "https://ui-avatars.com/api/?name=Engr+Adewale&background=226F75&color=fff",
+      profile_image:
+        "https://ui-avatars.com/api/?name=Engr+Adewale&background=226F75&color=fff",
       projects: [
         {
           id: 101,
           title: "Modern Duplex Development",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 102,
           title: "Luxury Villa",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1570129477992-45a003ff3271?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1570129477992-45a003ff3271?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 103,
           title: "Estate Gates",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=150&h=150&fit=crop" }
-          ]
-        }
-      ]
+            {
+              url: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=150&h=150&fit=crop",
+            },
+          ],
+        },
+      ],
     },
     {
       id: 2,
@@ -266,23 +280,28 @@ const BrowseDevelopers = () => {
       completed_projects: 18,
       bio: "Specializing in commercial plazas and mixed-use development projects.",
       is_verified: true,
-      profile_image: "https://ui-avatars.com/api/?name=Prime+Build&background=253E44&color=fff",
+      profile_image:
+        "https://ui-avatars.com/api/?name=Prime+Build&background=253E44&color=fff",
       projects: [
         {
           id: 201,
           title: "Commercial Plaza Project",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 202,
           title: "Shopping Complex",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1536367567313-e1831ff27c1f?w=150&h=150&fit=crop" }
-          ]
-        }
-      ]
+            {
+              url: "https://images.unsplash.com/photo-1536367567313-e1831ff27c1f?w=150&h=150&fit=crop",
+            },
+          ],
+        },
+      ],
     },
     {
       id: 3,
@@ -294,30 +313,37 @@ const BrowseDevelopers = () => {
       completed_projects: 21,
       bio: "Leading construction firm in Northern Nigeria with expertise in residential estate development.",
       is_verified: true,
-      profile_image: "https://ui-avatars.com/api/?name=Covenant+Builders&background=6C5B7F&color=fff",
+      profile_image:
+        "https://ui-avatars.com/api/?name=Covenant+Builders&background=6C5B7F&color=fff",
       projects: [
         {
           id: 301,
           title: "Residential Estate Expansion",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 302,
           title: "Gated Community Development",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 303,
           title: "Townhouse Complex",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1512207736139-c2b276e76403?w=150&h=150&fit=crop" }
-          ]
-        }
-      ]
+            {
+              url: "https://images.unsplash.com/photo-1512207736139-c2b276e76403?w=150&h=150&fit=crop",
+            },
+          ],
+        },
+      ],
     },
     {
       id: 4,
@@ -329,37 +355,46 @@ const BrowseDevelopers = () => {
       completed_projects: 31,
       bio: "Premium construction services with focus on luxury residential and office complexes.",
       is_verified: true,
-      profile_image: "https://ui-avatars.com/api/?name=BuildRight&background=D4AF37&color=000",
+      profile_image:
+        "https://ui-avatars.com/api/?name=BuildRight&background=D4AF37&color=000",
       projects: [
         {
           id: 401,
           title: "Office Complex Construction",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 402,
           title: "Corporate Headquarters",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 403,
           title: "Luxury Penthouse",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1542314503-37143f4f6e64?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1542314503-37143f4f6e64?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 404,
           title: "Hotel Development",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=150&h=150&fit=crop" }
-          ]
-        }
-      ]
+            {
+              url: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=150&h=150&fit=crop",
+            },
+          ],
+        },
+      ],
     },
     {
       id: 5,
@@ -371,23 +406,28 @@ const BrowseDevelopers = () => {
       completed_projects: 15,
       bio: "Trusted builder for residential properties with excellent safety and quality standards.",
       is_verified: true,
-      profile_image: "https://ui-avatars.com/api/?name=SafeHaven&background=47B881&color=fff",
+      profile_image:
+        "https://ui-avatars.com/api/?name=SafeHaven&background=47B881&color=fff",
       projects: [
         {
           id: 501,
           title: "Residential Complex",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1570129477992-45a003ff3271?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1570129477992-45a003ff3271?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 502,
           title: "Family Homes Project",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=150&h=150&fit=crop" }
-          ]
-        }
-      ]
+            {
+              url: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=150&h=150&fit=crop",
+            },
+          ],
+        },
+      ],
     },
     {
       id: 6,
@@ -399,31 +439,38 @@ const BrowseDevelopers = () => {
       completed_projects: 28,
       bio: "Specialists in bungalow and duplex construction with attention to architectural detail.",
       is_verified: true,
-      profile_image: "https://ui-avatars.com/api/?name=Heritage+Builders&background=8B4513&color=fff",
+      profile_image:
+        "https://ui-avatars.com/api/?name=Heritage+Builders&background=8B4513&color=fff",
       projects: [
         {
           id: 601,
           title: "Classic Bungalow Design",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 602,
           title: "Modern Duplex Series",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1512207736139-c2b276e76403?w=150&h=150&fit=crop" }
-          ]
+            {
+              url: "https://images.unsplash.com/photo-1512207736139-c2b276e76403?w=150&h=150&fit=crop",
+            },
+          ],
         },
         {
           id: 603,
           title: "Architectural Showcase",
           project_media: [
-            { url: "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=150&h=150&fit=crop" }
-          ]
-        }
-      ]
-    }
+            {
+              url: "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=150&h=150&fit=crop",
+            },
+          ],
+        },
+      ],
+    },
   ];
 
   useEffect(() => {
@@ -433,7 +480,7 @@ const BrowseDevelopers = () => {
         setError(null);
         const response = await apiClient.getDevelopers();
         const list = (response.developers || response || []) as any[];
-        console.log('Initial developers response:', list);
+        console.log("Initial developers response:", list);
 
         // Enrich each developer with their full details (including projects/media)
         const enriched = await Promise.all(
@@ -447,28 +494,34 @@ const BrowseDevelopers = () => {
               return full;
             } catch (e) {
               // If the per-dev fetch fails, return the basic dev entry
-              console.warn(`Failed to fetch details for developer ${dev.id}:`, e);
+              console.warn(
+                `Failed to fetch details for developer ${dev.id}:`,
+                e,
+              );
               return dev;
             }
           }),
         );
 
-        console.log('Enriched developers:', enriched);
+        console.log("Enriched developers:", enriched);
 
-        // Normalize project media shape if present  
+        // Normalize project media shape if present
         const normalized = enriched.map((d) => {
           if (d.projects && Array.isArray(d.projects)) {
             d.projects = d.projects.map((p: any) => {
               // Ensure media is always an array
-              const mediaArray = Array.isArray(p.project_media) ? p.project_media : 
-                                Array.isArray(p.media) ? p.media : [];
+              const mediaArray = Array.isArray(p.project_media)
+                ? p.project_media
+                : Array.isArray(p.media)
+                  ? p.media
+                  : [];
               return { ...p, media: mediaArray };
             });
           }
           return d;
         });
 
-        console.log('Final normalized developers:', normalized);
+        console.log("Final normalized developers:", normalized);
         setDevelopers(normalized || []);
       } catch (err: any) {
         console.error("Error fetching developers from API:", err.message);
@@ -495,7 +548,10 @@ const BrowseDevelopers = () => {
     if (selectedCity !== "all" && !dev.location.includes(selectedCity))
       return false;
     // Use trust_score from DB or transparencyScore fallback
-    const trustScoreValue = dev.trust_score !== null && dev.trust_score !== undefined ? dev.trust_score : dev.transparencyScore || 0;
+    const trustScoreValue =
+      dev.trust_score !== null && dev.trust_score !== undefined
+        ? dev.trust_score
+        : dev.transparencyScore || 0;
     if (trustScoreValue < minTransparency) return false;
     return true;
   });
@@ -783,17 +839,23 @@ const BrowseDevelopers = () => {
                     <div className=" flex items-center gap-3">
                       <div className=" h-[4rem] w-[4rem] rounded-full border-2 border-gray-300 flex items-center justify-center bg-gray-100">
                         {dev.profile_image ? (
-                          <img src={dev.profile_image} alt={dev.name || 'Developer'} className="w-full h-full rounded-full object-cover" />
+                          <img
+                            src={dev.profile_image}
+                            alt={dev.name || "Developer"}
+                            className="w-full h-full rounded-full object-cover"
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600 rounded-full text-white font-bold text-lg">
-                            {(dev.name || 'D').charAt(0).toUpperCase()}
+                            {(dev.name || "D").charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
 
                       <div className=" space-y-1">
                         <div className=" flex items-center gap-1">
-                          <h1 className=" font-bold text-xl">{dev.name || 'Developer'}</h1>
+                          <h1 className=" font-bold text-xl">
+                            {dev.name || "Developer"}
+                          </h1>
                           {dev.is_verified && (
                             <svg
                               className="w-5 h-5 text-green-600"
@@ -811,9 +873,16 @@ const BrowseDevelopers = () => {
                         {/* Projects count badges */}
                         <div className="flex ml-2 items-center">
                           <div className="flex -ml-2">
-                            {dev.projects && dev.projects.slice(0, 5).map((project: any, idx: number) => (
-                              <ProjectImageBadge key={`${project.id}-${idx}`} project={project} idx={idx} />
-                            ))}
+                            {dev.projects &&
+                              dev.projects
+                                .slice(0, 5)
+                                .map((project: any, idx: number) => (
+                                  <ProjectImageBadge
+                                    key={`${project.id}-${idx}`}
+                                    project={project}
+                                    idx={idx}
+                                  />
+                                ))}
                           </div>
 
                           {/* Project count badge: show total from projects array (includes both sources) */}
@@ -830,7 +899,11 @@ const BrowseDevelopers = () => {
                     <div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-gray-900">
-                            {dev.trust_score !== null && dev.trust_score !== undefined ? dev.trust_score : dev.transparencyScore || 0}%
+                          {dev.trust_score !== null &&
+                          dev.trust_score !== undefined
+                            ? dev.trust_score
+                            : dev.transparencyScore || 0}
+                          %
                         </div>
                         <p className="text-[10px] text-gray-500">Trust Score</p>
                       </div>
@@ -859,7 +932,8 @@ const BrowseDevelopers = () => {
                           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                         />
                       </svg>
-                      {dev.location || 'Nigeria'} • {dev.years_experience || 0} years experience
+                      {dev.location || "Nigeria"} • {dev.years_experience || 0}{" "}
+                      years experience
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <svg
@@ -869,18 +943,25 @@ const BrowseDevelopers = () => {
                       >
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
-                      {Number(dev.rating || 0).toFixed(1)} rating • {dev.completed_projects || 0} projects completed
+                      {Number(dev.rating || 0).toFixed(1)} rating •{" "}
+                      {dev.completed_projects || 0} projects completed
                     </div>
                   </div>
 
                   {/* Bottom section */}
                   <div className=" space-y-1.5">
                     <p className="text-sm text-gray-600 truncate">
-                      {dev.bio || 'No description provided'}
+                      {dev.bio || "No description provided"}
                     </p>
-                    <Button className="w-full bg-[#253E44] hover:bg-[#253E44]/90">
-                      View Profile
-                    </Button>
+                    <div className=" flex items-center gap-2">
+                      <Button className="w-full bg-[#253E44] hover:bg-[#253E44]/90">
+                        View Profile
+                      </Button>
+                      
+                      <Button className="" variant="outline">
+                        <FaHeart className=" text-gray-400"/>
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
