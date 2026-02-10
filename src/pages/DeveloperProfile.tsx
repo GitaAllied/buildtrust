@@ -9,7 +9,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Heart } from "lucide-react";
+import { Heart, AlertCircle, X } from "lucide-react";
 import Logo from '../assets/Logo.png'
 
 // Component for rotating project images
@@ -99,7 +99,6 @@ const DeveloperProfile = () => {
   const [developer, setDeveloper] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [requestError, setRequestError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -428,21 +427,6 @@ const DeveloperProfile = () => {
         )}
 
         {/* Content */}
-        {/* Global request alert shown as a regular site alert */}
-        {requestError && (
-          <div className="max-w-6xl mx-auto px-6 mb-6">
-            <Alert variant="destructive">
-              <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m4-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <AlertTitle>Request Unavailable</AlertTitle>
-                <AlertDescription>{requestError}</AlertDescription>
-              </div>
-            </Alert>
-          </div>
-        )}
-
         {developer && !loading && (
           <>
         {/* Banner Section */}
@@ -483,12 +467,14 @@ const DeveloperProfile = () => {
                 
                 <Button 
                   onClick={() => {
-                    // Clear previous request errors
-                    setRequestError(null);
                     // Check login
                     const token = localStorage.getItem('auth_token');
                     if (!token) {
-                      setRequestError('Please log in before requesting a build.');
+                      toast({
+                        title: "Authentication Required",
+                        description: "Please log in before requesting a build.",
+                        variant: "destructive",
+                      });
                       return;
                     }
                     // Check role
@@ -497,12 +483,20 @@ const DeveloperProfile = () => {
                       const user = userStr ? JSON.parse(userStr) : null;
                       const role = (user?.role ?? '').toString().toLowerCase().trim();
                       if (role === 'developer') {
-                        setRequestError('Only logged-in clients can request to build. Please switch to a client account or contact support for assistance.');
+                        toast({
+                          title: "Access Denied",
+                          description: "Only logged-in clients can request to build. Please switch to a client account or contact support for assistance.",
+                          variant: "destructive",
+                        });
                         return;
                       }
                     } catch (e) {
                       // If parsing fails, require login again
-                      setRequestError('Please log in before requesting a build.');
+                      toast({
+                        title: "Authentication Required",
+                        description: "Please log in before requesting a build.",
+                        variant: "destructive",
+                      });
                       return;
                     }
 
@@ -893,7 +887,7 @@ const DeveloperProfile = () => {
 
       <ProjectRequestModal 
         isOpen={showRequestModal}
-        onClose={() => { setShowRequestModal(false); setRequestError(null); }}
+        onClose={() => setShowRequestModal(false)}
         developerName={developer?.name || 'Developer'}
         developerId={developer?.id}
       />

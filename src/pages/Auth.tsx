@@ -150,40 +150,23 @@ export default function Auth() {
         return;
       }
 
-      // Developer setup flow
-      if (setupIntent === "developer-setup") {
-        if (userFromResponse?.setup_completed) {
-          console.log('✅ DEVELOPER SETUP ALREADY COMPLETED, REDIRECTING TO HOME');
-          navigate("/");
-        } else {
-          console.log('🔧 DEVELOPER SETUP NOT COMPLETED, SETTING FLAG FOR SETUP');
-          localStorage.setItem('setup_after_verification', 'developer');
-          navigate("/");
-        }
-      }
-      // Client setup flow
-      else if (setupIntent === "client-setup") {
-        if (userFromResponse?.setup_completed) {
-          console.log('✅ CLIENT SETUP ALREADY COMPLETED, REDIRECTING TO HOME');
-          navigate("/");
-        } else {
-          console.log('🔧 CLIENT SETUP NOT COMPLETED, SETTING FLAG FOR SETUP');
-          localStorage.setItem('setup_after_verification', 'client');
-          navigate("/");
-        }
-      }
-      // Default redirect - check if setup is needed
-      else {
-        // If user hasn't completed setup, set flag to auto-open setup modal
-        // Check if setup_completed is 0, false, null, or undefined (not completed)
-        const setupNotCompleted = !userFromResponse?.setup_completed;
-        console.log('🔍 DEFAULT SIGN-IN REDIRECT:', { setupNotCompleted, role: userFromResponse?.role });
-        if (setupNotCompleted) {
-          const setupRole = userFromResponse?.role === 'developer' ? 'developer' : 'client';
-          console.log('⚙️ SETUP NEEDED, SETTING FLAG FOR ROLE:', setupRole);
-          localStorage.setItem('setup_after_verification', setupRole);
-        }
-        navigate("/");
+      // Determine if setup is completed
+      const setupCompleted = !!userFromResponse?.setup_completed;
+      const userRole = userFromResponse?.role || 'client';
+
+      console.log('🔄 SETUP STATUS:', { setupCompleted, userRole });
+
+      // Route based on setup completion status
+      if (setupCompleted) {
+        // Setup is complete - redirect to dashboard
+        const dashboard = userRole === 'developer' ? '/developer-dashboard' : '/client-dashboard';
+        console.log(`✅ SETUP COMPLETED, REDIRECTING TO ${dashboard}`);
+        navigate(dashboard);
+      } else {
+        // Setup not completed - redirect to setup page
+        const setupPage = userRole === 'developer' ? '/developer-setup' : '/client-setup';
+        console.log(`🔧 SETUP NOT COMPLETED, REDIRECTING TO ${setupPage}`);
+        navigate(setupPage);
       }
     } catch (error) {
       // Handle structured API errors from apiClient (it attaches `status` and `body` to Error)

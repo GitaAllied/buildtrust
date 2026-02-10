@@ -35,6 +35,7 @@ import SavedDevelopers from "./pages/SavedDevelopers";
 import ProjectRequests from "./pages/ProjectRequests";
 import UploadUpdate from "./pages/UploadUpdate";
 import Support from "./pages/Support";
+import TicketDetail from "./pages/TicketDetail";
 import NotFound from "./pages/NotFound";
 import ActiveProjects from "./pages/ActiveProjects";
 import DeveloperMessages from "./pages/DeveloperMessages";
@@ -320,6 +321,16 @@ const App = () => (
               <EmailVerificationGuard>
                 <ProtectedRoute>
                   <Support />
+                </ProtectedRoute>
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/support/ticket/:ticketId"
+            element={
+              <EmailVerificationGuard>
+                <ProtectedRoute>
+                  <TicketDetail />
                 </ProtectedRoute>
               </EmailVerificationGuard>
             }

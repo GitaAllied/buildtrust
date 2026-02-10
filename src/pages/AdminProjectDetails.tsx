@@ -50,6 +50,7 @@ const AdminProjectDetails = () => {
     budget: "",
     developer_id: "",
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const projectId = parseInt(id || "0");
@@ -80,14 +81,42 @@ const AdminProjectDetails = () => {
   const handleSave = async () => {
     if (!project) return;
 
+    // Validation
+    const errors: Record<string, string> = {};
+    
+    if (!formData.title.trim()) {
+      errors.title = "Title is required";
+    }
+    if (!formData.description.trim()) {
+      errors.description = "Description is required";
+    }
+    if (!formData.status) {
+      errors.status = "Status is required";
+    }
+    if (!formData.budget || parseFloat(formData.budget) <= 0) {
+      errors.budget = "Budget must be greater than 0";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors below",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFormErrors({});
     setSaving(true);
+
     try {
       const updatedProject = updateProject(project.id, {
-        title: formData.title,
-        description: formData.description,
-        status: formData.status,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        status: formData.status as any,
         budget: parseFloat(formData.budget),
-        developer_id: formData.developer_id
+        developer_id: formData.developer_id && formData.developer_id !== "0"
           ? parseInt(formData.developer_id)
           : undefined,
       });
@@ -99,11 +128,13 @@ const AdminProjectDetails = () => {
           title: "Success",
           description: "Project updated successfully",
         });
+      } else {
+        throw new Error("Failed to update project");
       }
-    } catch (err) {
+    } catch (err: any) {
       toast({
         title: "Error",
-        description: "Failed to update project",
+        description: err.message || "Failed to update project",
         variant: "destructive",
       });
     } finally {
@@ -189,7 +220,20 @@ const AdminProjectDetails = () => {
             </div>
           </div>
           <Button
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={() => {
+              if (!isEditing && project) {
+                // Entering edit mode - sync form data from current project
+                setFormData({
+                  title: project.title,
+                  description: project.description,
+                  status: project.status,
+                  budget: project.budget.toString(),
+                  developer_id: project.developer_id?.toString() || "",
+                });
+                setFormErrors({});
+              }
+              setIsEditing(!isEditing);
+            }}
             className="bg-[#253E44] hover:bg-[#253E44]/90"
           >
             <Edit2 className="h-4 w-4 md:mr-2" />
@@ -371,7 +415,7 @@ const AdminProjectDetails = () => {
             </div>
           </div>
         ) : (
-          <>
+          <div className="px-6 py-8">
             {/* Edit Mode */}
             <Card>
               <CardHeader>
@@ -379,39 +423,52 @@ const AdminProjectDetails = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <label className="text-sm font-medium">Project Title</label>
+                  <label className="text-sm font-medium text-gray-900">Project Title</label>
                   <Input
                     value={formData.title}
                     onChange={(e) =>
                       setFormData({ ...formData, title: e.target.value })
                     }
-                    className="mt-2"
+                    placeholder="Enter project title"
+                    className={`mt-2 ${formErrors.title ? "border-red-500" : ""}`}
+                    disabled={saving}
                   />
+                  {formErrors.title && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">Description</label>
+                  <label className="text-sm font-medium text-gray-900">Description</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
                     }
-                    className="mt-2 w-full p-2 border border-gray-300 rounded-md"
+                    placeholder="Enter project description"
+                    className={`mt-2 w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#226F75] ${
+                      formErrors.description ? "border-red-500" : ""
+                    }`}
                     rows={4}
+                    disabled={saving}
                   />
+                  {formErrors.description && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Status</label>
+                    <label className="text-sm font-medium text-gray-900">Status</label>
                     <Select
                       value={formData.status}
                       onValueChange={(value) =>
                         setFormData({ ...formData, status: value })
                       }
+                      disabled={saving}
                     >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
+                      <SelectTrigger className={`mt-2 ${formErrors.status ? "border-red-500" : ""}`}>
+                        <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="open">Open</SelectItem>
@@ -420,23 +477,33 @@ const AdminProjectDetails = () => {
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
+                    {formErrors.status && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.status}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">Budget</label>
+                    <label className="text-sm font-medium text-gray-900">Budget (USD)</label>
                     <Input
                       type="number"
                       value={formData.budget}
                       onChange={(e) =>
                         setFormData({ ...formData, budget: e.target.value })
                       }
-                      className="mt-2"
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      className={`mt-2 ${formErrors.budget ? "border-red-500" : ""}`}
+                      disabled={saving}
                     />
+                    {formErrors.budget && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.budget}</p>
+                    )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">
+                  <label className="text-sm font-medium text-gray-900">
                     Assign Developer
                   </label>
                   <Select
@@ -444,12 +511,13 @@ const AdminProjectDetails = () => {
                     onValueChange={(value) =>
                       setFormData({ ...formData, developer_id: value })
                     }
+                    disabled={saving}
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Select developer" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="0">Unassigned</SelectItem>
                       {developers.map((dev) => (
                         <SelectItem key={dev.id} value={dev.id.toString()}>
                           {dev.name}
@@ -459,8 +527,15 @@ const AdminProjectDetails = () => {
                   </Select>
                 </div>
 
-                <div className="flex justify-end space-x-4">
-                  <Button variant="outline" onClick={() => setIsEditing(false)}>
+                <div className="flex justify-end space-x-4 pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsEditing(false);
+                      setFormErrors({});
+                    }}
+                    disabled={saving}
+                  >
                     Cancel
                   </Button>
                   <Button
@@ -483,7 +558,7 @@ const AdminProjectDetails = () => {
                 </div>
               </CardContent>
             </Card>
-          </>
+          </div>
         )}
       </div>
     </div>

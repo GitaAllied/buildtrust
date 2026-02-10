@@ -22,6 +22,7 @@ import {
   FaShare,
   FaStar,
   FaTableCells,
+  FaUpload,
   FaUser,
   FaUserGear,
 } from "react-icons/fa6";
@@ -58,22 +59,40 @@ const mockProject = {
 const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [project, setProject] = useState<any | null>(null);
 
   const [activeTab, setActiveTab] = useState("projects");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signOutModal, setSignOutModal] = useState(false);
 
-  const sidebarItems = [
-    { id: "dashboard", label: "Dashboard", icon: <FaUser /> },
-    { id: "projects", label: "Projects", icon: <FaBriefcase />, active: true },
-    { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
-    { id: "messages", label: "Messages", icon: <FaMessage /> },
-    { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
-    { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
-    { id: "settings", label: "Settings", icon: <FaGear /> },
-  ];
+  // Determine which sidebar items to show based on user role
+  const getDefaultSidebarItems = () => {
+    if (user?.role === "developer") {
+      return [
+        { id: "dashboard", label: "Dashboard", icon: <FaUser /> },
+        { id: "requests", label: "Project Requests", icon: <FaDownload /> },
+        { id: "projects", label: "Active Projects", icon: <FaBriefcase />, active: true },
+        { id: "upload", label: "Upload Update", icon: <FaUpload /> },
+        { id: "messages", label: "Messages", icon: <FaMessage /> },
+        { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
+        { id: "profile", label: "Licenses & Profile", icon: <FaUser /> },
+        { id: "support", label: "Support", icon: <FaGear /> },
+      ];
+    }
+    // Client sidebar items
+    return [
+      { id: "dashboard", label: "Dashboard", icon: <FaUser /> },
+      { id: "projects", label: "Projects", icon: <FaBriefcase />, active: true },
+      { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
+      { id: "messages", label: "Messages", icon: <FaMessage /> },
+      { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
+      { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
+      { id: "settings", label: "Settings", icon: <FaGear /> },
+    ];
+  };
+
+  const [sidebarItems, setSidebarItems] = useState(getDefaultSidebarItems());
 
   const handleLogout = async () => {
     try {
@@ -88,22 +107,34 @@ const ProjectDetails = () => {
     switch (itemId) {
       case "dashboard":
         setActiveTab(itemId);
-        navigate("/client-dashboard");
+        navigate(user?.role === "developer" ? "/developer-dashboard" : "/client-dashboard");
+        break;
+      case "requests":
+        navigate("/project-requests");
         break;
       case "projects":
-        navigate("/projects");
+        navigate(user?.role === "developer" ? "/active-projects" : "/projects");
+        break;
+      case "upload":
+        navigate("/upload-update");
         break;
       case "payments":
-        navigate("/payments");
+        navigate(user?.role === "developer" ? "/developer-payments" : "/payments");
         break;
       case "messages":
-        navigate("/messages");
+        navigate(user?.role === "developer" ? "/developer-messages" : "/messages");
         break;
       case "contracts":
         navigate("/contracts");
         break;
       case "saved":
         navigate("/saved-developers");
+        break;
+      case "profile":
+        navigate("/developer-liscences");
+        break;
+      case "support":
+        navigate("/support");
         break;
       case "settings":
         navigate("/settings");
@@ -115,6 +146,11 @@ const ProjectDetails = () => {
         navigate("/browse");
     }
   };
+
+  useEffect(() => {
+    // Update sidebar items when user role changes
+    setSidebarItems(getDefaultSidebarItems());
+  }, [user?.role]);
 
   useEffect(() => {
     // For now use mock data. In future replace with apiClient.getProject(id)
@@ -225,18 +261,18 @@ const ProjectDetails = () => {
             <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <div className="min-w-0">
                 <h1 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 truncate">
-                  My Projects
+                  {user?.role === "developer" ? "Active Projects" : "My Projects"}
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-500 truncate">
-                  Track and manage your construction projects
+                  {user?.role === "developer" ? "View and manage project updates" : "Track and manage your construction projects"}
                 </p>
               </div>
             </div>
             <Button
               className="bg-[#253E44] hover:bg-[#253E44]/90 text-xs sm:text-sm w-full sm:w-auto"
-              onClick={() => navigate("/browse")}
+              onClick={() => navigate(user?.role === "developer" ? "/upload-update" : "/browse")}
             >
-              Start New Project
+              {user?.role === "developer" ? "Upload Update" : "Start New Project"}
             </Button>
           </div>
         </div>
@@ -267,6 +303,7 @@ const ProjectDetails = () => {
               <Button
                 // variant="ghost"
                 className=""
+                style={{ display: user?.role === "developer" ? "none" : "inline-flex" }}
               >
                 <FaShare/> Share
               </Button>
@@ -456,7 +493,7 @@ const ProjectDetails = () => {
                       </div>
                     </div>
                   </Card>
-                  <Card className=" p-6 space-y-3">
+                  <Card className=" p-6 space-y-3" style={{ display: user?.role === "client" ? "block" : "none" }}>
                     <h4 className="font-bold text-[#253E44]">
                       Project Assets
                     </h4>
@@ -498,7 +535,33 @@ const ProjectDetails = () => {
                       Download All Reports
                     </button>
                   </Card>
-                  <Card className=" p-6 bg-[#253E44]/5 space-y-3">
+                  <Card className=" p-6 space-y-3" style={{ display: user?.role === "developer" ? "block" : "none" }}>
+                    <h4 className="font-bold text-[#253E44]">
+                      Latest Updates
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center">
+                            <FaImages/>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold truncate max-w-[120px]">
+                              Update_Week_1.zip
+                            </p>
+                            <p className="text-[10px] text-slate-400">2 days ago</p>
+                          </div>
+                        </div>
+                        <span className="material-icons-round text-slate-400">
+                          <FaDownload/>
+                        </span>
+                      </div>
+                    </div>
+                    <Button onClick={() => navigate("/upload-update")} className="w-full mt-4 text-xs font-bold bg-[#253E44] hover:bg-[#253E44]/90">
+                      Upload New Update
+                    </Button>
+                  </Card>
+                  <Card className=" p-6 bg-[#253E44]/5 space-y-3" style={{ display: user?.role === "client" ? "block" : "none" }}>
                     <h4 className="font-bold text-[#253E44] flex items-center gap-2">
                       <FaHeadset/>
                       Need Help?
@@ -513,6 +576,18 @@ const ProjectDetails = () => {
                     >
                       Chat with Support
                     </a>
+                  </Card>
+                  <Card className=" p-6 bg-green-50 space-y-3" style={{ display: user?.role === "developer" ? "block" : "none" }}>
+                    <h4 className="font-bold text-green-700 flex items-center gap-2">
+                      <FaHeadset/>
+                      Project Status
+                    </h4>
+                    <p className="text-xs text-green-600 leading-relaxed mb-4">
+                      You are assigned to this project. Keep the client updated with regular progress reports.
+                    </p>
+                    <Button onClick={() => navigate("/developer-messages")} className="inline-block text-xs font-bold bg-green-600 hover:bg-green-700">
+                      Message Client
+                    </Button>
                   </Card>
                 </div>
               </div>
