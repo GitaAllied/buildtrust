@@ -554,7 +554,7 @@ const BrowseDevelopers = () => {
       try {
         const response = await apiClient.getSavedDevelopers();
         const saved = Array.isArray(response) ? response : response?.developers || [];
-        const savedIds = new Set(saved.map((dev: any) => dev.id));
+        const savedIds = new Set<number>(saved.map((dev: any) => dev.id));
         setSavedDevelopers(savedIds);
       } catch (err) {
         console.error('Error loading saved developers:', err);
@@ -622,6 +622,8 @@ const BrowseDevelopers = () => {
       setSavingId(null);
     }
   };
+
+  const filteredDevelopers = developers.filter((dev) => {
     if (
       searchQuery &&
       !dev.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
