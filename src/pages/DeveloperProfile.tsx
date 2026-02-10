@@ -507,21 +507,6 @@ const DeveloperProfile = () => {
                   Request to Build
                 </Button>
 
-                {/* Save Developer Button - Only for logged in clients */}
-                {user && user.role === 'client' && (
-                  <Button
-                    onClick={handleSaveDeveloper}
-                    disabled={isSaving}
-                    variant={isSaved ? "default" : "outline"}
-                    className={`ml-3 ${isSaved ? 'bg-red-500 hover:bg-red-600 text-white' : 'border-gray-300'}`}
-                  >
-                    <Heart
-                      className={`mr-2 h-4 w-4 ${isSaved ? 'fill-white' : ''}`}
-                    />
-                    {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
-                  </Button>
-                )}
-
                 <p className="text-sm text-gray-500 mt-2 text-center">
                   Responds {developer.response_time || 'within 24 hours'}
                 </p>
