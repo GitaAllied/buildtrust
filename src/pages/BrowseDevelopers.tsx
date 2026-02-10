@@ -543,7 +543,7 @@ const BrowseDevelopers = () => {
     fetchDevelopers();
   }, []);
 
-  // Load saved developers when user is logged in
+  // Load saved developers when user is logged in or developers are loaded
   useEffect(() => {
     const loadSavedDevelopers = async () => {
       if (!user || user.role !== 'client') {
@@ -556,6 +556,7 @@ const BrowseDevelopers = () => {
         const saved = Array.isArray(response) ? response : response?.developers || [];
         const savedIds = new Set<number>(saved.map((dev: any) => dev.id));
         setSavedDevelopers(savedIds);
+        console.log('Loaded saved developers:', savedIds);
       } catch (err) {
         console.error('Error loading saved developers:', err);
         setSavedDevelopers(new Set());
@@ -563,7 +564,7 @@ const BrowseDevelopers = () => {
     };
 
     loadSavedDevelopers();
-  }, [user]);
+  }, [user, developers.length]);
 
   // Handle save/unsave developer
   const handleSaveDeveloper = async (e: React.MouseEvent, developerId: number) => {
