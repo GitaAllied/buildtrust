@@ -189,7 +189,7 @@ const ProjectDetails = () => {
           </Link>
         </div>
         <button
-          onClick={() => dispatch(openAdminSidebar(!isOpen))}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
           className="p-1.5 sm:p-2 hover:bg-[#226F75]/10 rounded-lg transition-colors"
         >
           {sidebarOpen ? (
@@ -598,7 +598,7 @@ const ProjectDetails = () => {
       {signOutModal && (
         <SignoutModal
           isOpen={signOutModal}
-          onClose={() =>dispatch(openSignoutModal(false))}
+          onClose={() => setSignOutModal(false)}
         />
       )}
     </div>
