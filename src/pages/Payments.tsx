@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useNavigate } from "react-router-dom";
 import {
   CheckCircle,
   Clock,
@@ -13,79 +12,17 @@ import {
   X,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
-import {
-  FaBriefcase,
-  FaDoorOpen,
-  FaFileContract,
-  FaGear,
-  FaMessage,
-  FaMoneyBill,
-  FaUser,
-  FaUserGear,
-} from "react-icons/fa6";
-import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
+import ClientSidebar from "@/components/ClientSidebar";
+import { useDispatch, useSelector } from "react-redux";
+import { openClientSidebar, openSignoutModal } from "@/redux/action";
 
 const Payments = () => {
-  const [activeTab, setActiveTab] = useState("payments");
   const [activeSection, setActiveSection] = useState("overview");
-  const navigate = useNavigate();
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { signOut } = useAuth();
-  const [signOutModal, setSignOutModal] = useState(false);
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
-
-  const sidebarItems = [
-    { id: "dashboard", label: "Dashboard", icon: <FaUser /> },
-    { id: "projects", label: "Projects", icon: <FaBriefcase /> },
-    { id: "payments", label: "Payments", icon: <FaMoneyBill />, active: true },
-    { id: "messages", label: "Messages", icon: <FaMessage /> },
-    { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
-    { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
-    { id: "settings", label: "Settings", icon: <FaGear /> },
-  ];
-
-  const handleNavigation = (itemId: string) => {
-    switch (itemId) {
-      case "dashboard":
-        setActiveTab(itemId);
-        navigate("/client-dashboard");
-        break;
-      case "projects":
-        navigate("/projects");
-        break;
-      case "payments":
-        navigate("/payments");
-        break;
-      case "messages":
-        navigate("/messages");
-        break;
-      case "contracts":
-        navigate("/contracts");
-        break;
-      case "saved":
-        navigate("/saved-developers");
-        break;
-      case "settings":
-        navigate("/settings");
-        break;
-        case "logout":
-        handleLogout();
-        break;
-      default:
-        navigate("/browse");
-    }
-  };
+  const dispatch = useDispatch();
+  const isOpen = useSelector((state: any) => state.sidebar.clientSidebar);
+  const signOutModal = useSelector((state: any) => state.signout);
 
   const projects = [
     {
@@ -190,13 +127,15 @@ const Payments = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center space-x-2 w-[20%]">
-          <Link to={'/'}><img src={Logo} alt="Build Trust Africa Logo" /></Link>
+          <Link to={"/"}>
+            <img src={Logo} alt="Build Trust Africa Logo" />
+          </Link>
         </div>
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={() => dispatch(openClientSidebar(!isOpen))}
           className="p-1.5 sm:p-2 hover:bg-[#226F75]/10 rounded-lg transition-colors"
         >
-          {sidebarOpen ? (
+          {isOpen ? (
             <X className="h-5 w-5 text-[#226F75]" />
           ) : (
             <Menu className="h-5 w-5 text-[#226F75]" />
@@ -205,59 +144,7 @@ const Payments = () => {
       </div>
 
       {/* Sidebar */}
-      <div
-        className={`${
-          sidebarOpen ? "block" : "hidden"
-        } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
-      >
-        <div className=" h-full flex flex-col justify-start md:justify-between">
-          <div>
-            {/* logo */}
-            <div className="p-4 sm:pb-2 sm:p-6 hidden md:block">
-              <button
-                onClick={() => navigate("/")}
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
-              >
-                <Link to={"/"}>
-                  <img src={Logo} alt="" className="w-[55%]" />
-                </Link>
-              </button>
-            </div>
-            {/* nav links */}
-            <nav className="p-3 sm:p-4 space-y-1">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    handleNavigation(item.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
-                    activeTab === item.id
-                      ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
-                      : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
-                  }`}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-          {/* Signout Button */}
-          <div className="p-3 sm:p-4">
-            <button
-              onClick={() => {
-                setSignOutModal(true);
-              }}
-              className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center text-red-500"
-            >
-              <FaDoorOpen />
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
+      <ClientSidebar active={"payments"} />
       <div className="w-full flex-1 md:pl-64 min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
@@ -357,7 +244,7 @@ const Payments = () => {
                         </CardTitle>
                         <Badge variant="outline">
                           {Math.round(
-                            (project.paidAmount / project.totalAmount) * 100
+                            (project.paidAmount / project.totalAmount) * 100,
                           )}
                           % Complete
                         </Badge>
@@ -371,7 +258,7 @@ const Payments = () => {
                         </span>
                         <span>
                           {Math.round(
-                            (project.paidAmount / project.totalAmount) * 100
+                            (project.paidAmount / project.totalAmount) * 100,
                           )}
                           %
                         </span>
@@ -413,8 +300,8 @@ const Payments = () => {
                                   milestone.status === "paid"
                                     ? "default"
                                     : milestone.status === "pending"
-                                    ? "destructive"
-                                    : "secondary"
+                                      ? "destructive"
+                                      : "secondary"
                                 }
                                 className={
                                   milestone.status === "paid"
@@ -505,12 +392,10 @@ const Payments = () => {
           )}
         </div>
       </div>
-      {signOutModal && (
-        <SignoutModal
-          isOpen={signOutModal}
-          onClose={() => setSignOutModal(false)}
-        />
-      )}
+      <SignoutModal
+        isOpen={signOutModal}
+        onClose={() => dispatch(openSignoutModal(false))}
+      />
     </div>
   );
 };

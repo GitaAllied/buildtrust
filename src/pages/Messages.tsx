@@ -1,30 +1,22 @@
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
-import { Send, Search, ArrowLeft, Menu, X } from "lucide-react";
+import { Send, Search, Menu, X } from "lucide-react";
 import Logo from "../assets/Logo.png";
-import {
-  FaBriefcase,
-  FaDoorOpen,
-  FaFileContract,
-  FaGear,
-  FaMessage,
-  FaMoneyBill,
-  FaUser,
-  FaUserGear,
-} from "react-icons/fa6";
 import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/lib/api";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
+import ClientSidebar from "@/components/ClientSidebar";
+import { useDispatch, useSelector } from "react-redux";
+import { openClientSidebar, openSignoutModal } from "@/redux/action";
 
 const Messages = () => {
-  const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<
+    number | null
+  >(null);
   const [conversations, setConversations] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -32,84 +24,40 @@ const Messages = () => {
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
   const isTypingRef = useRef(false);
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("messages");
+  const dispatch = useDispatch();
+  const isOpen = useSelector((state: any) => state.sidebar.clientSidebar);
+  const signOutModal = useSelector((state: any) => state.signout);
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { signOut, user } = useAuth();
-  const [signOutModal, setSignOutModal] = useState(false);
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
-
-  const sidebarItems = [
-    { id: "dashboard", label: "Dashboard", icon: <FaUser /> },
-    { id: "projects", label: "Projects", icon: <FaBriefcase /> },
-    { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
-    { id: "messages", label: "Messages", icon: <FaMessage />, active: true },
-    { id: "contracts", label: "Contracts", icon: <FaFileContract /> },
-    { id: "saved", label: "Saved Developers", icon: <FaUserGear /> },
-    { id: "settings", label: "Settings", icon: <FaGear /> },
-  ];
-
-  const handleNavigation = (itemId: string) => {
-    switch (itemId) {
-      case "dashboard":
-        setActiveTab(itemId);
-        navigate("/client-dashboard");
-        break;
-      case "projects":
-        navigate("/projects");
-        break;
-      case "payments":
-        navigate("/payments");
-        break;
-      case "messages":
-        navigate("/messages");
-        break;
-      case "contracts":
-        navigate("/contracts");
-        break;
-      case "saved":
-        navigate("/saved-developers");
-        break;
-      case "settings":
-        navigate("/settings");
-        break;
-        case "logout":
-        handleLogout();
-        break;
-      default:
-        navigate("/browse");
-    }
-  };
+  const { user } = useAuth();
 
   // load conversations and admin on mount
-
   useEffect(() => {
     const init = async () => {
       try {
         // find admin user (clients can only message admin)
         const users: any[] = await apiClient.getUsers();
-        const admin = users.find((u) => u.role === 'admin');
+        const admin = users.find((u) => u.role === "admin");
         setAdminUser(admin || null);
 
         // load conversations
         const convs: any[] = await apiClient.getConversations();
 
-        if (user?.role === 'client') {
+        if (user?.role === "client") {
           // keep only conversation with admin (if exists)
-          const convWithAdmin = convs.find(c => c.other_id === admin?.id || c.participant1_id === admin?.id || c.participant2_id === admin?.id);
+          const convWithAdmin = convs.find(
+            (c) =>
+              c.other_id === admin?.id ||
+              c.participant1_id === admin?.id ||
+              c.participant2_id === admin?.id,
+          );
           if (convWithAdmin) {
             setConversations([convWithAdmin]);
-            setSelectedConversation(convWithAdmin.conversation_id || convWithAdmin.id);
-            await loadMessages(convWithAdmin.conversation_id || convWithAdmin.id);
+            setSelectedConversation(
+              convWithAdmin.conversation_id || convWithAdmin.id,
+            );
+            await loadMessages(
+              convWithAdmin.conversation_id || convWithAdmin.id,
+            );
           } else {
             setConversations([]);
             setSelectedConversation(null);
@@ -123,7 +71,7 @@ const Messages = () => {
           }
         }
       } catch (err) {
-        console.error('Error initializing messages:', err);
+        console.error("Error initializing messages:", err);
       }
     };
 
@@ -133,7 +81,8 @@ const Messages = () => {
   // cleanup typing indicator when unmount or conversation changes
   useEffect(() => {
     return () => {
-      if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+      if (typingTimeoutRef.current)
+        window.clearTimeout(typingTimeoutRef.current);
       if (isTypingRef.current && selectedConversation) {
         try {
           apiClient.setTyping(selectedConversation, false);
@@ -146,7 +95,9 @@ const Messages = () => {
 
   const loadMessages = async (conversationId: number | string) => {
     try {
-      const msgs: any[] = await apiClient.getConversationMessages(conversationId as any);
+      const msgs: any[] = await apiClient.getConversationMessages(
+        conversationId as any,
+      );
       setMessages(msgs || []);
       // scroll to bottom after a small delay to let DOM render
       setTimeout(() => {
@@ -155,7 +106,7 @@ const Messages = () => {
         }
       }, 50);
     } catch (err) {
-      console.error('Error loading messages:', err);
+      console.error("Error loading messages:", err);
     }
   };
 
@@ -164,13 +115,15 @@ const Messages = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center space-x-2 w-[20%]">
-          <Link to={'/'}><img src={Logo} alt="Build Trust Africa Logo" /></Link>
+          <Link to={"/"}>
+            <img src={Logo} alt="Build Trust Africa Logo" />
+          </Link>
         </div>
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={() => dispatch(openClientSidebar(!isOpen))}
           className="p-1.5 sm:p-2 hover:bg-[#226F75]/10 rounded-lg transition-colors"
         >
-          {sidebarOpen ? (
+          {isOpen ? (
             <X className="h-5 w-5 text-[#226F75]" />
           ) : (
             <Menu className="h-5 w-5 text-[#226F75]" />
@@ -179,59 +132,7 @@ const Messages = () => {
       </div>
 
       {/* Sidebar */}
-      <div
-        className={`${
-          sidebarOpen ? "block" : "hidden"
-        } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
-      >
-        <div className=" h-full flex flex-col justify-start md:justify-between">
-          <div>
-            {/* logo */}
-            <div className="p-4 sm:pb-2 sm:p-6 hidden md:block">
-              <button
-                onClick={() => navigate("/")}
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
-              >
-                <Link to={"/"}>
-                  <img src={Logo} alt="" className="w-[55%]" />
-                </Link>
-              </button>
-            </div>
-            {/* nav links */}
-            <nav className="p-3 sm:p-4 space-y-1">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    handleNavigation(item.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
-                    activeTab === item.id
-                      ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
-                      : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
-                  }`}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-          {/* Signout Button */}
-          <div className="p-3 sm:p-4">
-            <button
-              onClick={() => {
-                setSignOutModal(true);
-              }}
-              className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center text-red-500"
-            >
-              <FaDoorOpen />
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
+      <ClientSidebar active={"messages"} />
       <div className="w-full flex-1 md:pl-64 min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
@@ -281,22 +182,26 @@ const Messages = () => {
                     <div className="flex items-start gap-2 sm:gap-3">
                       <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
                         <AvatarFallback className="text-xs">
-                          {((conv.other_name || conv.name) || 'M')
+                          {(conv.other_name || conv.name || "M")
                             .toString()
                             .split(" ")
-                            .map((n:any) => n[0])
+                            .map((n: any) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
-                          <p className="font-medium truncate">{conv.other_name || conv.name || 'Management'}</p>
+                          <p className="font-medium truncate">
+                            {conv.other_name || conv.name || "Management"}
+                          </p>
                           <p className="text-xs text-gray-500 flex-shrink-0">
-                            {conv.last_message_at ? new Date(conv.last_message_at).toLocaleString() : ''}
+                            {conv.last_message_at
+                              ? new Date(conv.last_message_at).toLocaleString()
+                              : ""}
                           </p>
                         </div>
                         <p className="text-xs text-gray-600 truncate">
-                          {conv.preview || ''}
+                          {conv.preview || ""}
                         </p>
                       </div>
                     </div>
@@ -316,25 +221,48 @@ const Messages = () => {
                 </Avatar>
                 <div className="min-w-0">
                   <h3 className="font-medium text-xs sm:text-sm truncate">
-                    {user?.role === 'client' ? 'Management' : (conversations.find(c => (c.conversation_id || c.id) === selectedConversation)?.other_name || 'Conversation')}
+                    {user?.role === "client"
+                      ? "Management"
+                      : conversations.find(
+                          (c) =>
+                            (c.conversation_id || c.id) ===
+                            selectedConversation,
+                        )?.other_name || "Conversation"}
                   </h3>
                   <p className="text-xs text-gray-500 truncate">
-                    {user?.role === 'client' ? 'Message the management team' : ''}
+                    {user?.role === "client"
+                      ? "Message the management team"
+                      : ""}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Messages */}
-            <div ref={messagesRef} className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
+            <div
+              ref={messagesRef}
+              className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4"
+            >
               {messages.map((msg) => {
                 const isOwn = msg.sender_id === user?.id;
                 return (
-                  <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs sm:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm ${isOwn ? 'bg-[#253E44] text-white' : 'bg-white border'}`}>
+                  <div
+                    key={msg.id}
+                    className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-xs sm:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm ${isOwn ? "bg-[#253E44] text-white" : "bg-white border"}`}
+                    >
                       <p>{msg.content || msg.message}</p>
-                      <p className={`text-xs mt-1 ${isOwn ? 'text-white' : 'text-gray-500'}`}>
-                        {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                      <p
+                        className={`text-xs mt-1 ${isOwn ? "text-white" : "text-gray-500"}`}
+                      >
+                        {msg.created_at
+                          ? new Date(msg.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : ""}
                       </p>
                     </div>
                   </div>
@@ -360,7 +288,8 @@ const Messages = () => {
                         await apiClient.setTyping(convId, true);
                       }
                       // reset timeout
-                      if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+                      if (typingTimeoutRef.current)
+                        window.clearTimeout(typingTimeoutRef.current);
                       typingTimeoutRef.current = window.setTimeout(async () => {
                         isTypingRef.current = false;
                         try {
@@ -379,28 +308,37 @@ const Messages = () => {
                   onClick={async () => {
                     if (!newMessage.trim()) return;
                     try {
-                      const recipientId = user?.role === 'client' ? adminUser?.id : undefined;
-                      const resp: any = await apiClient.sendMessage(recipientId, newMessage.trim(), selectedConversation || undefined);
+                      const recipientId =
+                        user?.role === "client" ? adminUser?.id : undefined;
+                      const resp: any = await apiClient.sendMessage(
+                        recipientId,
+                        newMessage.trim(),
+                        selectedConversation || undefined,
+                      );
                       // resp should be the posted message
                       if (resp) {
                         setMessages((m) => [...m, resp]);
                         // ensure conversation id is set
-                        if (resp.conversation_id) setSelectedConversation(resp.conversation_id);
-                        setNewMessage('');
+                        if (resp.conversation_id)
+                          setSelectedConversation(resp.conversation_id);
+                        setNewMessage("");
                         try {
                           // mark typing stopped
-                          const convId = resp.conversation_id || selectedConversation;
+                          const convId =
+                            resp.conversation_id || selectedConversation;
                           if (convId) await apiClient.setTyping(convId, false);
                         } catch (err) {
                           // ignore
                         }
                         // scroll to bottom
                         setTimeout(() => {
-                          if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+                          if (messagesRef.current)
+                            messagesRef.current.scrollTop =
+                              messagesRef.current.scrollHeight;
                         }, 50);
                       }
                     } catch (err) {
-                      console.error('Error sending message:', err);
+                      console.error("Error sending message:", err);
                     }
                   }}
                   className="bg-[#253E44] hover:bg-[#253E44]/70 h-9 sm:h-10 px-2 sm:px-3"
@@ -415,7 +353,7 @@ const Messages = () => {
       {signOutModal && (
         <SignoutModal
           isOpen={signOutModal}
-          onClose={() => setSignOutModal(false)}
+          onClose={() => dispatch(openSignoutModal(false))}
         />
       )}
     </div>

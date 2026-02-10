@@ -15,9 +15,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import {
   MessageSquare,
-  User,
-  Mail,
-  Phone,
   X,
   Menu,
   Ticket,
@@ -29,15 +26,6 @@ import {
 import Logo from "../assets/Logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  FaBook,
-  FaDoorOpen,
-  FaGear,
-  FaHandshake,
-  FaMessage,
-  FaUser,
-  FaUsers,
-} from "react-icons/fa6";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -48,22 +36,24 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Tag, Save } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
 import { apiClient } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import AdminSidebar from "@/components/AdminSidebar";
+import { useDispatch, useSelector } from "react-redux";
+import { openAdminSidebar, openSignoutModal } from "@/redux/action";
 
 const AdminSupport = () => {
   const navigate = useNavigate();
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   // UI State
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("support");
+  const dispatch = useDispatch();
+  const isOpen = useSelector((state: any) => state.sidebar.adminSidebar);
+  const signOutModal = useSelector((state: any) => state.signout);
   const [activeSection, setActiveSection] = useState("tickets");
-  const [signOutModal, setSignOutModal] = useState(false);
 
   // Data States
   const [tickets, setTickets] = useState<any[]>([]);
@@ -212,7 +202,7 @@ const AdminSupport = () => {
       setTickets(response.tickets || []);
     } catch (error: any) {
       console.error("Error loading tickets:", error);
-      console.warn('Using mock data due to API connection issue');
+      console.warn("Using mock data due to API connection issue");
       // Use mock data when API fails
       setTickets(mockTickets);
       toast({
@@ -233,7 +223,7 @@ const AdminSupport = () => {
       setCategories(response || []);
     } catch (error: any) {
       console.error("Error loading categories:", error);
-      console.warn('Using mock data due to API connection issue');
+      console.warn("Using mock data due to API connection issue");
       // Use mock data when API fails
       setCategories(mockCategories);
       toast({
@@ -261,70 +251,12 @@ const AdminSupport = () => {
     loadTickets();
   }, [selectedCategory, selectedStatus, selectedPriority, searchTerm]);
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
-
-  const sidebarItems = [
-    { id: "dashboard", label: "Dashboard", icon: <FaUser /> },
-    { id: "users", label: "User Management", icon: <FaUsers /> },
-    { id: "projects", label: "Projects", icon: <FaHandshake /> },
-    { id: "contracts", label: "Contracts", icon: <FaBook /> },
-    { id: "developers", label: "Developers", icon: <FaUser /> },
-    { id: "messages", label: "Messages", icon: <FaMessage /> },
-    { id: "reports", label: "Reports", icon: <FaBook /> },
-    { id: "settings", label: "Settings", icon: <FaGear /> },
-    { id: "support", label: "Support", icon: <FaHandshake />, active: true },
-  ];
-
   const supportSections = [
     { id: "tickets", label: "Tickets", icon: Ticket },
     { id: "create", label: "Create Tickets", icon: Pen },
     { id: "manage", label: "Manage Categories", icon: FileStack },
     { id: "settings", label: "Settings", icon: Settings },
   ];
-
-  const handleNavigation = (itemId: string) => {
-    switch (itemId) {
-      case "dashboard":
-        navigate("/super-admin-dashboard");
-        break;
-      case "users":
-        navigate("/admin/users");
-        break;
-      case "projects":
-        navigate("/admin/projects");
-        break;
-      case "contracts":
-        navigate("/admin/contracts");
-        break;
-      case "developers":
-        navigate("/admin/developers");
-        break;
-      case "messages":
-        navigate("/admin/messages");
-        break;
-      case "reports":
-        navigate("/admin/reports");
-        break;
-      case "settings":
-        navigate("/admin/settings");
-        break;
-      case "support":
-        navigate("/admin/support");
-        break;
-      case "logout":
-        handleLogout();
-        break;
-      default:
-        navigate("/super-admin-dashboard");
-    }
-  };
 
   // Ticket Status Badge
   const getStatusBadge = (status: string) => {
@@ -511,7 +443,7 @@ const AdminSupport = () => {
     if (
       category.ticket_count > 0 &&
       !confirm(
-        `This category has ${category.ticket_count} associated tickets. Are you sure you want to delete it?`
+        `This category has ${category.ticket_count} associated tickets. Are you sure you want to delete it?`,
       )
     ) {
       return;
@@ -535,10 +467,7 @@ const AdminSupport = () => {
   };
 
   // Update Ticket Status
-  const handleUpdateTicketStatus = async (
-    ticketId: number,
-    status: string
-  ) => {
+  const handleUpdateTicketStatus = async (ticketId: number, status: string) => {
     try {
       await apiClient.updateTicketStatus(ticketId, status);
       toast({
@@ -559,7 +488,7 @@ const AdminSupport = () => {
   // Update Ticket Priority
   const handleUpdateTicketPriority = async (
     ticketId: number,
-    priority: string
+    priority: string,
   ) => {
     try {
       await apiClient.updateTicketPriority(ticketId, priority);
@@ -726,10 +655,10 @@ const AdminSupport = () => {
           </Link>
         </div>
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={() => dispatch(openAdminSidebar(!isOpen))}
           className="p-1.5 sm:p-2 hover:bg-[#226F75]/10 rounded-lg transition-colors"
         >
-          {sidebarOpen ? (
+          {isOpen ? (
             <X className="h-5 w-5 text-[#226F75]" />
           ) : (
             <Menu className="h-5 w-5 text-[#226F75]" />
@@ -738,56 +667,7 @@ const AdminSupport = () => {
       </div>
 
       {/* Sidebar */}
-      <div
-        className={`${
-          sidebarOpen ? "block" : "hidden"
-        } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
-      >
-        <div className="h-full flex flex-col justify-start md:justify-between">
-          <div>
-            <div className="p-4 pb-0 sm:pb-0 sm:p-6 hidden md:block">
-              <button
-                onClick={() => navigate("/")}
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity w-full"
-              >
-                <Link to={"/"}>
-                  <img src={Logo} alt="Logo" className="w-[55%]" />
-                </Link>
-              </button>
-            </div>
-            <nav className="p-3 pb-0 sm:p-4 sm:pb-0 space-y-1">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    handleNavigation(item.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
-                    activeTab === item.id
-                      ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
-                      : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
-                  }`}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-          <div className="p-3 sm:p-4 pb-0 sm:pb-0">
-            <button
-              onClick={() => {
-                setSignOutModal(true);
-              }}
-              className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center text-red-500"
-            >
-              <FaDoorOpen />
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
+      <AdminSidebar active={"support"} />
 
       <div className="w-full flex-1 md:pl-64 min-h-screen bg-gray-50">
         {/* Header */}
@@ -843,7 +723,10 @@ const AdminSupport = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full md:flex-1"
                   />
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={setSelectedCategory}
+                  >
                     <SelectTrigger className="w-full md:w-48">
                       <SelectValue placeholder="Filter by category" />
                     </SelectTrigger>
@@ -856,7 +739,10 @@ const AdminSupport = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <Select
+                    value={selectedStatus}
+                    onValueChange={setSelectedStatus}
+                  >
                     <SelectTrigger className="w-full md:w-48">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
@@ -868,7 +754,10 @@ const AdminSupport = () => {
                       <SelectItem value="closed">Closed</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+                  <Select
+                    value={selectedPriority}
+                    onValueChange={setSelectedPriority}
+                  >
                     <SelectTrigger className="w-full md:w-48">
                       <SelectValue placeholder="Filter by priority" />
                     </SelectTrigger>
@@ -924,7 +813,9 @@ const AdminSupport = () => {
                                     {ticket.category_name || "Uncategorized"}
                                   </Badge>
                                   <span className="text-xs text-gray-500">
-                                    {new Date(ticket.created_at).toLocaleDateString()}
+                                    {new Date(
+                                      ticket.created_at,
+                                    ).toLocaleDateString()}
                                   </span>
                                 </div>
                               </div>
@@ -946,7 +837,9 @@ const AdminSupport = () => {
                                     <SelectItem value="resolved">
                                       Resolved
                                     </SelectItem>
-                                    <SelectItem value="closed">Closed</SelectItem>
+                                    <SelectItem value="closed">
+                                      Closed
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                                 <Select
@@ -960,15 +853,23 @@ const AdminSupport = () => {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="low">Low</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="medium">
+                                      Medium
+                                    </SelectItem>
                                     <SelectItem value="high">High</SelectItem>
-                                    <SelectItem value="urgent">Urgent</SelectItem>
+                                    <SelectItem value="urgent">
+                                      Urgent
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => navigate(`/admin/support/ticket/${ticket.id}`)}
+                                  onClick={() =>
+                                    navigate(
+                                      `/admin/support/ticket/${ticket.id}`,
+                                    )
+                                  }
                                 >
                                   View
                                 </Button>
@@ -1031,7 +932,10 @@ const AdminSupport = () => {
                           </SelectTrigger>
                           <SelectContent>
                             {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id.toString()}>
+                              <SelectItem
+                                key={cat.id}
+                                value={cat.id.toString()}
+                              >
                                 {cat.name}
                               </SelectItem>
                             ))}
@@ -1044,7 +948,10 @@ const AdminSupport = () => {
                         <Select
                           value={formData.priority}
                           onValueChange={(value) =>
-                            setFormData((prev) => ({ ...prev, priority: value }))
+                            setFormData((prev) => ({
+                              ...prev,
+                              priority: value,
+                            }))
                           }
                         >
                           <SelectTrigger>
@@ -1352,7 +1259,8 @@ const AdminSupport = () => {
                           <Input
                             id="email"
                             value={
-                              supportSettings.general_settings?.supportEmail || ""
+                              supportSettings.general_settings?.supportEmail ||
+                              ""
                             }
                             onChange={(e) =>
                               setSupportSettings((prev) => ({
@@ -1370,7 +1278,8 @@ const AdminSupport = () => {
                           <Input
                             id="phone"
                             value={
-                              supportSettings.general_settings?.supportPhone || ""
+                              supportSettings.general_settings?.supportPhone ||
+                              ""
                             }
                             onChange={(e) =>
                               setSupportSettings((prev) => ({
@@ -1423,7 +1332,9 @@ const AdminSupport = () => {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="auto-message">Auto Response Message</Label>
+                          <Label htmlFor="auto-message">
+                            Auto Response Message
+                          </Label>
                           <Textarea
                             id="auto-message"
                             value={
@@ -1459,11 +1370,13 @@ const AdminSupport = () => {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex items-center gap-4">
-                          <Label htmlFor="auto-assign">Auto Assign Tickets</Label>
+                          <Label htmlFor="auto-assign">
+                            Auto Assign Tickets
+                          </Label>
                           <Switch
                             checked={
-                              supportSettings.ticket_settings?.autoAssignTickets ||
-                              false
+                              supportSettings.ticket_settings
+                                ?.autoAssignTickets || false
                             }
                             onCheckedChange={(checked) =>
                               setSupportSettings((prev) => ({
@@ -1514,7 +1427,9 @@ const AdminSupport = () => {
                                 ...prev,
                                 ticket_settings: {
                                   ...prev.ticket_settings,
-                                  ticketEscalationHours: parseInt(e.target.value),
+                                  ticketEscalationHours: parseInt(
+                                    e.target.value,
+                                  ),
                                 },
                               }))
                             }
@@ -1533,7 +1448,9 @@ const AdminSupport = () => {
                     {/* SLA Settings */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>SLA Settings (Response Times in Hours)</CardTitle>
+                        <CardTitle>
+                          SLA Settings (Response Times in Hours)
+                        </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div>
@@ -1542,8 +1459,8 @@ const AdminSupport = () => {
                             id="urgent"
                             type="number"
                             value={
-                              supportSettings.sla_settings?.urgentResponseTime ||
-                              1
+                              supportSettings.sla_settings
+                                ?.urgentResponseTime || 1
                             }
                             onChange={(e) =>
                               setSupportSettings((prev) => ({
@@ -1562,7 +1479,8 @@ const AdminSupport = () => {
                             id="high"
                             type="number"
                             value={
-                              supportSettings.sla_settings?.highResponseTime || 4
+                              supportSettings.sla_settings?.highResponseTime ||
+                              4
                             }
                             onChange={(e) =>
                               setSupportSettings((prev) => ({
@@ -1581,8 +1499,8 @@ const AdminSupport = () => {
                             id="medium"
                             type="number"
                             value={
-                              supportSettings.sla_settings?.mediumResponseTime ||
-                              24
+                              supportSettings.sla_settings
+                                ?.mediumResponseTime || 24
                             }
                             onChange={(e) =>
                               setSupportSettings((prev) => ({
@@ -1601,7 +1519,8 @@ const AdminSupport = () => {
                             id="low"
                             type="number"
                             value={
-                              supportSettings.sla_settings?.lowResponseTime || 72
+                              supportSettings.sla_settings?.lowResponseTime ||
+                              72
                             }
                             onChange={(e) =>
                               setSupportSettings((prev) => ({
@@ -1707,7 +1626,9 @@ const AdminSupport = () => {
                           />
                         </div>
                         <div className="flex items-center gap-4">
-                          <Label htmlFor="allow-uploads">Allow File Uploads</Label>
+                          <Label htmlFor="allow-uploads">
+                            Allow File Uploads
+                          </Label>
                           <Switch
                             checked={
                               supportSettings.security_settings
@@ -1730,7 +1651,8 @@ const AdminSupport = () => {
                             id="max-file"
                             type="number"
                             value={
-                              supportSettings.security_settings?.maxFileSize || 10
+                              supportSettings.security_settings?.maxFileSize ||
+                              10
                             }
                             onChange={(e) =>
                               setSupportSettings((prev) => ({
@@ -1819,7 +1741,7 @@ const AdminSupport = () => {
       {signOutModal && (
         <SignoutModal
           isOpen={signOutModal}
-          onClose={() => setSignOutModal(false)}
+          onClose={() => dispatch(openSignoutModal(false))}
         />
       )}
     </div>
