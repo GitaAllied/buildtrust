@@ -16,8 +16,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { apiClient } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import Logo from "../assets/Logo.png";
-import { FaHeart } from "react-icons/fa6";
+import { Heart } from "lucide-react";
 
 // Complete list of African cities - synchronized with PersonalInfo.tsx
 const AFRICAN_CITIES = [
@@ -213,6 +215,8 @@ const ProjectImageBadge = ({ project, idx }: any) => {
 
 const BrowseDevelopers = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("all");
   const [selectedProjectType, setSelectedProjectType] = useState("all");
@@ -225,6 +229,8 @@ const BrowseDevelopers = () => {
   const [cityPopoverOpen, setCityPopoverOpen] = useState(false);
   const [projectTypeSearch, setProjectTypeSearch] = useState("");
   const [projectTypePopoverOpen, setProjectTypePopoverOpen] = useState(false);
+  const [savedDevelopers, setSavedDevelopers] = useState<Set<number>>(new Set());
+  const [savingId, setSavingId] = useState<number | null>(null);
 
   // Mock data for when API is not connected
   const mockDevelopers = [
@@ -537,7 +543,85 @@ const BrowseDevelopers = () => {
     fetchDevelopers();
   }, []);
 
-  const filteredDevelopers = developers.filter((dev) => {
+  // Load saved developers when user is logged in
+  useEffect(() => {
+    const loadSavedDevelopers = async () => {
+      if (!user || user.role !== 'client') {
+        setSavedDevelopers(new Set());
+        return;
+      }
+
+      try {
+        const response = await apiClient.getSavedDevelopers();
+        const saved = Array.isArray(response) ? response : response?.developers || [];
+        const savedIds = new Set(saved.map((dev: any) => dev.id));
+        setSavedDevelopers(savedIds);
+      } catch (err) {
+        console.error('Error loading saved developers:', err);
+        setSavedDevelopers(new Set());
+      }
+    };
+
+    loadSavedDevelopers();
+  }, [user]);
+
+  // Handle save/unsave developer
+  const handleSaveDeveloper = async (e: React.MouseEvent, developerId: number) => {
+    e.stopPropagation(); // Prevent card click
+
+    if (!user) {
+      toast({
+        title: "Please Log In",
+        description: "You must be logged in to save developers.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (user.role !== 'client') {
+      toast({
+        title: "Not Available",
+        description: "Only clients can save developers.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSavingId(developerId);
+      const isSaved = savedDevelopers.has(developerId);
+
+      if (isSaved) {
+        // Unsave developer
+        await apiClient.unsaveDeveloper(developerId);
+        setSavedDevelopers((prev) => {
+          const updated = new Set(prev);
+          updated.delete(developerId);
+          return updated;
+        });
+        toast({
+          title: "Removed",
+          description: "Developer removed from your saved list.",
+        });
+      } else {
+        // Save developer
+        await apiClient.saveDeveloper(developerId);
+        setSavedDevelopers((prev) => new Set(prev).add(developerId));
+        toast({
+          title: "Saved",
+          description: "Developer added to your saved list.",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to save developer",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingId(null);
+    }
+  };
     if (
       searchQuery &&
       !dev.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -958,9 +1042,25 @@ const BrowseDevelopers = () => {
                         View Profile
                       </Button>
                       
-                      <Button className="" variant="outline">
-                        <FaHeart className=" text-gray-400"/>
-                      </Button>
+                      {user && user.role === 'client' && (
+                        <Button
+                          variant={savedDevelopers.has(dev.id) ? "default" : "outline"}
+                          className={`px-3 ${
+                            savedDevelopers.has(dev.id)
+                              ? 'bg-red-500 hover:bg-red-600 text-white'
+                              : 'border-gray-300'
+                          }`}
+                          onClick={(e) => handleSaveDeveloper(e, dev.id)}
+                          disabled={savingId === dev.id}
+                          title={savedDevelopers.has(dev.id) ? "Remove from saved" : "Save to favorites"}
+                        >
+                          <Heart
+                            className={`h-4 w-4 ${
+                              savedDevelopers.has(dev.id) ? 'fill-white' : ''
+                            }`}
+                          />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
