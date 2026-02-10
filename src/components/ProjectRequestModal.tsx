@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api";
 
 interface ProjectRequestModalProps {
@@ -14,6 +16,25 @@ interface ProjectRequestModalProps {
   developerName: string;
   developerId?: number;
 }
+
+// Common building types - users can select or type custom ones
+const COMMON_BUILDING_TYPES = [
+  "Duplex",
+  "Bungalow",
+  "Commercial Building",
+  "Rental Property",
+  "Estate Development",
+  "Renovation Project",
+  "Apartment Complex",
+  "Office Building",
+  "Hotel",
+  "Warehouse",
+  "Mixed-use Development",
+  "Villa",
+  "Townhouse",
+  "Shopping Mall",
+  "Industrial Complex"
+];
 
 const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: ProjectRequestModalProps) => {
   const navigate = useNavigate();
@@ -31,6 +52,9 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [buildingTypeSearch, setBuildingTypeSearch] = useState("");
+  const [buildingTypePopoverOpen, setBuildingTypePopoverOpen] = useState(false);
 
   const getStoredRole = () => {
     try {
@@ -61,9 +85,80 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
 
   const effectiveRole = userRole ?? getStoredRole();
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Validate Project Name
+    if (!formData.projectName.trim()) {
+      errors.projectName = "Project name is required";
+    } else if (formData.projectName.trim().length < 3) {
+      errors.projectName = "Project name must be at least 3 characters";
+    } else if (formData.projectName.trim().length > 100) {
+      errors.projectName = "Project name cannot exceed 100 characters";
+    }
+
+    // Validate Location
+    if (!formData.location.trim()) {
+      errors.location = "Project location is required";
+    } else if (formData.location.trim().length < 3) {
+      errors.location = "Location must be at least 3 characters";
+    }
+
+    // Validate Building Type
+    if (!formData.buildingType) {
+      errors.buildingType = "Please select a building type";
+    }
+
+    // Validate Budget Range
+    if (!formData.budgetRange) {
+      errors.budgetRange = "Please select a budget range";
+    }
+
+    // Validate Message
+    if (!formData.message.trim()) {
+      errors.message = "Message to developer is required";
+    } else if (formData.message.trim().length < 10) {
+      errors.message = "Message must be at least 10 characters";
+    } else if (formData.message.trim().length > 1000) {
+      errors.message = "Message cannot exceed 1000 characters";
+    }
+
+    // Validate Start Date if provided
+    if (formData.startDate) {
+      const selectedDate = new Date(formData.startDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        errors.startDate = "Start date must be today or in the future";
+      }
+    }
+
+    // Validate File if provided
+    if (formData.sitePlan) {
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (formData.sitePlan.size > maxSize) {
+        errors.sitePlan = "File size cannot exceed 5MB";
+      }
+      const validFormats = ["application/pdf", "image/jpeg", "image/png", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+      if (!validFormats.includes(formData.sitePlan.type)) {
+        errors.sitePlan = "File format not supported. Please use PDF, JPG, PNG, DOC, or DOCX";
+      }
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Validate form first
+    if (!validateForm()) {
+      setError("Please fix the errors below before submitting");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -181,6 +276,8 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
 
   const handleClose = () => {
     setIsSubmitted(false);
+    setError(null);
+    setFieldErrors({});
     setFormData({
       projectName: "",
       location: "",
@@ -282,16 +379,34 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Validation Error Alert */}
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-red-900">Validation Error</h4>
+                <p className="text-sm text-red-800 mt-1">{error}</p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="projectName">Project Name *</Label>
               <Input
                 id="projectName"
                 value={formData.projectName}
-                onChange={(e) => handleInputChange("projectName", e.target.value)}
+                onChange={(e) => {
+                  handleInputChange("projectName", e.target.value);
+                  if (fieldErrors.projectName) setFieldErrors(prev => ({ ...prev, projectName: "" }));
+                }}
                 placeholder="e.g., Modern Family Duplex"
+                className={fieldErrors.projectName ? "border-red-500 focus:ring-red-500" : ""}
                 required
               />
+              {fieldErrors.projectName && (
+                <p className="text-red-600 text-sm mt-1">{fieldErrors.projectName}</p>
+              )}
             </div>
             
             <div>
@@ -299,36 +414,113 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
               <Input
                 id="location"
                 value={formData.location}
-                onChange={(e) => handleInputChange("location", e.target.value)}
+                onChange={(e) => {
+                  handleInputChange("location", e.target.value);
+                  if (fieldErrors.location) setFieldErrors(prev => ({ ...prev, location: "" }));
+                }}
                 placeholder="e.g., Lekki, Lagos"
+                className={fieldErrors.location ? "border-red-500 focus:ring-red-500" : ""}
                 required
               />
+              {fieldErrors.location && (
+                <p className="text-red-600 text-sm mt-1">{fieldErrors.location}</p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="buildingType">Type of Building *</Label>
-              <Select value={formData.buildingType} onValueChange={(value) => handleInputChange("buildingType", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select building type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="duplex">Duplex</SelectItem>
-                  <SelectItem value="bungalow">Bungalow</SelectItem>
-                  <SelectItem value="commercial">Commercial Building</SelectItem>
-                  <SelectItem value="rental">Rental Property</SelectItem>
-                  <SelectItem value="estate">Estate Development</SelectItem>
-                  <SelectItem value="renovation">Renovation Project</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <Popover open={buildingTypePopoverOpen} onOpenChange={setBuildingTypePopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`w-full justify-between ${fieldErrors.buildingType ? "border-red-500" : ""}`}
+                  >
+                    <span className="text-gray-700">
+                      {formData.buildingType || "Select building type"}
+                    </span>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3" side="bottom" align="start" sideOffset={8}>
+                  <div className="space-y-3">
+                    <Input
+                      placeholder="Type or search building type..."
+                      value={buildingTypeSearch}
+                      onChange={(e) => setBuildingTypeSearch(e.target.value)}
+                      className="h-9"
+                    />
+                    <div className="max-h-64 overflow-y-auto space-y-1">
+                      <button
+                        onClick={() => {
+                          handleInputChange("buildingType", "");
+                          setBuildingTypePopoverOpen(false);
+                          setBuildingTypeSearch("");
+                          if (fieldErrors.buildingType) setFieldErrors(prev => ({ ...prev, buildingType: "" }));
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-blue-50 transition-colors ${
+                          !formData.buildingType ? "bg-blue-100 text-[#226F75] font-medium" : "text-gray-700"
+                        }`}
+                      >
+                        Clear Selection
+                      </button>
+                      {/* Show filtered common types */}
+                      {COMMON_BUILDING_TYPES.filter(type =>
+                        type.toLowerCase().includes(buildingTypeSearch.toLowerCase())
+                      ).map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => {
+                            handleInputChange("buildingType", type);
+                            setBuildingTypePopoverOpen(false);
+                            setBuildingTypeSearch("");
+                            if (fieldErrors.buildingType) setFieldErrors(prev => ({ ...prev, buildingType: "" }));
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-blue-50 transition-colors ${
+                            formData.buildingType === type ? "bg-blue-100 text-[#226F75] font-medium" : "text-gray-700"
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                      {/* Show custom entry option if text doesn't match common types */}
+                      {buildingTypeSearch && !COMMON_BUILDING_TYPES.some(type =>
+                        type.toLowerCase() === buildingTypeSearch.toLowerCase()
+                      ) && (
+                        <button
+                          onClick={() => {
+                            handleInputChange("buildingType", buildingTypeSearch);
+                            setBuildingTypePopoverOpen(false);
+                            setBuildingTypeSearch("");
+                            if (fieldErrors.buildingType) setFieldErrors(prev => ({ ...prev, buildingType: "" }));
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-blue-50 transition-colors text-[#226F75] font-medium border border-[#226F75] bg-blue-50"
+                        >
+                          ✓ Use "{buildingTypeSearch}"
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {fieldErrors.buildingType && (
+                <p className="text-red-600 text-sm mt-1">{fieldErrors.buildingType}</p>
+              )}
             </div>
 
             <div>
               <Label htmlFor="budgetRange">Estimated Budget Range *</Label>
-              <Select value={formData.budgetRange} onValueChange={(value) => handleInputChange("budgetRange", value)}>
-                <SelectTrigger>
+              <Select 
+                value={formData.budgetRange} 
+                onValueChange={(value) => {
+                  handleInputChange("budgetRange", value);
+                  if (fieldErrors.budgetRange) setFieldErrors(prev => ({ ...prev, budgetRange: "" }));
+                }}
+              >
+                <SelectTrigger className={fieldErrors.budgetRange ? "border-red-500" : ""}>
                   <SelectValue placeholder="Select budget range" />
                 </SelectTrigger>
                 <SelectContent>
@@ -339,6 +531,9 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
                   <SelectItem value="100+">₦100M+</SelectItem>
                 </SelectContent>
               </Select>
+              {fieldErrors.budgetRange && (
+                <p className="text-red-600 text-sm mt-1">{fieldErrors.budgetRange}</p>
+              )}
             </div>
           </div>
 
@@ -349,8 +544,15 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
                 id="startDate"
                 type="date"
                 value={formData.startDate}
-                onChange={(e) => handleInputChange("startDate", e.target.value)}
+                onChange={(e) => {
+                  handleInputChange("startDate", e.target.value);
+                  if (fieldErrors.startDate) setFieldErrors(prev => ({ ...prev, startDate: "" }));
+                }}
+                className={fieldErrors.startDate ? "border-red-500 focus:ring-red-500" : ""}
               />
+              {fieldErrors.startDate && (
+                <p className="text-red-600 text-sm mt-1">{fieldErrors.startDate}</p>
+              )}
             </div>
 
             <div>
@@ -374,13 +576,21 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
             <Input
               id="sitePlan"
               type="file"
-              onChange={handleFileChange}
+              onChange={(e) => {
+                handleFileChange(e);
+                if (fieldErrors.sitePlan) setFieldErrors(prev => ({ ...prev, sitePlan: "" }));
+              }}
               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-              className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+              className={`file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 ${fieldErrors.sitePlan ? "border-red-500" : ""}`}
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Accepted formats: PDF, JPG, PNG, DOC, DOCX (max 5MB)
-            </p>
+            {fieldErrors.sitePlan && (
+              <p className="text-red-600 text-sm mt-1">{fieldErrors.sitePlan}</p>
+            )}
+            {!fieldErrors.sitePlan && (
+              <p className="text-xs text-gray-500 mt-1">
+                Accepted formats: PDF, JPG, PNG, DOC, DOCX (max 5MB)
+              </p>
+            )}
           </div>
 
           <div>
@@ -388,11 +598,24 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
             <textarea
               id="message"
               value={formData.message}
-              onChange={(e) => handleInputChange("message", e.target.value)}
+              onChange={(e) => {
+                handleInputChange("message", e.target.value);
+                if (fieldErrors.message) setFieldErrors(prev => ({ ...prev, message: "" }));
+              }}
               placeholder="Please describe your project requirements, any specific preferences, or questions you have..."
-              className="w-full min-h-[100px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-vertical"
+              className={`w-full min-h-[100px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-vertical ${fieldErrors.message ? "border-red-500 focus:ring-red-500" : ""}`}
               required
             />
+            <div className="flex justify-between items-start mt-1">
+              <div>
+                {fieldErrors.message && (
+                  <p className="text-red-600 text-sm">{fieldErrors.message}</p>
+                )}
+              </div>
+              <span className="text-xs text-gray-500">
+                {formData.message.length}/1000
+              </span>
+            </div>
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">

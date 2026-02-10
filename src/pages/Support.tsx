@@ -46,6 +46,8 @@ const Support = () => {
   const [faqItems, setFaqItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
 
   // Fetch support categories and FAQ on mount
   useEffect(() => {
@@ -83,6 +85,32 @@ const Support = () => {
     
     fetchData();
   }, []);
+
+  // Fetch tickets for developers
+  useEffect(() => {
+    const fetchTickets = async () => {
+      if (user?.role === 'developer') {
+        try {
+          setTicketsLoading(true);
+          const response = await apiClient.getTickets();
+          // Handle both array response and paginated object response
+          const ticketsData = Array.isArray(response) ? response : response?.tickets || [];
+          setTickets(ticketsData || []);
+        } catch (err: any) {
+          console.error('Error fetching tickets:', err);
+          toast({ 
+            title: 'Error', 
+            description: 'Failed to load support tickets', 
+            variant: 'destructive' 
+          });
+        } finally {
+          setTicketsLoading(false);
+        }
+      }
+    };
+    
+    fetchTickets();
+  }, [user?.role]);
 
   const handleLogout = async () => {
     try {
@@ -301,6 +329,87 @@ const Support = () => {
         </div>
 
         <div className="p-6 max-w-6xl mx-auto">
+          {/* Support Tickets History - For Developers - Moved to Top */}
+          {user?.role === "developer" && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MessageCircle className="mr-2 h-5 w-5" />
+                  My Support Tickets
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {ticketsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#253E44]"></div>
+                  </div>
+                ) : tickets && tickets.length > 0 ? (
+                  <div className="space-y-4">
+                    {tickets.slice(0, 3).map((ticket: any) => {
+                      // Determine status color
+                      const statusColors = {
+                        'Open': { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+                        'In Progress': { bg: 'bg-blue-100', text: 'text-blue-700' },
+                        'Resolved': { bg: 'bg-green-100', text: 'text-green-700' },
+                        'Closed': { bg: 'bg-gray-100', text: 'text-gray-700' }
+                      };
+                      
+                      const statusColor = statusColors[ticket.status as keyof typeof statusColors] || statusColors['Open'];
+                      
+                      // Format date
+                      const createdDate = new Date(ticket.created_at);
+                      const daysAgo = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+                      const dateStr = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+
+                      return (
+                        <div key={ticket.id} className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-medium text-[#253E44]">{ticket.subject || ticket.title}</h3>
+                                <span className={`px-2 py-1 ${statusColor.bg} ${statusColor.text} text-xs font-medium rounded`}>
+                                  {ticket.status}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-2">{ticket.description}</p>
+                              <div className="flex items-center gap-4 text-xs text-gray-500">
+                                <span>Category: {ticket.category_name || 'General'}</span>
+                                <span>Opened: {dateStr}</span>
+                                <span>Ticket #{ticket.id}</span>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/support/ticket/${ticket.id}`)}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <MessageCircle className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+                    <p className="text-gray-500">No support tickets yet</p>
+                  </div>
+                )}
+              </CardContent>
+              <div className="px-6 pb-4">
+                {tickets && tickets.length > 3 && (
+                  <Button 
+                    className="w-full bg-[#253E44] hover:bg-[#253E44]/90"
+                    onClick={() => navigate('/support')}
+                  >
+                    View All Tickets
+                  </Button>
+                )}
+              </div>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Contact Support */}
             <Card>
@@ -464,6 +573,7 @@ const Support = () => {
           </Card>
         </div>
       </div>
+
       {signOutModal && (
         <SignoutModal
           isOpen={signOutModal}

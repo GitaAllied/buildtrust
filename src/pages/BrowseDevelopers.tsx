@@ -10,8 +10,114 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { apiClient } from "@/lib/api";
 import Logo from "../assets/Logo.png";
+
+// Complete list of African cities - synchronized with PersonalInfo.tsx
+const AFRICAN_CITIES = [
+  // North Africa
+  { name: "Cairo", country: "Egypt" },
+  { name: "Alexandria", country: "Egypt" },
+  { name: "Casablanca", country: "Morocco" },
+  { name: "Marrakech", country: "Morocco" },
+  { name: "Rabat", country: "Morocco" },
+  { name: "Fez", country: "Morocco" },
+  { name: "Tunis", country: "Tunisia" },
+  { name: "Sousse", country: "Tunisia" },
+  { name: "Algiers", country: "Algeria" },
+  { name: "Constantine", country: "Algeria" },
+  { name: "Tripoli", country: "Libya" },
+  
+  // West Africa
+  { name: "Lagos", country: "Nigeria" },
+  { name: "Abuja", country: "Nigeria" },
+  { name: "Port Harcourt", country: "Nigeria" },
+  { name: "Kano", country: "Nigeria" },
+  { name: "Ibadan", country: "Nigeria" },
+  { name: "Benin City", country: "Nigeria" },
+  { name: "Enugu", country: "Nigeria" },
+  { name: "Kaduna", country: "Nigeria" },
+  { name: "Owerri", country: "Nigeria" },
+  { name: "Abeokuta", country: "Nigeria" },
+  { name: "Accra", country: "Ghana" },
+  { name: "Kumasi", country: "Ghana" },
+  { name: "Dakar", country: "Senegal" },
+  { name: "Freetown", country: "Sierra Leone" },
+  { name: "Conakry", country: "Guinea" },
+  { name: "Monrovia", country: "Liberia" },
+  { name: "Bamako", country: "Mali" },
+  { name: "Ouagadougou", country: "Burkina Faso" },
+  { name: "Lomé", country: "Togo" },
+  { name: "Cotonou", country: "Benin" },
+  
+  // Central Africa
+  { name: "Kinshasa", country: "DRC" },
+  { name: "Lubumbashi", country: "DRC" },
+  { name: "Brazzaville", country: "Congo" },
+  { name: "Libreville", country: "Gabon" },
+  { name: "Bangui", country: "Central African Republic" },
+  { name: "Yaoundé", country: "Cameroon" },
+  { name: "Douala", country: "Cameroon" },
+  { name: "N'Djamena", country: "Chad" },
+  
+  // East Africa
+  { name: "Nairobi", country: "Kenya" },
+  { name: "Mombasa", country: "Kenya" },
+  { name: "Dar es Salaam", country: "Tanzania" },
+  { name: "Dodoma", country: "Tanzania" },
+  { name: "Kampala", country: "Uganda" },
+  { name: "Juba", country: "South Sudan" },
+  { name: "Addis Ababa", country: "Ethiopia" },
+  { name: "Dire Dawa", country: "Ethiopia" },
+  { name: "Kigali", country: "Rwanda" },
+  { name: "Bujumbura", country: "Burundi" },
+  { name: "Djibouti City", country: "Djibouti" },
+  { name: "Mogadishu", country: "Somalia" },
+  
+  // Southern Africa
+  { name: "Johannesburg", country: "South Africa" },
+  { name: "Cape Town", country: "South Africa" },
+  { name: "Durban", country: "South Africa" },
+  { name: "Pretoria", country: "South Africa" },
+  { name: "Gaborone", country: "Botswana" },
+  { name: "Harare", country: "Zimbabwe" },
+  { name: "Bulawayo", country: "Zimbabwe" },
+  { name: "Lusaka", country: "Zambia" },
+  { name: "Lilongwe", country: "Malawi" },
+  { name: "Blantyre", country: "Malawi" },
+  { name: "Maputo", country: "Mozambique" },
+  { name: "Windhoek", country: "Namibia" },
+  { name: "Maseru", country: "Lesotho" },
+  { name: "Mbabane", country: "Eswatini" },
+  { name: "Antananarivo", country: "Madagascar" },
+  
+  // Island Nations
+  { name: "Port Louis", country: "Mauritius" },
+  { name: "Victoria", country: "Seychelles" },
+];
+
+// Common project types - users can select or type custom ones
+const COMMON_PROJECT_TYPES = [
+  "Duplex",
+  "Bungalow",
+  "Commercial",
+  "Rental Property",
+  "Estate Development",
+  "Apartment Complex",
+  "Office Building",
+  "Hotel",
+  "Warehouse",
+  "Mixed-use Development",
+  "Villa",
+  "Townhouse",
+  "Shopping Mall",
+  "Residential Tower"
+];
 
 // Compute backend origin for uploads (remove trailing /api if present)
 const BACKEND_ORIGIN = (
@@ -108,6 +214,10 @@ const BrowseDevelopers = () => {
   const [developers, setDevelopers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [citySearch, setCitySearch] = useState("");
+  const [cityPopoverOpen, setCityPopoverOpen] = useState(false);
+  const [projectTypeSearch, setProjectTypeSearch] = useState("");
+  const [projectTypePopoverOpen, setProjectTypePopoverOpen] = useState(false);
 
   // Mock data for when API is not connected
   const mockDevelopers = [
@@ -450,36 +560,139 @@ const BrowseDevelopers = () => {
 
           {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Select value={selectedCity} onValueChange={setSelectedCity}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select City" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Cities</SelectItem>
-                <SelectItem value="Lagos">Lagos</SelectItem>
-                <SelectItem value="Abuja">Abuja</SelectItem>
-                <SelectItem value="Port Harcourt">Port Harcourt</SelectItem>
-                <SelectItem value="Kano">Kano</SelectItem>
-                <SelectItem value="Ibadan">Ibadan</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* City Selector with Search */}
+            <Popover open={cityPopoverOpen} onOpenChange={setCityPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between bg-white hover:bg-gray-50 border-gray-300"
+                >
+                  <span className="text-gray-700">
+                    {selectedCity === "all" ? "Select City" : AFRICAN_CITIES.find(c => c.name === selectedCity)?.name || selectedCity}
+                  </span>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3" side="bottom" align="start" sideOffset={8}>
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Search cities..."
+                    value={citySearch}
+                    onChange={(e) => setCitySearch(e.target.value)}
+                    className="h-9"
+                  />
+                  <div className="max-h-64 overflow-y-auto space-y-1">
+                    <button
+                      onClick={() => {
+                        setSelectedCity("all");
+                        setCityPopoverOpen(false);
+                        setCitySearch("");
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-blue-50 transition-colors ${
+                        selectedCity === "all" ? "bg-blue-100 text-[#226F75] font-medium" : "text-gray-700"
+                      }`}
+                    >
+                      All Cities
+                    </button>
+                    {AFRICAN_CITIES.filter(city => 
+                      city.name.toLowerCase().includes(citySearch.toLowerCase()) ||
+                      city.country.toLowerCase().includes(citySearch.toLowerCase())
+                    ).map((city) => (
+                      <button
+                        key={`${city.name}-${city.country}`}
+                        onClick={() => {
+                          setSelectedCity(city.name);
+                          setCityPopoverOpen(false);
+                          setCitySearch("");
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-blue-50 transition-colors ${
+                          selectedCity === city.name ? "bg-blue-100 text-[#226F75] font-medium" : "text-gray-700"
+                        }`}
+                      >
+                        <div className="font-medium">{city.name}</div>
+                        <div className="text-xs text-gray-500">{city.country}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
-            <Select
-              value={selectedProjectType}
-              onValueChange={setSelectedProjectType}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Project Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="Duplex">Duplex</SelectItem>
-                <SelectItem value="Bungalow">Bungalow</SelectItem>
-                <SelectItem value="Commercial">Commercial</SelectItem>
-                <SelectItem value="Rental">Rental Property</SelectItem>
-                <SelectItem value="Estate">Estate Development</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Project Type Selector with Custom Entry */}
+            <Popover open={projectTypePopoverOpen} onOpenChange={setProjectTypePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between bg-white hover:bg-gray-50 border-gray-300"
+                >
+                  <span className="text-gray-700">
+                    {selectedProjectType === "all" ? "Project Type" : selectedProjectType}
+                  </span>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3" side="bottom" align="start" sideOffset={8}>
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Type or search project type..."
+                    value={projectTypeSearch}
+                    onChange={(e) => setProjectTypeSearch(e.target.value)}
+                    className="h-9"
+                  />
+                  <div className="max-h-64 overflow-y-auto space-y-1">
+                    <button
+                      onClick={() => {
+                        setSelectedProjectType("all");
+                        setProjectTypePopoverOpen(false);
+                        setProjectTypeSearch("");
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-blue-50 transition-colors ${
+                        selectedProjectType === "all" ? "bg-blue-100 text-[#226F75] font-medium" : "text-gray-700"
+                      }`}
+                    >
+                      All Types
+                    </button>
+                    {/* Show filtered common types */}
+                    {COMMON_PROJECT_TYPES.filter(type =>
+                      type.toLowerCase().includes(projectTypeSearch.toLowerCase())
+                    ).map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => {
+                          setSelectedProjectType(type);
+                          setProjectTypePopoverOpen(false);
+                          setProjectTypeSearch("");
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-blue-50 transition-colors ${
+                          selectedProjectType === type ? "bg-blue-100 text-[#226F75] font-medium" : "text-gray-700"
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                    {/* Show custom entry option if text doesn't match common types */}
+                    {projectTypeSearch && !COMMON_PROJECT_TYPES.some(type =>
+                      type.toLowerCase() === projectTypeSearch.toLowerCase()
+                    ) && (
+                      <button
+                        onClick={() => {
+                          setSelectedProjectType(projectTypeSearch);
+                          setProjectTypePopoverOpen(false);
+                          setProjectTypeSearch("");
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-blue-50 transition-colors text-[#226F75] font-medium border border-[#226F75] bg-blue-50"
+                      >
+                        ✓ Use "{projectTypeSearch}"
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             <Select value={budgetRange} onValueChange={setBudgetRange}>
               <SelectTrigger>
@@ -536,89 +749,6 @@ const BrowseDevelopers = () => {
             <span>Escrow-backed guarantee available</span>
           </div>
         </div>
-
-        {/* <Card
-            key={"sample-card"}
-            className="hover:shadow-lg transition-all duration-300 cursor-pointer w-[33%]"
-          >
-            <CardContent className="p-5 space-y-5">
-              <div className=" flex justify-between items-center">
-                <div className=" flex items-center gap-3">
-                  <div className=" h-[4rem] w-[4rem] rounded-full border-2 border-gray-300 flex items-center justify-center">
-                    <img src="" alt="" />
-                  </div>
-
-                  <div className=" space-y-1">
-                    <h1 className=" font-bold text-xl">John Doe</h1>
-                    <div className=" flex ml-2">
-                      {[...Array(5)].map((_, idx) => (
-                        <div
-                          className=" h-[1.5rem] w-[1.5rem] rounded-full border-2 border-gray-300 -ml-2 flex items-center justify-center bg-white"
-                          key={idx}
-                        >
-                          <img src="" alt="" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-gray-900">
-                      30%
-                    </div>
-                    <p className="text-[10px] text-gray-500">Trust Score</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className=" space-y-1.5">
-                <div className="flex items-center text-sm text-gray-600">
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                  Nigeria • 0 years experience
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  3 rating • 2 projects completed
-                </div>
-              </div>
-
-              <div className=" space-y-1.5">
-                <p className="text-sm text-gray-600 truncate">
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Quod,
-                  ratione.{" "}
-                </p>
-                <Button className="w-full bg-[#253E44] hover:bg-[#253E44]/90">
-                  View Profile
-                </Button>
-              </div>
-            </CardContent>
-          </Card> */}
 
         {/* Loading State */}
         {loading && (
