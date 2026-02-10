@@ -761,7 +761,7 @@ const DeveloperProfile = () => {
                         <h4 className="text-sm font-medium text-gray-900 mb-2">
                           Languages
                         </h4>
-                        <p className="text-gray-700">
+                        <p className="text-gray-700 capitalize">
                           {developer.languages
                             ? Array.isArray(developer.languages)
                               ? developer.languages.join(", ")
@@ -796,7 +796,7 @@ const DeveloperProfile = () => {
                         {citiesCovered.map((city: any, idx: number) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-sm border border-blue-200"
+                            className="inline-flex items-center bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-sm border border-blue-200 capitalize"
                           >
                             <svg
                               className="w-4 h-4 mr-2"
