@@ -3,9 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, useNavigate } from "react-router-dom";
+import { Provider } from "react-redux";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { EmailVerificationGuard } from "@/components/EmailVerificationGuard";
+import store from "@/redux/store";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import EmailVerification from "./pages/EmailVerification";
@@ -54,12 +56,13 @@ import PortfolioSetup from "./components/PortfolioSetup";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
+  <Provider store={store}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
           {/* Public Routes - accessible before email verification */}
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
@@ -374,6 +377,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </Provider>
 );
 
 export default App;
