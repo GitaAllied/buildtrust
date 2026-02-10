@@ -15,42 +15,31 @@ function formatTimeOnly(msg: any) {
   }
 }
 import { apiClient } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   X,
   Menu,
-  Search,
   Send
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
-import {
-  FaBriefcase,
-  FaDoorOpen,
-  FaDownload,
-  FaGear,
-  FaMessage,
-  FaMoneyBill,
-  FaUpload,
-  FaUser,
-} from "react-icons/fa6";
 import { Link } from "react-router-dom";
+import DeveloperSidebar from "@/components/DeveloperSidebar";
+import { useDispatch, useSelector } from "react-redux";
+import SignoutModal from "@/components/ui/signoutModal";
+import { openDeveloperSidebar, openSignoutModal } from "@/redux/action";
 
 const DeveloperMessages = () => {
-  const [activeTab, setActiveTab] = useState("messages");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { signOut } = useAuth();
+  const dispatch = useDispatch()
+  const isOpen = useSelector((state:any) => state.sidebar.developerSidebar)
+    const signOutModal = useSelector((state:any) => state.signout) 
+
 
   // Only one conversation: developer <-> admin
   const [adminUserId, setAdminUserId] = useState<number | null>(null);
@@ -59,69 +48,6 @@ const DeveloperMessages = () => {
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
-
-  const sidebarItems = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: <FaUser />
-    },
-    { id: "requests", label: "Project Requests", icon: <FaDownload /> },
-    { id: "projects", label: "Active Projects", icon: <FaBriefcase /> },
-    { id: "upload", label: "Upload Update", icon: <FaUpload /> },
-    { id: "messages", label: "Messages", icon: <FaMessage />,
-      active: true, },
-    { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
-    { id: "profile", label: "Licenses & Profile", icon: <FaUser /> },
-    { id: "support", label: "Support", icon: <FaGear /> },
-    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
-  ];
-
-
-
-  const handleNavigation = (itemId: string) => {
-    switch (itemId) {
-      case "dashboard":
-        setActiveTab(itemId);
-        navigate("/developer-dashboard");
-        break;
-      case "requests":
-        navigate("/project-requests");
-        break;
-      case "projects":
-        navigate("/active-projects");
-        break;
-      case "upload":
-        navigate("/upload-update");
-        break;
-      case "messages":
-        navigate("/developer-messages");
-        break;
-      case "payments":
-        navigate("/developer-payments");
-        break;
-      case "profile":
-        navigate("/developer-liscences");
-        break;
-      case "support":
-        navigate("/support");
-        break;
-        case "logout":
-        handleLogout();
-        break;
-      default:
-        navigate("/browse");
-    }
-  };
 
   // Find admin userId and load conversation/messages
   useEffect(() => {
@@ -201,10 +127,10 @@ const DeveloperMessages = () => {
           <Link to={'/'}><img src={Logo} alt="" /></Link>
         </div>
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={() => dispatch(openDeveloperSidebar(!isOpen))}
           className="p-1.5 sm:p-2 hover:bg-[#226F75]/10 rounded-lg transition-colors"
         >
-          {sidebarOpen ? (
+          {isOpen ? (
             <X className="h-5 w-5 text-[#226F75]" />
           ) : (
             <Menu className="h-5 w-5 text-[#226F75]" />
@@ -213,39 +139,7 @@ const DeveloperMessages = () => {
       </div>
 
       {/* Sidebar */}
-      <div
-        className={`${
-          sidebarOpen ? "block" : "hidden"
-        } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
-      >
-        <div className="p-4 sm:p-6 border-b border-white/20 hidden md:block">
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full"
-          >
-            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
-          </button>
-        </div>
-        <nav className="p-3 sm:p-4 space-y-1">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                handleNavigation(item.id);
-                setSidebarOpen(false);
-              }}
-              className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
-                activeTab === item.id
-                  ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
-                  : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <DeveloperSidebar active={"messages"}/>
 
       {/* Main Content */}
       <div className="w-full flex-1 md:pl-64 min-h-screen bg-gray-50">
@@ -343,6 +237,12 @@ const DeveloperMessages = () => {
           </div>
         </div>
       </div>
+      {signOutModal && (
+        <SignoutModal
+          isOpen={signOutModal}
+          onClose={() =>dispatch(openSignoutModal(false))}
+        />
+      )}
     </div>
   );
 };
