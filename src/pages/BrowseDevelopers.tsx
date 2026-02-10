@@ -529,6 +529,20 @@ const BrowseDevelopers = () => {
 
         console.log("Final normalized developers:", normalized);
         setDevelopers(normalized || []);
+        
+        // Load saved developers after fetching the developers list
+        if (user && user.role === 'client') {
+          try {
+            const response = await apiClient.getSavedDevelopers();
+            const saved = Array.isArray(response) ? response : response?.developers || [];
+            const savedIds = new Set<number>(saved.map((dev: any) => dev.id));
+            setSavedDevelopers(savedIds);
+            console.log('Loaded saved developers:', savedIds);
+          } catch (err) {
+            console.error('Error loading saved developers:', err);
+            setSavedDevelopers(new Set());
+          }
+        }
       } catch (err: any) {
         console.error("Error fetching developers from API:", err.message);
         console.warn("Using mock data due to API connection issue");
@@ -541,30 +555,7 @@ const BrowseDevelopers = () => {
     };
 
     fetchDevelopers();
-  }, []);
-
-  // Load saved developers when user is logged in or developers are loaded
-  useEffect(() => {
-    const loadSavedDevelopers = async () => {
-      if (!user || user.role !== 'client') {
-        setSavedDevelopers(new Set());
-        return;
-      }
-
-      try {
-        const response = await apiClient.getSavedDevelopers();
-        const saved = Array.isArray(response) ? response : response?.developers || [];
-        const savedIds = new Set<number>(saved.map((dev: any) => dev.id));
-        setSavedDevelopers(savedIds);
-        console.log('Loaded saved developers:', savedIds);
-      } catch (err) {
-        console.error('Error loading saved developers:', err);
-        setSavedDevelopers(new Set());
-      }
-    };
-
-    loadSavedDevelopers();
-  }, [user, developers.length]);
+  }, [user]);
 
   // Handle save/unsave developer
   const handleSaveDeveloper = async (e: React.MouseEvent, developerId: number) => {
