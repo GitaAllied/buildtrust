@@ -164,6 +164,7 @@ const ProjectRequests = () => {
                       size="sm"
                       variant="outline"
                       className="text-xs w-full sm:w-[33%]"
+                      onClick={() => navigate(`/project/${request.id}`)}
                     >
                       View Details
                     </Button>

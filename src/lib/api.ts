@@ -194,6 +194,28 @@ class ApiClient {
     return response.json();
   }
 
+  async uploadProfileImage(userId: number, file: File | Blob) {
+    const token = localStorage.getItem('auth_token');
+    const form = new FormData();
+    form.append('avatar', file as any);
+
+    const headers: HeadersInit = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.baseUrl}/users/${userId}/avatar`, {
+      method: 'PUT',
+      headers,
+      body: form,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Upload failed (${response.status})`);
+    }
+
+    return response.json();
+  }
+
   async logout(): Promise<{ message: string }> {
     return this.request<{ message: string }>('/auth/logout', {
       method: 'POST',
@@ -435,6 +457,56 @@ class ApiClient {
   async getClientProjects() {
     return this.request('/projects', {
       method: 'GET',
+    });
+  }
+
+  // Get payment summary for authenticated user
+  async getPaymentsSummary() {
+    return this.request('/payments/summary', {
+      method: 'GET',
+    });
+  }
+
+  // Get transaction history
+  async getTransactionHistory() {
+    return this.request('/payments/transactions', {
+      method: 'GET',
+    });
+  }
+
+  // Record a payment
+  async recordPayment(data: Record<string, unknown>) {
+    return this.request('/payments/record', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Payment methods CRUD
+  async getPaymentMethods() {
+    return this.request('/payments/methods', { method: 'GET' });
+  }
+
+  async addPaymentMethod(data: { cardholderName: string; cardNumber: string; expiryDate: string; cvv?: string; isDefault?: boolean }) {
+    return this.request('/payments/methods', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updatePaymentMethod(id: number, data: { cardholderName?: string; isDefault?: boolean }) {
+    return this.request(`/payments/methods/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deletePaymentMethod(id: number) {
+    return this.request(`/payments/methods/${id}`, {
+      method: 'DELETE',
     });
   }
 
@@ -703,6 +775,13 @@ class ApiClient {
     if (limit) params.append('limit', String(limit));
     return this.request(`/support/tickets/${ticketId}/messages?${params.toString()}`, {
       method: 'GET',
+    });
+  }
+
+  async addTicketMessage(ticketId: number, data: { sender_id?: number; content: string; is_internal?: boolean }) {
+    return this.request(`/support/tickets/${ticketId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 
