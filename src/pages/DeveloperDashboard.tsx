@@ -35,6 +35,7 @@ import SignoutModal from "@/components/ui/signoutModal";
 import DeveloperSidebar from "@/components/DeveloperSidebar";
 import { useDispatch, useSelector } from "react-redux";
 import { openDeveloperSidebar, openSignoutModal } from "@/redux/action";
+import { FaMoneyBill } from "react-icons/fa6";
 
 const DeveloperDashboard = () => {
   const [uploadProgress, setUploadProgress] = useState("");
@@ -328,7 +329,7 @@ const DeveloperDashboard = () => {
                     Notifications
                   </h3>
                 </div>
-                <div className="max-h-80 overflow-y-auto">
+                <div className="max-h-screen md:max-h-80 overflow-y-auto">
                   {notifications.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">
                       No notifications
@@ -693,7 +694,7 @@ const DeveloperDashboard = () => {
               <Card>
                 <CardHeader className="pb-3 px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-6">
                   <CardTitle className="flex items-center text-xs sm:text-sm md:text-base gap-2">
-                    <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    <FaMoneyBill className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                     Escrow & Payments
                   </CardTitle>
                 </CardHeader>
