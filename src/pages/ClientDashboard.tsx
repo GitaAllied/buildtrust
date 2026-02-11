@@ -18,14 +18,12 @@ import {
   Camera,
   Menu,
   X,
+  Search,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/lib/api";
 import Logo from "../assets/Logo.png";
-import {
-  FaSearchengin,
-} from "react-icons/fa6";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
 import ClientSidebar from "@/components/ClientSidebar";
@@ -391,14 +389,14 @@ const ClientDashboard = () => {
         {/* Header */}
         <div className="bg-white/95 backdrop-blur-md border-b border-white/20 sticky top-12 md:top-0 z-30 shadow-sm p-3 sm:p-4 md:p-6">
           <div className="flex flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 w-[70%] md:w-full">
               <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
                 <AvatarImage src="https://placehold.net/avatar-4.svg" />
                 <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
                   DN
                 </AvatarFallback>
               </Avatar>
-              <div className="min-w-0">
+              <div className=" w-[70%]">
                 <h1 className="text-base sm:text-lg md:text-2xl font-bold text-[#253E44] truncate">
                   Welcome, {user?.name || "Client"}
                 </h1>
@@ -408,7 +406,7 @@ const ClientDashboard = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <div className="flex items-center gap-1 sm:gap-3 flex-nowrap">
               <Popover
                 open={notificationsOpen}
                 onOpenChange={setNotificationsOpen}
@@ -435,7 +433,7 @@ const ClientDashboard = () => {
                       Notifications
                     </h3>
                   </div>
-                  <div className="max-h-80 overflow-y-auto">
+                  <div className="max-h-screen md:max-h-80 overflow-y-auto">
                     {notifications.length === 0 ? (
                       <div className="p-4 text-center text-gray-500">
                         No notifications
@@ -503,11 +501,18 @@ const ClientDashboard = () => {
               </Popover>
               <Button
                 onClick={() => navigate("/browse")}
-                className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-xs sm:text-sm shadow-md hover:shadow-lg transition-all"
+                className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-xs sm:text-sm shadow-md hover:shadow-lg transition-all hidden md:block"
               >
-                <p className=" hidden md:block">Browse Developers</p>
-                <FaSearchengin className=" md:hidden" />
+                <p className="">Browse Developers</p>
               </Button>
+              <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={()=> navigate("/browse")}
+                    className="relative flex-shrink-0 md:hidden"
+                  >
+                    <Search className=" text-[#226F75]" />
+                  </Button>
             </div>
           </div>
         </div>
