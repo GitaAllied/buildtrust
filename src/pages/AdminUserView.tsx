@@ -277,21 +277,40 @@ const AdminUserView = () => {
       const filename = segments.length ? segments[segments.length - 1] : '';
 
       if (filename) {
-        // Candidate: /uploads/<filename>
+        const decoded = decodeURIComponent(filename);
+        const bare = decoded.replace(/^uploaded[_-]?/, '');
+
+        // Candidate: /uploads/<filename> (encoded and decoded)
         urls.push(`${backend}/uploads/${encodeURIComponent(filename)}`);
+        urls.push(`${backend}/uploads/${encodeURIComponent(decoded)}`);
+        urls.push(`${backend}/uploads/${encodeURIComponent(bare)}`);
 
         // Candidate: if doc.type is present, /uploads/<type>/<filename>
-        if (doc.type) urls.push(`${backend}/uploads/${encodeURIComponent(doc.type)}/${encodeURIComponent(filename)}`);
+        if (doc.type) {
+          urls.push(`${backend}/uploads/${encodeURIComponent(doc.type)}/${encodeURIComponent(filename)}`);
+          urls.push(`${backend}/uploads/${encodeURIComponent(doc.type)}/${encodeURIComponent(decoded)}`);
+          urls.push(`${backend}/uploads/${encodeURIComponent(doc.type)}/${encodeURIComponent(bare)}`);
+        }
+
+        // Also include a direct backend path without encoding (some servers expect raw path)
+        urls.push(`${backend}/uploads/${filename}`);
+        urls.push(`${backend}/uploads/${decoded}`);
       }
 
       // If path contains 'uploaded_' try replacing with 'uploads/'
-      if (pathname.includes('uploaded_')) {
-        const replaced = pathname.replace(/uploaded_/g, 'uploads/');
+      if (pathname.includes('uploaded_') || pathname.includes('uploaded-')) {
+        const replaced = pathname.replace(/uploaded[_-]/g, 'uploads/');
         if (/^https?:\/\//i.test(original)) {
           try { urls.push(new URL(replaced, original).toString()); } catch (e) { urls.push(`${backend}${replaced}`); }
         } else {
           urls.push(`${backend}${replaced}`);
         }
+      }
+
+      // include the original absolute/relative path as last resort
+      if (original) {
+        if (/^https?:\/\//i.test(original)) urls.push(original);
+        else urls.push(`${backend}${original.startsWith('/') ? original : '/' + original}`);
       }
 
       // Remove duplicates and return
