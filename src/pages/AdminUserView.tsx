@@ -5,7 +5,12 @@ function getAbsoluteUrl(url: string) {
   if (/^https?:\/\//i.test(url)) return url;
   // Use backend URL from env or fallback
   const backend = import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || 'http://localhost:3001';
-  return url.startsWith('/') ? backend + url : backend + '/' + url;
+  const combined = url.startsWith('/') ? backend + url : backend + '/' + url;
+  try {
+    return encodeURI(combined);
+  } catch (e) {
+    return combined;
+  }
 }
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -775,7 +780,7 @@ const AdminUserView = () => {
                 asChild
                 size="sm"
               >
-                <a href={selectedDocumentForPreview.url} target="_blank" rel="noopener noreferrer">
+                <a href={getAbsoluteUrl(selectedDocumentForPreview.url)} target="_blank" rel="noopener noreferrer">
                   <Download className="h-3 w-3 mr-1" />
                   Download
                 </a>
