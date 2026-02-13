@@ -48,6 +48,11 @@ import {
 import { Link } from "react-router-dom";
 import { apiClient } from "@/lib/api";
 import DeclinedDocumentAlert from "@/components/DeclinedDocumentAlert";
+import SignoutModal from "@/components/ui/signoutModal";
+import DeveloperSidebar from "@/components/DeveloperSidebar";
+import { useDispatch, useSelector } from "react-redux";
+import { openDeveloperSidebar, openSignoutModal } from "@/redux/action";
+import { FaMoneyBill } from "react-icons/fa6";
 
 const DeveloperDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -427,18 +432,29 @@ const DeveloperDashboard = () => {
                     </Badge>
                   )}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-
-                {/* Declined document notifications */}
-                {declinedDocuments && declinedDocuments.length > 0 && (
-                  <div className="space-y-1">
-                    <div className="px-3 text-xs text-gray-500 font-medium">Account Alerts</div>
-                    {declinedDocuments.map((doc) => (
-                      <DropdownMenuItem
-                        key={doc.id}
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-screen h-screen sm:w-80 sm:h-auto p-0 mt-2"
+                side="bottom"
+                align="end"
+              >
+                <div className="p-4 border-b border-gray-200">
+                  <h3 className="font-semibold text-[#253E44]">
+                    Notifications
+                  </h3>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                      No notifications
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
+                          notification.unread ? "bg-blue-50" : ""
+                        }`}
                         onClick={() => {
                           setNotificationOpen(false);
                           setSelectedDeclinedDocument(doc);
@@ -808,7 +824,7 @@ const DeveloperDashboard = () => {
               <Card>
                 <CardHeader className="pb-3 px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-6">
                   <CardTitle className="flex items-center text-xs sm:text-sm md:text-base gap-2">
-                    <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    <FaMoneyBill className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                     Escrow & Payments
                   </CardTitle>
                 </CardHeader>

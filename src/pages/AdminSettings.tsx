@@ -42,6 +42,8 @@ import SignoutModal from "@/components/ui/signoutModal";
 import AdminSidebar from "@/components/AdminSidebar";
 import { useDispatch, useSelector } from "react-redux";
 import { openAdminSidebar, openSignoutModal } from "@/redux/action";
+import { FaMoneyBill } from "react-icons/fa6";
+
 
 const AdminSettings = () => {
   const navigate = useNavigate();
@@ -2529,7 +2531,7 @@ const AdminSettings = () => {
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center space-x-2">
-                                <DollarSign className="h-5 w-5" />
+                                <FaMoneyBill className="h-5 w-5" />
                                 <span>Fees & Limits</span>
                               </CardTitle>
                             </CardHeader>
