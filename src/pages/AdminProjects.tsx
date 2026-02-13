@@ -55,6 +55,8 @@ import SignoutModal from "@/components/ui/signoutModal";
 import AdminSidebar from "@/components/AdminSidebar";
 import { useDispatch, useSelector } from "react-redux";
 import { openAdminSidebar, openSignoutModal } from "@/redux/action";
+import { FaMoneyBill } from "react-icons/fa6";
+
 interface Project {
   id: number;
   title: string;
@@ -422,7 +424,7 @@ const AdminProjects = () => {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-1 text-gray-900 font-medium">
-                              <DollarSign className="h-4 w-4" />
+                              <FaMoneyBill className="h-4 w-4" />
                               <span>{project.budget || "N/A"}</span>
                             </div>
                           </td>

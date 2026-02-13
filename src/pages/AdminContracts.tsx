@@ -43,6 +43,8 @@ import {
   ArrowLeft,
   FileText,
 } from "lucide-react";
+import { FaMoneyBill } from "react-icons/fa6";
+
 
 interface Contract {
   id: number;
@@ -274,7 +276,7 @@ const AdminContracts = () => {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-1 text-gray-900 font-medium">
-                            <DollarSign className="h-4 w-4" />
+                            <FaMoneyBill className="h-4 w-4" />
                             <span>{contract.agreed_amount.toFixed(2)}</span>
                           </div>
                         </td>

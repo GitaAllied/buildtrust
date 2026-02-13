@@ -12,6 +12,8 @@ import SignoutModal from "@/components/ui/signoutModal";
 import DeveloperSidebar from "@/components/DeveloperSidebar";
 import { useDispatch, useSelector } from "react-redux";
 import { openDeveloperSidebar, openSignoutModal } from "@/redux/action";
+import { FaMoneyBill } from "react-icons/fa6";
+
 
 const ProjectRequests = () => {
   const navigate = useNavigate();
@@ -31,7 +33,7 @@ const ProjectRequests = () => {
       description:
         "Looking for an experienced developer to build a modern 4-bedroom duplex with contemporary finishes.",
       avatar:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
+        "https://placehold.net/building.svg",
     },
     {
       id: 2,
@@ -44,7 +46,7 @@ const ProjectRequests = () => {
       description:
         "Complete renovation of a 3-bedroom bungalow including kitchen and bathroom upgrades.",
       avatar:
-        "https://images.unsplash.com/photo-1494790108755-2616b612b5bc?w=100&h=100&fit=crop",
+        "https://placehold.net/building.svg",
     },
     {
       id: 3,
@@ -57,7 +59,7 @@ const ProjectRequests = () => {
       description:
         "Construction of a 3-story commercial building for office and retail spaces.",
       avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+        "https://placehold.net/building.svg",
     },
   ];
 
@@ -107,7 +109,7 @@ const ProjectRequests = () => {
         </div>
 
         <div className="p-3 sm:p-4 md:p-6">
-          <div className="space-y-3 sm:space-y-4 md:space-y-6">
+          <div className="grid md:grid-cols-2 md:gap-5">
             {requests.map((request) => (
               <Card key={request.id} className=" transition-shadow">
                 <CardContent className="p-3 sm:p-4 md:p-6">
@@ -122,19 +124,19 @@ const ProjectRequests = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-xs sm:text-sm md:text-base text-center md:text-left mb-1 truncate">
+                      <h3 className="font-semibold text-xs sm:text-sm md:text-base text-center md:text-left truncate">
                         {request.project}
                       </h3>
-                      <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600 mb-2 flex-wrap">
-                        <User className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                        <span className="truncate">{request.client}</span>
-                        <Badge variant="outline" className="text-xs">
+                      <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-600 flex-wrap">
+                        <User className="h-2 w-2 sm:h-3 sm:w-3 flex-shrink-0" />
+                        <span className="truncate text-xs">{request.client}</span>
+                        <Badge variant="outline" className="text-[10px] text-gray-600">
                           {request.received}
                         </Badge>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm sm:text-base md:text-lg font-semibold text-green-600">
+                      <p className="text-sm sm:text-base md:text-lg font-bold text-green-600">
                         {request.budget}
                       </p>
                     </div>
@@ -147,14 +149,14 @@ const ProjectRequests = () => {
                   <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-xs sm:text-sm">
                     <div className="flex justify-center items-center gap-1">
                       <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                      <span className="truncate">{request.location}</span>
+                      <span className="truncate text-xs">{request.location}</span>
                     </div>
                     <div className="flex items-center justify-center gap-1">
                       <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                      <span className="truncate">{request.timeline}</span>
+                      <span className="truncate text-xs">{request.timeline}</span>
                     </div>
                     <div className="flex items-center justify-center gap-1">
-                      <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                      <FaMoneyBill className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
                       <span className="truncate text-xs">{request.budget}</span>
                     </div>
                   </div>
@@ -170,7 +172,7 @@ const ProjectRequests = () => {
                     </Button>
                     <Button
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700 text-xs w-full sm:w-[33%]"
+                      className="bg-green-500 hover:bg-green-400 text-xs w-full sm:w-[33%]"
                     >
                       {/* <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> */}
                       Accept
@@ -178,7 +180,7 @@ const ProjectRequests = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="bg-red-600 hover:bg-red-700 text-xs w-full sm:w-[33%] text-white"
+                      className="bg-red-500 hover:bg-red-400 text-xs w-full sm:w-[33%] text-white hover:text-white"
                     >
                       {/* <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> */}
                       Reject
