@@ -54,6 +54,7 @@ const SuperAdminDashboard = () => {
   ]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const dispatch = useDispatch()
   const isOpen = useSelector((state:any) => state.sidebar.adminSidebar)
     const signOutModal = useSelector((state:any) => state.signout) 
@@ -231,12 +232,16 @@ const SuperAdminDashboard = () => {
                 <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
                   <AvatarImage src="https://placehold.net/avatar-4.svg" />
                   <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
-                    SA
+                    {user?.name
+                      ?.split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase() || "AA"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 md:flex-none">
                   <h1 className="text-base sm:text-lg md:text-2xl font-bold text-[#253E44] truncate">
-                    Welcome back, Super Admin
+                    Welcome back, {user?.name || "Admin"}
                   </h1>
                 </div>
               </div>

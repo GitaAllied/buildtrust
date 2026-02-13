@@ -934,7 +934,7 @@ const BrowseDevelopers = () => {
                           <h1 className=" font-bold text-xl">
                             {dev.name || "Developer"}
                           </h1>
-                          {dev.is_verified && (
+                          {Number(dev.documents_verified) === 1 && (
                             <svg
                               className="w-5 h-5 text-green-600"
                               fill="currentColor"

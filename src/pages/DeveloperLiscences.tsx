@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -17,12 +18,14 @@ import {
   Shield,
   CreditCard,
   HelpCircle,
+  Upload,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import { apiClient } from "@/lib/api";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
 import DeveloperSidebar from "@/components/DeveloperSidebar";
+import DeclinedDocumentAlert from "@/components/DeclinedDocumentAlert";
 import { useDispatch, useSelector } from "react-redux";
 import { openDeveloperSidebar, openSignoutModal } from "@/redux/action";
 
@@ -57,6 +60,9 @@ const DeveloperLiscences = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [declinedDocument, setDeclinedDocument] = useState<any | null>(null);
+  const [selectedDocumentForReupload, setSelectedDocumentForReupload] = useState<any | null>(null);
+  const [reuploadingDocId, setReuploadingDocId] = useState<number | null>(null);
 
   // Load account data on mount
   useEffect(() => {
@@ -106,9 +112,16 @@ const DeveloperLiscences = () => {
           website: fullUserData.website || "",
         });
         // Populate documents array (license, id, etc.)
-        setDocuments(
-          fullUserData.documents || fullUserData.user_documents || [],
-        );
+        const docs = fullUserData.documents || fullUserData.user_documents || [];
+        setDocuments(docs);
+        
+        // Check if any documents have been declined (verified = 2)
+        const declinedDocs = docs.filter((d: any) => d.verified === 2);
+        if (declinedDocs.length > 0) {
+          setDeclinedDocument(declinedDocs[0]);
+        } else {
+          setDeclinedDocument(null);
+        }
       } catch (error) {
         console.error("Failed to load account data:", error);
         toast({
@@ -523,6 +536,64 @@ const DeveloperLiscences = () => {
                         {saving ? "Saving..." : "Save Changes"}
                       </Button>
                     </div>
+
+                    {/* Documents Status Section */}
+                    <div className="border-t pt-6 mt-6">
+                      <h3 className="text-lg font-semibold mb-4">Document Verification</h3>
+                      {documents && documents.length > 0 ? (
+                        <div className="space-y-3">
+                          {documents.map((doc: any) => (
+                            <div
+                              key={doc.id}
+                              className={`border rounded-lg p-4 flex items-start justify-between ${
+                                doc.verified === 2 ? "bg-red-50 border-red-200" : doc.verified === 1 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"
+                              }`}
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-medium capitalize text-gray-900">
+                                    {doc.type?.replace(/_/g, " ")} Document
+                                  </p>
+                                  {doc.verified === 1 && (
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                                      ✓ Verified
+                                    </span>
+                                  )}
+                                  {doc.verified === 2 && (
+                                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+                                      ✗ Declined
+                                    </span>
+                                  )}
+                                  {doc.verified === null || doc.verified === 0 && (
+                                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
+                                      ⏳ Pending Review
+                                    </span>
+                                  )}
+                                </div>
+                                {doc.verified === 2 && doc.decline_reason && (
+                                  <p className="text-sm text-red-700 mt-2">
+                                    <strong>Reason:</strong> {doc.decline_reason}
+                                  </p>
+                                )}
+                              </div>
+                              {doc.verified === 2 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedDocumentForReupload(doc)}
+                                  className="ml-3 whitespace-nowrap"
+                                >
+                                  <Upload className="h-4 w-4 mr-1" />
+                                  Reupload
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">No documents uploaded yet.</p>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -726,6 +797,17 @@ const DeveloperLiscences = () => {
           </div>
         </div>
       </div>
+
+      {/* Global Declined Document Alert */}
+      <DeclinedDocumentAlert
+        declinedDocument={declinedDocument}
+        currentUserId={user?.id}
+        onDocumentReuploaded={() => {
+          refreshUser().catch(() => {});
+        }}
+        onDismiss={() => setDeclinedDocument(null)}
+      />
+
       {signOutModal && (
         <SignoutModal
           isOpen={signOutModal}

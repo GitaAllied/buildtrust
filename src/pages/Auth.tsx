@@ -143,9 +143,9 @@ export default function Auth() {
         timestamp: new Date().toISOString()
       });
 
-      // Admin users go to admin dashboard
-      if (userFromResponse && userFromResponse.role === "admin") {
-        console.log('👨‍💼 REDIRECTING ADMIN TO DASHBOARD');
+      // Admin and Sub-Admin users go to admin dashboard
+      if (userFromResponse && (userFromResponse.role === "admin" || userFromResponse.role === "sub_admin")) {
+        console.log('👨‍💼 REDIRECTING ADMIN/SUB-ADMIN TO DASHBOARD');
         navigate("/super-admin-dashboard");
         return;
       }

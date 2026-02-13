@@ -7,7 +7,7 @@ export interface User {
   email: string;
   name: string | null;
   is_active?: number;
-  role: 'client' | 'developer' | 'admin';
+  role: 'client' | 'developer' | 'admin' | 'sub_admin';
   bio?: string | null;
   phone?: string | null;
   location?: string | null;
@@ -20,6 +20,7 @@ export interface User {
   completed_projects?: number | null;
   rating?: number | null;
   total_reviews?: number | null;
+  trust_score?: number | null;
   setup_completed?: boolean;
   created_at?: string;
   email_verified?: boolean;
@@ -871,6 +872,26 @@ class ApiClient {
   async getSavedDevelopers() {
     return this.request('/developers/saved', {
       method: 'GET',
+    });
+  }
+
+  // User Documents API
+  async getUserDocuments(userId: number | string) {
+    return this.request(`/users/${userId}/documents`, {
+      method: 'GET',
+    });
+  }
+
+  async approveUserDocument(userId: number | string, documentId: number) {
+    return this.request(`/users/${userId}/documents/${documentId}/approve`, {
+      method: 'POST',
+    });
+  }
+
+  async declineUserDocument(userId: number | string, documentId: number, data: { reason: string }) {
+    return this.request(`/users/${userId}/documents/${documentId}/decline`, {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 }
