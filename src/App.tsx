@@ -72,6 +72,28 @@ const App = () => (
           <Route path="/browse" element={<BrowseDevelopers />} />
           <Route path="/developer/:id" element={<DeveloperProfile />} />
 
+          {/* Setup Routes - require email verification */}
+          <Route
+            path="/developer-setup"
+            element={
+              <EmailVerificationGuard>
+                <ProtectedRoute requiredRole="developer">
+                  <PortfolioSetup onExit={() => {}} />
+                </ProtectedRoute>
+              </EmailVerificationGuard>
+            }
+          />
+          <Route
+            path="/client-setup"
+            element={
+              <EmailVerificationGuard>
+                <ProtectedRoute requiredRole="client">
+                  <ClientSetup onExit={() => {}} />
+                </ProtectedRoute>
+              </EmailVerificationGuard>
+            }
+          />
+
           {/* Protected Routes - require email verification and role-based access */}
           <Route
             path="/client-dashboard"
