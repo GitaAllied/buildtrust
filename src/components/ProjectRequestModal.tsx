@@ -338,8 +338,12 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
     );
   }
 
-  // If the logged-in user is a developer, do not show the request form.
-  if (effectiveRole === 'developer') {
+  // Only show the request form to logged-in clients. For other roles or unauthenticated users,
+  // display an informative dialog explaining the restriction or prompting to log in.
+  if (effectiveRole !== 'client') {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const isAuthenticated = !!token;
+
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md">
@@ -350,19 +354,27 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Action not available for developer accounts</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Project requests are for clients only</h3>
               <p className="text-sm text-gray-700 mb-3">
-                Our platform restricts project requests to developers. To request a build, please sign in using a client account
-                or create a client profile. If you believe this is an error or need assistance converting your account,
-                contact our support team and we'll help you through the process.
+                {isAuthenticated ? (
+                  "Only client accounts can send project requests. Please switch to a client account or contact support for assistance."
+                ) : (
+                  "Please log in with a client account to send a project request."
+                )}
               </p>
               <div className="flex space-x-3">
                 <Button type="button" variant="outline" onClick={handleClose}>
                   Close
                 </Button>
-                <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={() => navigate('/support')}>
-                  Contact Support
-                </Button>
+                {!isAuthenticated ? (
+                  <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={() => navigate('/')}>
+                    Log In
+                  </Button>
+                ) : (
+                  <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={() => navigate('/support')}>
+                    Contact Support
+                  </Button>
+                )}
               </div>
             </div>
           </div>
