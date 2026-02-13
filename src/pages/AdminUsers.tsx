@@ -79,6 +79,7 @@ const AdminUsers = () => {
   const dispatch = useDispatch();
   const isOpen = useSelector((state: any) => state.sidebar.adminSidebar);
   const signOutModal = useSelector((state: any) => state.signout);
+  const { user: currentUser } = useAuth();
 
   const { toast } = useToast();
 
@@ -166,19 +167,44 @@ const AdminUsers = () => {
         : response.users || [];
       // Map to display format, filter out admin users, and sort in descending order (newest first)
       const mappedUsers = usersList
-        .filter((user: any) => user.role !== "admin") // Exclude admin/sub-admin users
+        .filter((user: any) => {
+          // Exclude admin users always
+          if (user.role === "admin") return false;
+          // If current user is sub_admin, also exclude sub_admin users
+          if (currentUser?.role === "sub_admin" && user.role === "sub_admin") return false;
+          return true;
+        })
         .map((user: any) => {
-          // Determine status based on is_active first, then email/setup verification
-          let status = "Pending";
+          // Determine status based on user role
+          let status = "Active";
+          
+          // Check if suspended first (applies to all)
           if (user.is_active === false || user.is_active === 0) {
             status = "Suspended";
-          } else if (!user.email_verified || user.email_verified === 0) {
-            status = "Pending";
-          } else if (
-            user.setup_completed === 1 ||
-            user.setup_completed === true
+          }
+          // Check if email is verified (applies to all)
+          else if (!user.email_verified || user.email_verified === 0) {
+            status = "Pending Email";
+          }
+          // Check if setup is completed (applies to all)
+          else if (
+            user.setup_completed === 0 ||
+            user.setup_completed === false
           ) {
-            status = "Verified";
+            status = "Pending Setup";
+          }
+          // For Developers: require document approval for verified status
+          else if (user.role?.toLowerCase() === "developer") {
+            const docsVerified = Number(user.documents_verified);
+            if (docsVerified !== 1) {
+              status = "Awaiting Approval";
+            } else {
+              status = "Verified";
+            }
+          }
+          // For Clients: show Active if setup is completed
+          else {
+            status = "Active";
           }
 
           return {
@@ -416,7 +442,10 @@ const AdminUsers = () => {
   const getStatusBadge = (status: string) => {
     const variants = {
       Verified: "default",
-      Pending: "secondary",
+      Active: "secondary",
+      "Pending Email": "secondary",
+      "Pending Setup": "secondary",
+      "Awaiting Approval": "secondary",
       Suspended: "destructive",
     } as const;
     return (
@@ -622,7 +651,10 @@ const AdminUsers = () => {
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="verified">Verified</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="pending email">Pending Email</SelectItem>
+                  <SelectItem value="pending setup">Pending Setup</SelectItem>
+                  <SelectItem value="awaiting approval">Awaiting Approval</SelectItem>
                   <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>

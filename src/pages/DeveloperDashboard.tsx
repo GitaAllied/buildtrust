@@ -7,13 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Star,
   Upload,
@@ -23,71 +26,66 @@ import {
   X,
   Camera,
   TrendingUp,
+  Award,
   DollarSign,
   Menu,
   Bell,
   Image,
   Video,
+  AlertCircle,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
+import {
+  FaBriefcase,
+  FaDoorOpen,
+  FaDownload,
+  FaGear,
+  FaMessage,
+  FaMoneyBill,
+  FaUpload,
+  FaUser,
+} from "react-icons/fa6";
 import { Link } from "react-router-dom";
-import SignoutModal from "@/components/ui/signoutModal";
-import DeveloperSidebar from "@/components/DeveloperSidebar";
-import { useDispatch, useSelector } from "react-redux";
-import { openDeveloperSidebar, openSignoutModal } from "@/redux/action";
+import { apiClient } from "@/lib/api";
+import DeclinedDocumentAlert from "@/components/DeclinedDocumentAlert";
 
 const DeveloperDashboard = () => {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [messagesUnreadCount, setMessagesUnreadCount] = useState(0);
+  const [declinedDocuments, setDeclinedDocuments] = useState<any[]>([]);
+  const [selectedDeclinedDocument, setSelectedDeclinedDocument] = useState<any | null>(null);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
+  const { user, signOut, loading } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const sidebarItems = [
     {
-      id: 1,
-      title: "Project Update",
-      message: "Foundation work completed on Modern Duplex",
-      time: "2 hours ago",
-      unread: true,
+      id: "dashboard",
+      label: "Dashboard",
+      icon: <FaUser />,
+      active: true,
     },
-    {
-      id: 2,
-      title: "Payment Reminder",
-      message: "Milestone payment due for Commercial Plaza",
-      time: "1 day ago",
-      unread: true,
-    },
-    {
-      id: 3,
-      title: "New Message",
-      message: "Engr. Adewale sent you a message",
-      time: "3 days ago",
-      unread: false,
-    },
-    {
-      id: 4,
-      title: "Project Update",
-      message: "Foundation work completed on Modern Duplex",
-      time: "2 hours ago",
-      unread: true,
-    },
-    {
-      id: 5,
-      title: "Payment Reminder",
-      message: "Milestone payment due for Commercial Plaza",
-      time: "1 day ago",
-      unread: false,
-    },
-    {
-      id: 6,
-      title: "New Message",
-      message: "Engr. Adewale sent you a message",
-      time: "3 days ago",
-      unread: false,
-    },
-  ]);
-  const dispatch = useDispatch();
-  const isOpen = useSelector((state: any) => state.sidebar.developerSidebar);
-  const signOutModal = useSelector((state: any) => state.signout);
+    { id: "requests", label: "Project Requests", icon: <FaDownload /> },
+    { id: "projects", label: "Active Projects", icon: <FaBriefcase /> },
+    { id: "upload", label: "Upload Update", icon: <FaUpload /> },
+    { id: "messages", label: "Messages", icon: <FaMessage /> },
+    { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
+    { id: "profile", label: "Licenses & Profile", icon: <FaUser /> },
+    { id: "support", label: "Support", icon: <FaGear /> },
+    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
+  ];
 
   const projectRequests = [
     {
@@ -158,6 +156,41 @@ const DeveloperDashboard = () => {
     },
   ];
 
+  const handleNavigation = (itemId: string) => {
+    switch (itemId) {
+      case "dashboard":
+        setActiveTab(itemId);
+        navigate("/developer-dashboard");
+        break;
+      case "requests":
+        navigate("/project-requests");
+        break;
+      case "projects":
+        navigate("/active-projects");
+        break;
+      case "upload":
+        navigate("/upload-update");
+        break;
+      case "messages":
+        navigate("/developer-messages");
+        break;
+      case "payments":
+        navigate("/developer-payments");
+        break;
+      case "profile":
+        navigate("/developer-liscences");
+        break;
+      case "support":
+        navigate("/support");
+        break;
+      case "logout":
+        handleLogout();
+        break;
+      default:
+        navigate("/browse");
+    }
+  };
+
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<{ url: string; type: string }[]>([]);
 
@@ -200,26 +233,81 @@ const DeveloperDashboard = () => {
   useEffect(() => {
     if (loading) return; // wait until auth state resolved
 
-    // if (!user) {
-    //   navigate('/', {
-    //     state: {
-    //       message: 'Please log in to access the developer dashboard',
-    //       messageType: 'info',
-    //     },
-    //   });
-    //   return;
-    // }
+    if (!user) {
+      navigate('/', {
+        state: {
+          message: 'Please log in to access the developer dashboard',
+          messageType: 'info',
+        },
+      });
+      return;
+    }
 
-    // if (user.role !== 'developer') {
-    //   navigate('/', {
-    //     state: {
-    //       message:
-    //         'The developer dashboard is available to developer accounts only. Please sign in with a developer account or contact support for assistance.',
-    //       messageType: 'info',
-    //     },
-    //   });
-    // }
+    if (user.role !== 'developer') {
+      navigate('/', {
+        state: {
+          message:
+            'The developer dashboard is available to developer accounts only. Please sign in with a developer account or contact support for assistance.',
+          messageType: 'info',
+        },
+      });
+    }
   }, [user, loading, navigate]);
+
+  // Fetch unread message count and declined documents
+  useEffect(() => {
+    if (!user || loading) return;
+
+    const fetchUnreadMessages = async () => {
+      try {
+        const conversations = await apiClient.getConversations();
+        let totalUnread = 0;
+        if (Array.isArray(conversations)) {
+          totalUnread = conversations.reduce((sum: number, conv: any) => {
+            return sum + (conv.unread_count || conv.unreadCount || 0);
+          }, 0);
+        }
+
+        setMessagesUnreadCount(totalUnread);
+      } catch (error) {
+        console.error('Failed to fetch unread messages:', error);
+      }
+    };
+
+    fetchUnreadMessages();
+  }, [user, loading]);
+
+  // keep combined unread count in sync with messages + declined documents
+  useEffect(() => {
+    setUnreadCount((messagesUnreadCount || 0) + (declinedDocuments?.length || 0));
+  }, [messagesUnreadCount, declinedDocuments]);
+
+  // Fetch user documents and check for declined ones
+  useEffect(() => {
+    if (!user || loading) return;
+
+    const fetchDeclinedDocuments = async () => {
+      try {
+        const res = await apiClient.getUserDocuments(user.id);
+        console.log('Debug: getUserDocuments response:', res);
+        // API may return either an array or an object like { documents: [...] }
+        const userDocuments = Array.isArray(res) ? res : res?.documents || [];
+        const declined = (userDocuments || []).filter((doc: any) => doc.verified === 2);
+        console.log('Debug: declined documents found:', declined);
+        setDeclinedDocuments(declined || []);
+
+        // optionally auto-open the first declined document alert
+        if (declined && declined.length > 0) {
+          setSelectedDeclinedDocument(declined[0]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch documents:', error);
+        setDeclinedDocuments([]);
+      }
+    };
+
+    fetchDeclinedDocuments();
+  }, [user, loading]);
 
   // Show spinner while auth is being refreshed
   if (loading) {
@@ -232,14 +320,7 @@ const DeveloperDashboard = () => {
             fill="none"
             viewBox="0 0 24 24"
           >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path
               className="opacity-75"
               fill="currentColor"
@@ -257,15 +338,13 @@ const DeveloperDashboard = () => {
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-white/20 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 w-[20%]">
-          <Link to={"/"}>
-            <img src={Logo} alt="" />
-          </Link>
+          <Link to={'/'}><img src={Logo} alt="" /></Link>
         </div>
         <button
-          onClick={() => dispatch(openDeveloperSidebar(!isOpen))}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
           className="p-1.5 sm:p-2 hover:bg-[#226F75]/10 rounded-lg transition-colors"
         >
-          {isOpen ? (
+          {sidebarOpen ? (
             <X className="h-5 w-5 text-[#226F75]" />
           ) : (
             <Menu className="h-5 w-5 text-[#226F75]" />
@@ -274,7 +353,39 @@ const DeveloperDashboard = () => {
       </div>
 
       {/* Sidebar */}
-      <DeveloperSidebar active={"dashboard"} />
+      <div
+        className={`${
+          sidebarOpen ? "block" : "hidden"
+        } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
+      >
+        <div className="p-4 sm:p-6 border-b border-white/20 hidden md:block">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full"
+          >
+            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
+          </button>
+        </div>
+        <nav className="p-3 sm:p-4 space-y-1">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                handleNavigation(item.id);
+                setSidebarOpen(false);
+              }}
+              className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
+                activeTab === item.id
+                  ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
+                  : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
+              }`}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 w-full md:pl-64">
@@ -283,7 +394,7 @@ const DeveloperDashboard = () => {
           <div className="flex sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
               <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
-                <AvatarImage src="https://placehold.net/avatar-4.svg" />
+                <AvatarImage src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop" />
                 <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
                   EA
                 </AvatarFallback>
@@ -297,103 +408,107 @@ const DeveloperDashboard = () => {
                     Trust Score:
                   </span>
                   <span className="text-xs sm:text-sm font-medium text-[#226F75]">
-                    92%
+                    {typeof user?.trust_score === 'number' ? `${user.trust_score}%` : user?.trust_score || "N/A"}
                   </span>
                 </div>
               </div>
             </div>
-            <Popover
-              open={notificationsOpen}
-              onOpenChange={setNotificationsOpen}
-            >
-              <PopoverTrigger asChild>
+            <DropdownMenu open={notificationOpen} onOpenChange={setNotificationOpen}>
+              <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="relative flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 hover:bg-[#226F75]/10"
                 >
                   <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
-                    {notifications.filter((n) => n.unread).length}
-                  </Badge>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-screen h-screen sm:w-80 sm:h-auto p-0 mt-2"
-                side="bottom"
-                align="end"
-              >
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="font-semibold text-[#253E44]">
-                    Notifications
-                  </h3>
-                </div>
-                <div className="max-h-80 overflow-y-auto">
-                  {notifications.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">
-                      No notifications
-                    </div>
-                  ) : (
-                    notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                          notification.unread ? "bg-blue-50" : ""
-                        }`}
-                        onClick={() => {
-                          // Mark as read and close dropdown
-                          setNotifications((prev) =>
-                            prev.map((n) =>
-                              n.id === notification.id
-                                ? { ...n, unread: false }
-                                : n,
-                            ),
-                          );
-                          setNotificationsOpen(false);
-                          // Navigate based on notification type
-                          if (notification.title === "New Message") {
-                            navigate("/messages");
-                          } else if (
-                            notification.title === "Payment Reminder"
-                          ) {
-                            navigate("/payments");
-                          } else {
-                            navigate("/projects");
-                          }
-                        }}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0">
-                            {notification.unread && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-[#253E44] truncate">
-                              {notification.title}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {notification.time}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
+                      {unreadCount}
+                    </Badge>
                   )}
-                </div>
-                <div className="p-3 border-t border-gray-200">
-                  <Button
-                    variant="ghost"
-                    className="w-full text-xs text-[#226F75] hover:bg-[#226F75]/10"
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                {/* Declined document notifications */}
+                {declinedDocuments && declinedDocuments.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="px-3 text-xs text-gray-500 font-medium">Account Alerts</div>
+                    {declinedDocuments.map((doc) => (
+                      <DropdownMenuItem
+                        key={doc.id}
+                        onClick={() => {
+                          setNotificationOpen(false);
+                          setSelectedDeclinedDocument(doc);
+                        }}
+                        className="flex items-start gap-3 p-3 cursor-pointer hover:bg-red-50"
+                      >
+                        <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-900">
+                            {doc.type ? `${doc.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}` : 'Document'} Declined
+                          </p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {doc.decline_reason ? doc.decline_reason : `${doc.type?.replace(/_/g, ' ')} requires reupload`}
+                          </p>
+                        </div>
+                        <Badge className="bg-red-100 text-red-700 text-xs">Action required</Badge>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                  </div>
+                )}
+
+                {/* Unread messages */}
+                {messagesUnreadCount > 0 && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setNotificationOpen(false);
+                      navigate('/developer-messages');
+                    }}
+                    className="flex items-start gap-3 p-3 cursor-pointer hover:bg-sky-50"
                   >
-                    Mark All As Read
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
+                    <MessageSquare className="h-5 w-5 text-sky-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900">New Messages</p>
+                      <p className="text-xs text-gray-600 mt-1">You have {messagesUnreadCount} unread message{messagesUnreadCount !== 1 ? 's' : ''}.</p>
+                    </div>
+                    <Badge className="bg-sky-100 text-sky-700 text-xs">Messages</Badge>
+                  </DropdownMenuItem>
+                )}
+
+                {/* Fallback when nothing to show */}
+                {declinedDocuments.length === 0 && messagesUnreadCount === 0 && (
+                  <div className="p-4 text-center text-sm text-gray-500">No new notifications</div>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Declined document alert dialog (opens when user selects an item or auto-opened) */}
+            <DeclinedDocumentAlert
+              declinedDocument={selectedDeclinedDocument}
+              currentUserId={user?.id}
+              onDocumentReuploaded={async (updatedDoc?: any) => {
+                // Optimistically remove the reuploaded document from declined list
+                if (updatedDoc && updatedDoc.id) {
+                  setDeclinedDocuments((prev) => prev.filter((d) => d.id !== updatedDoc.id));
+                }
+
+                // also refresh server state in background
+                try {
+                  const refreshed = await apiClient.getUserDocuments(user.id);
+                  const userDocuments = Array.isArray(refreshed) ? refreshed : refreshed?.documents || [];
+                  const declined = (userDocuments || []).filter((doc: any) => doc.verified === 2);
+                  setDeclinedDocuments(declined || []);
+                } catch (err) {
+                  console.error('Failed to refresh documents after reupload', err);
+                }
+
+                setSelectedDeclinedDocument(null);
+              }}
+              onDismiss={() => setSelectedDeclinedDocument(null)}
+            />
           </div>
         </div>
 
@@ -820,12 +935,8 @@ const DeveloperDashboard = () => {
           </div>
         </div>
       </div>
-      {signOutModal && (
-        <SignoutModal
-          isOpen={signOutModal}
-          onClose={() =>dispatch(openSignoutModal(false))}
-        />
-      )}
+
+      {/* Declined documents handled via dropdown-selected alert */}
     </div>
   );
 };

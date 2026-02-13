@@ -1,10 +1,29 @@
 import { useState, useEffect } from "react";
+// Helper to ensure document URLs are absolute
+function getAbsoluteUrl(url: string) {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  // Use backend URL from env or fallback
+  const backend = import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || 'http://localhost:3001';
+  return url.startsWith('/') ? backend + url : backend + '/' + url;
+}
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { apiClient } from "@/lib/api";
 import {
   Shield,
@@ -19,7 +38,11 @@ import {
   XCircle,
   Clock,
   Edit,
-  Loader2
+  Loader2,
+  FileCheck,
+  Download,
+  AlertCircle,
+  Eye
 } from "lucide-react";
 
 interface User {
@@ -30,6 +53,8 @@ interface User {
   status: string;
   phone?: string;
   location?: string;
+  current_state?: string | null;
+  current_country?: string | null;
   joined: string;
   projects: number;
   rating?: number;
@@ -45,9 +70,18 @@ interface User {
 const AdminUserView = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
+  const [selectedDocumentForPreview, setSelectedDocumentForPreview] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   // Mock user data for when API is not connected
   const mockUserData: User = {
@@ -99,6 +133,8 @@ const AdminUserView = () => {
           status: status,
           phone: userData.phone || '-',
           location: userData.location || '-',
+          current_state: userData.current_state || null,
+          current_country: userData.current_country || null,
           joined: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Recently',
           projects: 0,
           rating: 0,
@@ -124,6 +160,7 @@ const AdminUserView = () => {
 
     if (userId) {
       fetchUser();
+      loadDocuments();
     }
   }, [userId]);
 
@@ -144,9 +181,71 @@ const AdminUserView = () => {
     const variants = {
       "Verified": "default",
       "Pending": "secondary",
-      "Suspended": "destructive"
+      "Suspended": "destructive",
+      "Active": "secondary",
+      "Awaiting Approval": "secondary",
+      "Pending Email": "secondary",
+      "Pending Setup": "secondary"
     } as const;
     return <Badge variant={variants[status as keyof typeof variants] || "outline"}>{status}</Badge>;
+  };
+
+  const handleApproveDocument = async (documentId: number) => {
+    if (!userId) return;
+    try {
+      setIsSubmitting(true);
+      await apiClient.approveUserDocument(userId, documentId);
+      toast({
+        title: "Success",
+        description: "Document approved successfully",
+      });
+      loadDocuments();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve document",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeclineDocument = async () => {
+    if (!userId || !selectedDocumentId || !declineReason.trim()) return;
+    try {
+      setIsSubmitting(true);
+      await apiClient.declineUserDocument(userId, selectedDocumentId, {
+        reason: declineReason,
+      });
+      toast({
+        title: "Success",
+        description: "Document declined and user notified",
+      });
+      setShowDeclineDialog(false);
+      setDeclineReason("");
+      setSelectedDocumentId(null);
+      loadDocuments();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to decline document",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const loadDocuments = async () => {
+    if (!userId) return;
+    try {
+      const docs = await apiClient.getUserDocuments(userId);
+      setDocuments(Array.isArray(docs) ? docs : docs?.documents || []);
+    } catch (error) {
+      console.error("Failed to load documents:", error);
+      setDocuments([]);
+    }
   };
 
   if (loading) {
@@ -299,6 +398,118 @@ const AdminUserView = () => {
               </CardContent>
             </Card>
 
+            {/* Developer Documents Card - Only show for Developers */}
+            {user?.role?.toLowerCase() === "developer" && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <FileCheck className="h-5 w-5" />
+                      Documents & Verification
+                    </CardTitle>
+                    <Badge variant={documents && documents.length > 0 ? (documents.some((d: any) => !d.verified) ? "secondary" : "default") : "outline"}>
+                      {documents && documents.length > 0
+                        ? `${documents.filter((d: any) => d.verified).length}/${documents.length} Verified`
+                        : "No documents"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {documents && documents.length > 0 ? (
+                    <div className="space-y-4">
+                      {documents.map((doc: any) => (
+                        <div
+                          key={doc.id}
+                          className="border rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-sm capitalize">
+                                {doc.type?.replace(/_/g, " ") || "Document"}
+                              </h4>
+                              {doc.verified ? (
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-orange-600" />
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-600">
+                              Uploaded:{" "}
+                              {new Date(doc.created_at).toLocaleDateString()}
+                            </p>
+                            {doc.verified === 2 && doc.decline_reason && (
+                              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
+                                <p className="text-xs font-medium text-red-900">Declined - Reason:</p>
+                                <p className="text-xs text-red-800">{doc.decline_reason}</p>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                            {(doc.verified === null || doc.verified === 0) && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleApproveDocument(doc.id)}
+                                  disabled={isSubmitting}
+                                  className="bg-green-600 hover:bg-green-700 text-xs"
+                                >
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => {
+                                    setSelectedDocumentId(doc.id);
+                                    setShowDeclineDialog(true);
+                                  }}
+                                  disabled={isSubmitting}
+                                  className="text-xs"
+                                >
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Decline
+                                </Button>
+                              </>
+                            )}
+                            {doc.verified === 1 && (
+                              <Badge className="bg-green-100 text-green-800 text-xs">
+                                Verified
+                              </Badge>
+                            )}
+                            {doc.verified === 2 && (
+                              <Badge className="bg-red-100 text-red-800 text-xs">
+                                Declined
+                              </Badge>
+                            )}
+                            {doc.url && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedDocumentForPreview(doc);
+                                  setShowPreviewDialog(true);
+                                }}
+                                className="text-xs"
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Preview
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <FileCheck className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">No documents submitted yet</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Activity & Timeline Card */}
             <Card>
               <CardHeader>
@@ -383,6 +594,9 @@ const AdminUserView = () => {
                     <div>
                       <p className="text-sm font-medium">Location</p>
                       <p className="text-sm text-gray-600">{user?.location}</p>
+                      { (user?.current_state || user?.current_country) && (
+                        <p className="text-xs text-gray-400">{[user?.current_state, user?.current_country].filter(Boolean).join(', ')}</p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -450,6 +664,214 @@ const AdminUserView = () => {
           </div>
         </div>
       </div>
+
+      {/* Document Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={(open) => {
+        setShowPreviewDialog(open);
+        if (!open) {
+          setPreviewError(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-4xl max-w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCheck className="h-5 w-5" />
+              Document Preview - {selectedDocumentForPreview?.type?.replace(/_/g, " ")}
+            </DialogTitle>
+            <DialogDescription>
+              Review the document below before approving or declining
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedDocumentForPreview && (
+            <div className="grid gap-4 py-4">
+              {/* Document Content */}
+              <div className="border rounded-lg p-4 bg-gray-50 flex items-center justify-center min-h-[400px]">
+                {selectedDocumentForPreview.url ? (
+                  previewError ? (
+                    <div className="text-center">
+                      <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-2" />
+                      <p className="text-sm text-red-600 mb-2">{previewError}</p>
+                      <p className="text-xs text-gray-600 mb-3">URL: {getAbsoluteUrl(selectedDocumentForPreview.url)}</p>
+                      <Button
+                        size="sm"
+                        asChild
+                      >
+                        <a href={getAbsoluteUrl(selectedDocumentForPreview.url)} target="_blank" rel="noopener noreferrer">
+                          Open in new tab →
+                        </a>
+                      </Button>
+                    </div>
+                  ) : selectedDocumentForPreview.url.toLowerCase().endsWith('.pdf') ? (
+                    <iframe
+                      src={getAbsoluteUrl(selectedDocumentForPreview.url)}
+                      className="w-full h-full min-h-[500px]"
+                      title="Document Preview"
+                      onError={() => setPreviewError("Failed to load PDF")}
+                    />
+                  ) : (
+                    <img
+                      src={getAbsoluteUrl(selectedDocumentForPreview.url)}
+                      alt={selectedDocumentForPreview.type}
+                      className="max-w-full max-h-[500px] object-contain"
+                      onError={() => setPreviewError("Failed to load image")}
+                      onLoad={() => setPreviewError(null)}
+                    />
+                  )
+                ) : (
+                  <p className="text-gray-500">No document URL available</p>
+                )}
+              </div>
+
+              {/* Document Info */}
+              <div className="grid grid-cols-2 gap-4 bg-blue-50 p-3 rounded-lg text-sm">
+                <div>
+                  <p className="text-gray-600">Document Type</p>
+                  <p className="font-semibold capitalize">{selectedDocumentForPreview.type?.replace(/_/g, " ")}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Uploaded</p>
+                  <p className="font-semibold">{new Date(selectedDocumentForPreview.created_at).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">File Size</p>
+                  <p className="font-semibold">{(selectedDocumentForPreview.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Status</p>
+                  <p className="font-semibold">
+                    {selectedDocumentForPreview.verified === 1 && "✓ Verified"}
+                    {selectedDocumentForPreview.verified === 2 && "✗ Declined"}
+                    {(selectedDocumentForPreview.verified === null || selectedDocumentForPreview.verified === 0) && "⏳ Pending"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Show decline reason if document was declined */}
+              {selectedDocumentForPreview.verified === 2 && selectedDocumentForPreview.decline_reason && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm font-medium text-red-900">Document Declined - Reason:</p>
+                  <p className="text-sm text-red-800 mt-1">{selectedDocumentForPreview.decline_reason}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 flex flex-wrap justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowPreviewDialog(false);
+                setSelectedDocumentForPreview(null);
+              }}
+              disabled={isSubmitting}
+              size="sm"
+            >
+              Close
+            </Button>
+            {selectedDocumentForPreview?.url && (
+              <Button
+                variant="outline"
+                asChild
+                size="sm"
+              >
+                <a href={selectedDocumentForPreview.url} target="_blank" rel="noopener noreferrer">
+                  <Download className="h-3 w-3 mr-1" />
+                  Download
+                </a>
+              </Button>
+            )}
+            {!selectedDocumentForPreview?.verified && (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => {
+                    setShowPreviewDialog(false);
+                    setSelectedDocumentId(selectedDocumentForPreview?.id || null);
+                    setShowDeclineDialog(true);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  <XCircle className="h-3 w-3 mr-1" />
+                  Decline
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    if (selectedDocumentForPreview?.id) {
+                      handleApproveDocument(selectedDocumentForPreview.id);
+                      setShowPreviewDialog(false);
+                    }
+                  }}
+                  disabled={isSubmitting}
+                >
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Approve Document
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Decline Document Dialog */}
+      <Dialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
+        <DialogContent className="sm:max-w-[425px] max-w-[90vw]">
+          <DialogHeader>
+            <DialogTitle>Decline Document</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for declining this document. The user will be
+              notified with this message.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="reason" className="text-sm">
+                Decline Reason *
+              </Label>
+              <Textarea
+                id="reason"
+                placeholder="Explain why the document was declined (e.g., image quality, missing information, etc.)"
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                className="text-sm"
+                rows={5}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeclineDialog(false);
+                setDeclineReason("");
+                setSelectedDocumentId(null);
+              }}
+              disabled={isSubmitting}
+              size="sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeclineDocument}
+              disabled={isSubmitting || !declineReason.trim()}
+              className="bg-red-600 hover:bg-red-700"
+              size="sm"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Declining...
+                </>
+              ) : (
+                "Decline Document"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

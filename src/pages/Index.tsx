@@ -144,7 +144,7 @@ useEffect(() => {
   // Handle developer setup authentication check
   const handleDeveloperSetup = () => {
     // Admin users shouldn't access setup
-    if (user && user.role === 'admin') {
+    if (user && (user.role === 'admin' || user.role === 'sub_admin')) {
       navigate("/super-admin-dashboard");
       return;
     }
@@ -175,7 +175,7 @@ useEffect(() => {
   // Handle client setup authentication check
   const handleClientSetup = () => {
     // Admin users shouldn't access setup
-    if (user && user.role === 'admin') {
+    if (user && (user.role === 'admin' || user.role === 'sub_admin')) {
       navigate("/super-admin-dashboard");
       return;
     }
@@ -321,7 +321,7 @@ useEffect(() => {
                     Developer Dashboard
                   </Button>
                 )}
-                {user.role === 'admin' && (
+                {(user.role === 'admin' || user.role === 'sub_admin') && (
                   <Button
                     variant="outline"
                     onClick={() => navigate("/super-admin-dashboard")}
@@ -428,7 +428,7 @@ useEffect(() => {
                         Developer Dashboard
                       </Button>
                     )}
-                    {user.role === 'admin' && (
+                    {(user.role === 'admin' || user.role === 'sub_admin') && (
                       <Button
                         variant="outline"
                         onClick={() => {
