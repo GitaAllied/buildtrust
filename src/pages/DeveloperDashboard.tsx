@@ -52,7 +52,6 @@ import SignoutModal from "@/components/ui/signoutModal";
 import DeveloperSidebar from "@/components/DeveloperSidebar";
 import { useDispatch, useSelector } from "react-redux";
 import { openDeveloperSidebar, openSignoutModal } from "@/redux/action";
-import { FaMoneyBill } from "react-icons/fa6";
 
 const DeveloperDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -432,73 +431,63 @@ const DeveloperDashboard = () => {
                     </Badge>
                   )}
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-screen h-screen sm:w-80 sm:h-auto p-0 mt-2"
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-screen sm:w-80 p-0 mt-2"
                 side="bottom"
                 align="end"
               >
                 <div className="p-4 border-b border-gray-200">
-                  <h3 className="font-semibold text-[#253E44]">
-                    Notifications
-                  </h3>
+                  <h3 className="font-semibold text-[#253E44]">Notifications</h3>
                 </div>
                 <div className="max-h-80 overflow-y-auto">
-                  {notifications.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">
-                      No notifications
-                    </div>
+                  {declinedDocuments.length === 0 && messagesUnreadCount === 0 ? (
+                    <div className="p-4 text-center text-gray-500">No notifications</div>
                   ) : (
-                    notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                          notification.unread ? "bg-blue-50" : ""
-                        }`}
-                        onClick={() => {
-                          setNotificationOpen(false);
-                          setSelectedDeclinedDocument(doc);
-                        }}
-                        className="flex items-start gap-3 p-3 cursor-pointer hover:bg-red-50"
-                      >
-                        <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900">
-                            {doc.type ? `${doc.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}` : 'Document'} Declined
-                          </p>
-                          <p className="text-xs text-gray-600 mt-1">
-                            {doc.decline_reason ? doc.decline_reason : `${doc.type?.replace(/_/g, ' ')} requires reupload`}
-                          </p>
-                        </div>
-                        <Badge className="bg-red-100 text-red-700 text-xs">Action required</Badge>
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                  </div>
-                )}
+                    <>
+                      {declinedDocuments.map((doc) => (
+                        <DropdownMenuItem
+                          key={doc.id}
+                          onClick={() => {
+                            setNotificationOpen(false);
+                            setSelectedDeclinedDocument(doc);
+                          }}
+                          className="flex items-start gap-3 p-3 cursor-pointer hover:bg-red-50"
+                        >
+                          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {doc.type ? `${doc.type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}` : 'Document'} Declined
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {doc.decline_reason ? doc.decline_reason : `${(doc.type || 'Document').replace(/_/g, ' ')} requires reupload`}
+                            </p>
+                          </div>
+                          <Badge className="bg-red-100 text-red-700 text-xs">Action required</Badge>
+                        </DropdownMenuItem>
+                      ))}
 
-                {/* Unread messages */}
-                {messagesUnreadCount > 0 && (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setNotificationOpen(false);
-                      navigate('/developer-messages');
-                    }}
-                    className="flex items-start gap-3 p-3 cursor-pointer hover:bg-sky-50"
-                  >
-                    <MessageSquare className="h-5 w-5 text-sky-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-900">New Messages</p>
-                      <p className="text-xs text-gray-600 mt-1">You have {messagesUnreadCount} unread message{messagesUnreadCount !== 1 ? 's' : ''}.</p>
-                    </div>
-                    <Badge className="bg-sky-100 text-sky-700 text-xs">Messages</Badge>
-                  </DropdownMenuItem>
-                )}
+                      {messagesUnreadCount > 0 && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setNotificationOpen(false);
+                            navigate('/developer-messages');
+                          }}
+                          className="flex items-start gap-3 p-3 cursor-pointer hover:bg-sky-50"
+                        >
+                          <MessageSquare className="h-5 w-5 text-sky-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-900">New Messages</p>
+                            <p className="text-xs text-gray-600 mt-1">You have {messagesUnreadCount} unread message{messagesUnreadCount !== 1 ? 's' : ''}.</p>
+                          </div>
+                          <Badge className="bg-sky-100 text-sky-700 text-xs">Messages</Badge>
+                        </DropdownMenuItem>
+                      )}
 
-                {/* Fallback when nothing to show */}
-                {declinedDocuments.length === 0 && messagesUnreadCount === 0 && (
-                  <div className="p-4 text-center text-sm text-gray-500">No new notifications</div>
-                )}
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
             {/* Declined document alert dialog (opens when user selects an item or auto-opened) */}
