@@ -87,6 +87,8 @@ const AdminUserView = () => {
   const [selectedDocumentForPreview, setSelectedDocumentForPreview] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewAttemptUrl, setPreviewAttemptUrl] = useState<string | null>(null);
+  const [previewTriedAlternate, setPreviewTriedAlternate] = useState(false);
 
   // Mock user data for when API is not connected
   const mockUserData: User = {
@@ -492,8 +494,10 @@ const AdminUserView = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  setSelectedDocumentForPreview(doc);
-                                  setShowPreviewDialog(true);
+                                                          setSelectedDocumentForPreview(doc);
+                                                          setPreviewTriedAlternate(false);
+                                                          setPreviewAttemptUrl(null);
+                                                          setShowPreviewDialog(true);
                                 }}
                                 className="text-xs"
                               >
@@ -697,32 +701,55 @@ const AdminUserView = () => {
                     <div className="text-center">
                       <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-2" />
                       <p className="text-sm text-red-600 mb-2">{previewError}</p>
-                      <p className="text-xs text-gray-600 mb-3">URL: {getAbsoluteUrl(selectedDocumentForPreview.url)}</p>
+                      <p className="text-xs text-gray-600 mb-3">URL: {previewAttemptUrl || getAbsoluteUrl(selectedDocumentForPreview.url)}</p>
                       <Button
                         size="sm"
                         asChild
                       >
-                        <a href={getAbsoluteUrl(selectedDocumentForPreview.url)} target="_blank" rel="noopener noreferrer">
+                        <a href={previewAttemptUrl || getAbsoluteUrl(selectedDocumentForPreview.url)} target="_blank" rel="noopener noreferrer">
                           Open in new tab →
                         </a>
                       </Button>
                     </div>
-                  ) : selectedDocumentForPreview.url.toLowerCase().endsWith('.pdf') ? (
+                  ) : (selectedDocumentForPreview.url.toLowerCase().endsWith('.pdf') ? (
                     <iframe
-                      src={getAbsoluteUrl(selectedDocumentForPreview.url)}
+                      src={previewAttemptUrl || getAbsoluteUrl(selectedDocumentForPreview.url)}
                       className="w-full h-full min-h-[500px]"
                       title="Document Preview"
-                      onError={() => setPreviewError("Failed to load PDF")}
+                      onError={() => {
+                        // try alternate URL once before showing error
+                        if (!previewTriedAlternate && selectedDocumentForPreview.url) {
+                          const alt = tryAlternateUrl(selectedDocumentForPreview.url);
+                          if (alt) {
+                            setPreviewTriedAlternate(true);
+                            setPreviewAttemptUrl(getAbsoluteUrl(alt));
+                            setPreviewError(null);
+                            return;
+                          }
+                        }
+                        setPreviewError("Failed to load PDF");
+                      }}
                     />
                   ) : (
                     <img
-                      src={getAbsoluteUrl(selectedDocumentForPreview.url)}
+                      src={previewAttemptUrl || getAbsoluteUrl(selectedDocumentForPreview.url)}
                       alt={selectedDocumentForPreview.type}
                       className="max-w-full max-h-[500px] object-contain"
-                      onError={() => setPreviewError("Failed to load image")}
+                      onError={() => {
+                        if (!previewTriedAlternate && selectedDocumentForPreview.url) {
+                          const alt = tryAlternateUrl(selectedDocumentForPreview.url);
+                          if (alt) {
+                            setPreviewTriedAlternate(true);
+                            setPreviewAttemptUrl(getAbsoluteUrl(alt));
+                            setPreviewError(null);
+                            return;
+                          }
+                        }
+                        setPreviewError("Failed to load image");
+                      }}
                       onLoad={() => setPreviewError(null)}
                     />
-                  )
+                  ))
                 ) : (
                   <p className="text-gray-500">No document URL available</p>
                 )}
@@ -759,6 +786,48 @@ const AdminUserView = () => {
                   <p className="text-sm text-red-800 mt-1">{selectedDocumentForPreview.decline_reason}</p>
                 </div>
               )}
+
+                {/* helper: compute an alternate URL when filenames use legacy prefix */}
+                </DialogContent>
+            </Dialog>
+
+            {/* helper functions for preview URL fallback */}
+            {/* tryAlternateUrl: if path contains '/uploaded_' return '/uploads/<rest>' variant */}
+            function tryAlternateUrl(origUrl: string) {
+              try {
+                // If already absolute, parse and inspect pathname
+                const isAbsolute = /^https?:\/\//i.test(origUrl);
+                let parsed: URL;
+                if (isAbsolute) {
+                  parsed = new URL(origUrl);
+                } else {
+                  const backend = import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || 'http://localhost:3001';
+                  parsed = new URL(origUrl.startsWith('/') ? backend + origUrl : backend + '/' + origUrl);
+                }
+
+                const p = parsed.pathname;
+                if (p.includes('/uploads/')) return null; // already in uploads
+                const uploadedIndex = p.indexOf('/uploaded_');
+                if (uploadedIndex !== -1) {
+                  const rest = p.substring(uploadedIndex + '/uploaded_'.length);
+                  parsed.pathname = '/uploads/' + rest;
+                  return parsed.toString();
+                }
+
+                // If path doesn't include uploads but filename starts with 'uploaded_' at root
+                const segments = p.split('/').filter(Boolean);
+                const last = segments[segments.length - 1] || '';
+                if (last.startsWith('uploaded_')) {
+                  const rest = last.replace(/^uploaded_/, '');
+                  parsed.pathname = '/uploads/' + rest;
+                  return parsed.toString();
+                }
+
+                return null;
+              } catch (e) {
+                return null;
+              }
+            }
             </div>
           )}
 
