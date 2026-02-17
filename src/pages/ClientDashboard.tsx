@@ -153,30 +153,6 @@ const ClientDashboard = () => {
           },
         ]);
 
-        setMessages([
-          {
-            id: 1,
-            developer: "Engr. Adewale",
-            lastMessage: "Foundation work completed ahead of schedule!",
-            time: "1h ago",
-            unread: true,
-          },
-          {
-            id: 2,
-            developer: "Prime Build Ltd",
-            lastMessage: "Site survey documents ready for review",
-            time: "3h ago",
-            unread: false,
-          },
-          {
-            id: 3,
-            developer: "Covenant Builders",
-            lastMessage: "Thank you for choosing our services",
-            time: "2 days ago",
-            unread: false,
-          },
-        ]);
-
         setStats({
           totalInvestment: "₦25.4M",
           completedProjects: 3,
@@ -215,30 +191,6 @@ const ClientDashboard = () => {
             timestamp: "3 days ago",
             image:
               "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=150&h=150&fit=crop",
-          },
-        ]);
-
-        setMessages([
-          {
-            id: 1,
-            developer: "Engr. Adewale",
-            lastMessage: "Foundation work completed ahead of schedule!",
-            time: "1h ago",
-            unread: true,
-          },
-          {
-            id: 2,
-            developer: "Prime Build Ltd",
-            lastMessage: "Site survey documents ready for review",
-            time: "3h ago",
-            unread: false,
-          },
-          {
-            id: 3,
-            developer: "Covenant Builders",
-            lastMessage: "Thank you for choosing our services",
-            time: "2 days ago",
-            unread: false,
           },
         ]);
 
@@ -293,6 +245,35 @@ const ClientDashboard = () => {
     const notificationInterval = setInterval(fetchNotifications, 5 * 60 * 1000);
     
     return () => clearInterval(notificationInterval);
+  }, [user?.id]);
+
+  // Fetch real messages from DB (top 3 within 48 hours)
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const response = await apiClient.getRecentMessages(user.id);
+        
+        if (response && response.messages && Array.isArray(response.messages)) {
+          setMessages(response.messages);
+          console.log('💬 MESSAGES FETCHED:', response.messages.length, 'messages');
+        } else {
+          setMessages([]);
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        // Fallback to empty messages if API fails
+        setMessages([]);
+      }
+    };
+
+    fetchMessages();
+    
+    // Refresh messages every 5 minutes
+    const messagesInterval = setInterval(fetchMessages, 5 * 60 * 1000);
+    
+    return () => clearInterval(messagesInterval);
   }, [user?.id]);
 
   // Protect route: only allow authenticated users with role 'client'
