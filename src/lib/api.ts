@@ -894,6 +894,13 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  // Notifications API
+  async getNotifications(userId: number | string) {
+    return this.request(`/users/${userId}/notifications`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

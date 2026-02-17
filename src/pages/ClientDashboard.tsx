@@ -51,50 +51,8 @@ const ClientDashboard = () => {
     avgRating: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "Project Update",
-      message: "Foundation work completed on Modern Duplex",
-      time: "2 hours ago",
-      unread: true,
-    },
-    {
-      id: 2,
-      title: "Payment Reminder",
-      message: "Milestone payment due for Commercial Plaza",
-      time: "1 day ago",
-      unread: true,
-    },
-    {
-      id: 3,
-      title: "New Message",
-      message: "Engr. Adewale sent you a message",
-      time: "3 days ago",
-      unread: false,
-    },
-    {
-      id: 4,
-      title: "Project Update",
-      message: "Foundation work completed on Modern Duplex",
-      time: "2 hours ago",
-      unread: true,
-    },
-    {
-      id: 5,
-      title: "Payment Reminder",
-      message: "Milestone payment due for Commercial Plaza",
-      time: "1 day ago",
-      unread: false,
-    },
-    {
-      id: 6,
-      title: "New Message",
-      message: "Engr. Adewale sent you a message",
-      time: "3 days ago",
-      unread: false,
-    },
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   // Mock data for testing when API is not connected
   const mockProjects = [
@@ -299,6 +257,43 @@ const ClientDashboard = () => {
       fetchDashboardData();
     }
   }, [user]);
+
+  // Fetch real notifications based on user DB activity
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user?.id) return;
+      
+      try {
+        setNotificationsLoading(true);
+        const response = await apiClient.getNotifications(user.id);
+        
+        if (response && response.notifications) {
+          // Map the notifications to match the expected format
+          const mappedNotifications = response.notifications.map((notif: any, index: number) => ({
+            ...notif,
+            id: notif.id || `notif-${index}`,
+            unread: notif.unread !== false, // default to unread
+          }));
+          
+          setNotifications(mappedNotifications);
+          console.log('📬 NOTIFICATIONS FETCHED:', mappedNotifications.length, 'notifications');
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        // Fallback to empty notifications if API fails
+        setNotifications([]);
+      } finally {
+        setNotificationsLoading(false);
+      }
+    };
+
+    fetchNotifications();
+    
+    // Refresh notifications every 5 minutes
+    const notificationInterval = setInterval(fetchNotifications, 5 * 60 * 1000);
+    
+    return () => clearInterval(notificationInterval);
+  }, [user?.id]);
 
   // Protect route: only allow authenticated users with role 'client'
   useEffect(() => {
