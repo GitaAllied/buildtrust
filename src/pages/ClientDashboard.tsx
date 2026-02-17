@@ -662,6 +662,7 @@ const ClientDashboard = () => {
             {/* Right Column */}
             <div className="space-y-3 sm:space-y-4 md:space-y-6">
               {/* Messages Preview */}
+              {messages.length > 0 && (
               <Card className="border border-white/50 bg-white/80 rounded-2xl shadow-md overflow-hidden">
                 <CardHeader className="pb-3 sm:pb-4 border-b border-white/50 bg-gradient-to-r from-[#226F75]/5 to-[#253E44]/5">
                   <CardTitle className="flex items-center text-sm sm:text-base gap-2 text-[#226F75] font-bold">
@@ -716,6 +717,7 @@ const ClientDashboard = () => {
                   </div>
                 </CardContent>
               </Card>
+              )}
 
               {/* Quick Stats */}
               <Card className="border border-white/50 bg-white/80 rounded-2xl shadow-md">
