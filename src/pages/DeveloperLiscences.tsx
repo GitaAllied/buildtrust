@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -59,10 +59,24 @@ const DeveloperLiscences = () => {
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [profileImageSrc, setProfileImageSrc] = useState<string | null>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [declinedDocument, setDeclinedDocument] = useState<any | null>(null);
   const [selectedDocumentForReupload, setSelectedDocumentForReupload] = useState<any | null>(null);
   const [reuploadingDocId, setReuploadingDocId] = useState<number | null>(null);
+
+  // helper to create full URLs for profile images
+  const constructImageUrl = (imgPath: string | null | undefined): string | null => {
+    if (!imgPath || typeof imgPath !== 'string') return null;
+    if (/^https?:\/\//i.test(imgPath) || /^data:/i.test(imgPath)) {
+      return imgPath;
+    }
+    const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+    const base = apiUrl.toString().replace(/\/api.*$/i, '').replace(/\/$/, '');
+    return imgPath.startsWith('/') ? `${base}${imgPath}` : `${base}/${imgPath}`;
+  };
 
   // Load account data on mount
   useEffect(() => {
@@ -88,6 +102,10 @@ const DeveloperLiscences = () => {
               month: "long",
             })
           : "";
+
+        // set profile image
+        const imgPath = fullUserData.profile_image || fullUserData.profileImage || fullUserData.image;
+        setProfileImageSrc(constructImageUrl(imgPath));
 
         // Format account type from role
         const accountType = fullUserData.role
@@ -216,12 +234,49 @@ const DeveloperLiscences = () => {
                   <CardContent className="space-y-6">
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-20 w-20">
-                        <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" />
+                        {previewUrl ? (
+                          <AvatarImage src={previewUrl} />
+                        ) : profileImageSrc ? (
+                          <AvatarImage src={profileImageSrc} />
+                        ) : (
+                          <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" />
+                        )}
                         <AvatarFallback>DN</AvatarFallback>
                       </Avatar>
-                      <Button variant="outline">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0];
+                          if (!f || !user) return;
+                          setPreviewUrl(URL.createObjectURL(f));
+                          setUploading(true);
+                          try {
+                            await apiClient.uploadProfileImage(user.id, f);
+                            await refreshUser();
+                            try {
+                              const resp = await apiClient.getCurrentUser();
+                              const fu = resp.user || resp;
+                              const img = fu.profile_image || fu.profileImage || fu.image;
+                              if (img) {
+                                const url = constructImageUrl(img);
+                                setProfileImageSrc(url ? `${url}?t=${Date.now()}` : null);
+                              }
+                            } catch (e) {
+                              console.error('Error fetching updated profile:', e);
+                            }
+                          } catch (err) {
+                            console.error(err);
+                          } finally {
+                            setUploading(false);
+                          }
+                        }}
+                      />
+                      <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                         <Camera className="mr-2 h-4 w-4" />
-                        Change Photo
+                        {uploading ? 'Uploading...' : 'Change Photo'}
                       </Button>
                     </div>
 

@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: JSX.Element;
-  requiredRole?: 'client' | 'developer' | 'admin' | 'sub_admin';
+  requiredRole?: 'client' | 'developer' | 'admin' | 'sub_admin' | ('client' | 'developer' | 'admin' | 'sub_admin')[];
 }
 
 type UserRole = 'client' | 'developer' | 'admin' | 'sub_admin';
@@ -37,15 +37,23 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
 
   // Check role if required
   if (requiredRole) {
-    // For admin routes, allow both admin and sub_admin roles
-    if (requiredRole === 'admin') {
+    // Handle array of allowed roles
+    if (Array.isArray(requiredRole)) {
+      if (!requiredRole.includes(user.role as UserRole)) {
+        console.warn(`User role '${user.role}' does not match any required role: ${requiredRole.join(', ')}`);
+        return <Navigate to="/" replace />;
+      }
+    }
+    // Handle admin role (allows both admin and sub_admin)
+    else if (requiredRole === 'admin') {
       const isAdminRole = (user.role as UserRole) === 'admin' || (user.role as UserRole) === 'sub_admin';
       if (!isAdminRole) {
         console.warn(`User role '${user.role}' does not have admin privileges`);
         return <Navigate to="/" replace />;
       }
-    } else {
-      // For other roles, require exact match
+    }
+    // Handle single role requirement
+    else {
       if (user.role !== requiredRole) {
         console.warn(`User role '${user.role}' does not match required role '${requiredRole}'`);
         return <Navigate to="/" replace />;

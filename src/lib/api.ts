@@ -901,6 +901,12 @@ class ApiClient {
       method: 'GET',
     });
   }
+
+  async getRecentMessages(userId: number | string) {
+    return this.request(`/users/${userId}/messages/recent`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
