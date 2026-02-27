@@ -59,7 +59,7 @@ const DeveloperSidebar = ({ active }) => {
         navigate("/project-requests");
         break;
       case "projects":
-        navigate("/projects");
+        navigate("/active-projects");
         break;
       case "upload":
         navigate("/upload-update");

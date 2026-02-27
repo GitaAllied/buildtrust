@@ -54,8 +54,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { openDeveloperSidebar, openSignoutModal } from "@/redux/action";
 
 const DeveloperDashboard = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const dispatch = useDispatch();
+  const isOpen = useSelector((state:any) => state.sidebar.developerSidebar);
+  const signOutModal = useSelector((state:any) => state.signout);
+
   const [uploadProgress, setUploadProgress] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const [messagesUnreadCount, setMessagesUnreadCount] = useState(0);
@@ -64,32 +66,6 @@ const DeveloperDashboard = () => {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const navigate = useNavigate();
   const { user, signOut, loading } = useAuth();
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
-
-  const sidebarItems = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: <FaUser />,
-      active: true,
-    },
-    { id: "requests", label: "Project Requests", icon: <FaDownload /> },
-    { id: "projects", label: "Active Projects", icon: <FaBriefcase /> },
-    { id: "upload", label: "Upload Update", icon: <FaUpload /> },
-    { id: "messages", label: "Messages", icon: <FaMessage /> },
-    { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
-    { id: "profile", label: "Licenses & Profile", icon: <FaUser /> },
-    { id: "support", label: "Support", icon: <FaGear /> },
-    { id: "logout", label: "Sign Out", action: "logout", icon: <FaDoorOpen /> },
-  ];
 
   const projectRequests = [
     {
@@ -160,40 +136,6 @@ const DeveloperDashboard = () => {
     },
   ];
 
-  const handleNavigation = (itemId: string) => {
-    switch (itemId) {
-      case "dashboard":
-        setActiveTab(itemId);
-        navigate("/developer-dashboard");
-        break;
-      case "requests":
-        navigate("/project-requests");
-        break;
-      case "projects":
-        navigate("/active-projects");
-        break;
-      case "upload":
-        navigate("/upload-update");
-        break;
-      case "messages":
-        navigate("/developer-messages");
-        break;
-      case "payments":
-        navigate("/developer-payments");
-        break;
-      case "profile":
-        navigate("/developer-liscences");
-        break;
-      case "support":
-        navigate("/support");
-        break;
-      case "logout":
-        handleLogout();
-        break;
-      default:
-        navigate("/browse");
-    }
-  };
 
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<{ url: string; type: string }[]>([]);
@@ -345,10 +287,10 @@ const DeveloperDashboard = () => {
           <Link to={'/'}><img src={Logo} alt="" /></Link>
         </div>
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={() => dispatch(openDeveloperSidebar(!isOpen))}
           className="p-1.5 sm:p-2 hover:bg-[#226F75]/10 rounded-lg transition-colors"
         >
-          {sidebarOpen ? (
+          {isOpen ? (
             <X className="h-5 w-5 text-[#226F75]" />
           ) : (
             <Menu className="h-5 w-5 text-[#226F75]" />
@@ -357,39 +299,7 @@ const DeveloperDashboard = () => {
       </div>
 
       {/* Sidebar */}
-      <div
-        className={`${
-          sidebarOpen ? "block" : "hidden"
-        } md:block md:w-64 bg-white/95 backdrop-blur-sm shadow-lg md:shadow-sm border-r border-white/20 fixed top-14 md:top-0 left-0 right-0 h-[calc(100vh-56px)] md:h-screen z-40 md:z-auto overflow-y-auto`}
-      >
-        <div className="p-4 sm:p-6 border-b border-white/20 hidden md:block">
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full"
-          >
-            <Link to={'/'}><img src={Logo} alt="" className="w-[55%]" /></Link>
-          </button>
-        </div>
-        <nav className="p-3 sm:p-4 space-y-1">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                handleNavigation(item.id);
-                setSidebarOpen(false);
-              }}
-              className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
-                activeTab === item.id
-                  ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
-                  : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <DeveloperSidebar active={"dashboard"} />
 
       {/* Main Content */}
       <div className="flex-1 w-full md:pl-64">
@@ -940,6 +850,13 @@ const DeveloperDashboard = () => {
           </div>
         </div>
       </div>
+
+      {signOutModal && (
+        <SignoutModal
+          isOpen={signOutModal}
+          onClose={() => dispatch(openSignoutModal(false))}
+        />
+      )}
 
       {/* Declined documents handled via dropdown-selected alert */}
     </div>

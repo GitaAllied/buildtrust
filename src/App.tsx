@@ -364,7 +364,7 @@ const App = () => (
             path="/active-projects"
             element={
               <EmailVerificationGuard>
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={['client', 'developer']}>
                   <ActiveProjects />
                 </ProtectedRoute>
               </EmailVerificationGuard>
