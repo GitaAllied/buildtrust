@@ -625,6 +625,14 @@ const AdminProjectDetails = () => {
     }
   };
 
+  // Check if contract signatures are complete (both parties signed)
+  const isSignaturesComplete = (contract: any) => {
+    if (!contract) return false;
+    const clientSigned = contract?.client_signed_at;
+    const developerSigned = contract?.developer_signed_at;
+    return !!(clientSigned && developerSigned);
+  };
+
   // Calculate project progress based on contract signatures and duration
   const calculateProjectProgress = (durationStr: string | null, contract: any) => {
     if (!durationStr || !contract) {
@@ -1062,6 +1070,8 @@ const AdminProjectDetails = () => {
               setIsEditing(!isEditing);
             }}
             className="bg-[#253E44] hover:bg-[#253E44]/90"
+            disabled={!isSignaturesComplete(project?.contract)}
+            title={!isSignaturesComplete(project?.contract) ? "Cannot edit project until both parties have signed the contract" : ""}
           >
             <Edit2 className="h-4 w-4 md:mr-2" />
             <p className=" hidden md:block">{isEditing ? "Cancel" : "Edit"}</p>
@@ -1072,6 +1082,20 @@ const AdminProjectDetails = () => {
       <div className=" px-2 sm:px-3 lg:px-8 py-2 sm:py-3 lg:py-8">
         {!isEditing ? (
           <div className=" px-6 py-8">
+            {/* Show warning if signatures are not complete */}
+            {!isSignaturesComplete(project?.contract) && (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-amber-900">Editing Disabled</h3>
+                  <p className="text-sm text-amber-800 mt-1">
+                    Project details cannot be edited until both the client and developer have signed the contract. 
+                    Current signature status: {project?.contract?.client_signed_at ? "✓ Client" : "○ Client"} • {project?.contract?.developer_signed_at ? "✓ Developer" : "○ Developer"}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Calculate project progress once to avoid multiple calls */}
             {(() => {
               const progress = calculateProjectProgress(project?.duration, project?.contract);

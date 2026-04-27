@@ -23,6 +23,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/lib/api";
+import NotificationsModal from "@/components/NotificationsModal";
 import Logo from "../assets/Logo.png";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
@@ -59,6 +60,7 @@ const getProjectImageSrc = (project: any) => {
 
 const ClientDashboard = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const dispatch = useDispatch();
@@ -479,42 +481,50 @@ const ClientDashboard = () => {
                   </div>
                   <div className="max-h-screen md:max-h-80 overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <div className="p-4 text-center text-gray-500">
-                        No notifications
+                      <div className="p-6 text-center">
+                        <Bell className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500">No notifications yet</p>
                       </div>
                     ) : (
                       notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
+                          className={`p-3 sm:p-4 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors ${
                             notification.unread ? "bg-blue-50" : ""
                           }`}
-                          onClick={() => {
-                            // Mark as read and close dropdown
-                            setNotifications((prev) =>
-                              prev.map((n) =>
-                                n.id === notification.id
-                                  ? { ...n, unread: false }
-                                  : n,
-                              ),
-                            );
+                          onClick={async () => {
+                            // Mark as read
+                            try {
+                              if (notification.unread) {
+                                await apiClient.markNotificationAsRead(notification.id);
+                              }
+                              setNotifications((prev) =>
+                                prev.map((n) =>
+                                  n.id === notification.id
+                                    ? { ...n, unread: false }
+                                    : n,
+                                ),
+                              );
+                            } catch (error) {
+                              console.error('Failed to mark notification as read:', error);
+                            }
                             setNotificationsOpen(false);
                             // Navigate based on notification type
-                            if (notification.title === "New Message") {
-                              navigate("/messages");
-                            } else if (
-                              notification.title === "Payment Reminder"
-                            ) {
-                              navigate("/payments");
+                            if (notification.type === 'project_assignment') {
+                              navigate('/projects');
+                            } else if (notification.type === 'message') {
+                              navigate('/messages');
+                            } else if (notification.type === 'payment') {
+                              navigate('/payments');
                             } else {
-                              navigate("/projects");
+                              navigate('/projects');
                             }
                           }}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 pt-1">
                               {notification.unread && (
-                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -533,16 +543,29 @@ const ClientDashboard = () => {
                       ))
                     )}
                   </div>
-                  <div className="p-3 border-t border-gray-200">
+                  <div className="p-3 border-t border-gray-200 bg-gray-50 flex gap-2">
                     <Button
                       variant="ghost"
-                      className="w-full text-xs text-[#226F75] hover:bg-[#226F75]/10"
+                      className="flex-1 text-xs text-[#226F75] hover:bg-[#226F75]/10"
+                      size="sm"
+                      onClick={() => {
+                        setNotificationsOpen(false);
+                        setNotificationsModalOpen(true);
+                      }}
                     >
-                      Mark All As Read
+                      View All
                     </Button>
                   </div>
                 </PopoverContent>
               </Popover>
+
+              {/* Notifications Modal */}
+              <NotificationsModal
+                isOpen={notificationsModalOpen}
+                onClose={() => setNotificationsModalOpen(false)}
+                notifications={notifications}
+                onNotificationsChange={setNotifications}
+              />
               <Button
                 onClick={() => navigate("/browse")}
                 className="bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-xs sm:text-sm shadow-md hover:shadow-lg transition-all hidden md:block"

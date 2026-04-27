@@ -172,6 +172,12 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
       return;
     }
 
+    // Validate developer ID
+    if (!developerId || developerId <= 0) {
+      setError("Developer selection is invalid. Please refresh the page and try again.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -226,10 +232,15 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
 
         // Redirect after success message is shown (delay for UX)
         setTimeout(() => {
+          // Customize message based on whether developer was assigned
+          const message = response.developerAssigned 
+            ? '✓ Project request submitted! The developer will review and respond within 24 hours.'
+            : '✓ Project request submitted successfully! An admin will review and assign a developer shortly.';
+          
           if (effectiveRole === 'developer') {
-              navigate(`/developer/${developerId}`, {
+            navigate(`/developer/${developerId}`, {
               state: {
-                message: '✓ Project request submitted! The developer will review and respond within 24 hours.',
+                message,
                 messageType: 'success'
               }
             });
@@ -237,7 +248,7 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
             // Redirect clients to the client dashboard
             navigate('/client-dashboard', {
               state: {
-                message: '✓ Project request submitted! The developer will review and respond within 24 hours.',
+                message,
                 messageType: 'success'
               }
             });
@@ -248,20 +259,30 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
         setError(response.error || 'Failed to submit project request');
       }
     } catch (err: any) {
-      const errorMsg = err.message || 'An error occurred while submitting your request';
+      console.error('Project request submission error:', err);
       
-      // Check if it's a login-required error
-      if (err.message?.includes('unauthorized') || err.requireLogin) {
+      let errorMsg = err.message || 'An error occurred while submitting your request';
+      
+      // Check for specific error types from backend
+      if (err.body?.requireLogin || err.message?.includes('unauthorized')) {
+        errorMsg = 'Please log in to submit a project request';
         navigate('/', {
           state: {
-            message: 'Please log in to submit a project request',
+            message: errorMsg,
             messageType: 'info'
           }
         });
         handleClose();
-      } else {
-        setError(errorMsg);
+        setIsLoading(false);
+        return;
+      } else if (err.status === 400) {
+        // Handle general 400 errors with backend message
+        errorMsg = err.body?.error || errorMsg;
+      } else if (err.status === 500) {
+        errorMsg = 'Server error occurred. Please try again later or contact support.';
       }
+      
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }

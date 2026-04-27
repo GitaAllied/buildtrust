@@ -48,6 +48,7 @@ import {
 import { Link } from "react-router-dom";
 import { apiClient } from "@/lib/api";
 import DeclinedDocumentAlert from "@/components/DeclinedDocumentAlert";
+import NotificationsModal from "@/components/NotificationsModal";
 import SignoutModal from "@/components/ui/signoutModal";
 import DeveloperSidebar from "@/components/DeveloperSidebar";
 import { useDispatch, useSelector } from "react-redux";
@@ -85,8 +86,11 @@ const DeveloperDashboard = () => {
   const [declinedDocuments, setDeclinedDocuments] = useState<any[]>([]);
   const [selectedDeclinedDocument, setSelectedDeclinedDocument] = useState<any | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
   const [projectRequests, setProjectRequests] = useState<any[]>([]);
   const [ongoingProjectsData, setOngoingProjectsData] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const navigate = useNavigate();
   const { user, signOut, loading } = useAuth();
 
@@ -368,10 +372,47 @@ const DeveloperDashboard = () => {
     fetchProjects();
   }, [user, loading]);
 
-  // keep combined unread count in sync with messages + declined documents
+  // Fetch notifications from database
   useEffect(() => {
-    setUnreadCount((messagesUnreadCount || 0) + (declinedDocuments?.length || 0));
-  }, [messagesUnreadCount, declinedDocuments]);
+    if (!user?.id || loading) return;
+
+    const fetchNotifications = async () => {
+      try {
+        setNotificationsLoading(true);
+        const response = await apiClient.getNotifications(user.id);
+        
+        if (response && response.notifications) {
+          // Map the notifications to match the expected format
+          const mappedNotifications = response.notifications.map((notif: any, index: number) => ({
+            ...notif,
+            id: notif.id || `notif-${index}`,
+            unread: notif.unread !== false, // default to unread
+          }));
+          
+          setNotifications(mappedNotifications);
+          console.log('📬 NOTIFICATIONS FETCHED:', mappedNotifications.length, 'notifications from database');
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        setNotifications([]);
+      } finally {
+        setNotificationsLoading(false);
+      }
+    };
+
+    fetchNotifications();
+    
+    // Refresh notifications every 5 minutes
+    const notificationInterval = setInterval(fetchNotifications, 5 * 60 * 1000);
+    
+    return () => clearInterval(notificationInterval);
+  }, [user?.id, loading]);
+
+  // keep combined unread count in sync with database notifications + declined documents
+  useEffect(() => {
+    const dbUnreadCount = notifications.filter(n => n.unread).length;
+    setUnreadCount((dbUnreadCount || 0) + (declinedDocuments?.length || 0));
+  }, [notifications, declinedDocuments]);
 
   // Fetch user documents and check for declined ones
   useEffect(() => {
@@ -488,63 +529,129 @@ const DeveloperDashboard = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-screen sm:w-80 p-0 mt-2"
+                className="w-screen sm:w-96 p-0 mt-2"
                 side="bottom"
                 align="end"
               >
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="font-semibold text-[#253E44]">Notifications</h3>
+                <div className="p-4 border-b border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-[#253E44]">Notifications</h3>
+                    <Badge className="bg-[#226F75] text-white text-xs">
+                      {notifications.filter(n => n.unread).length + declinedDocuments.length}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="max-h-80 overflow-y-auto">
-                  {declinedDocuments.length === 0 && messagesUnreadCount === 0 ? (
-                    <div className="p-4 text-center text-gray-500">No notifications</div>
+                <div className="max-h-96 overflow-y-auto">
+                  {notifications.length === 0 && declinedDocuments.length === 0 ? (
+                    <div className="p-6 text-center">
+                      <Bell className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">No notifications yet</p>
+                    </div>
                   ) : (
                     <>
+                      {/* Database Notifications */}
+                      {notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`p-3 sm:p-4 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors ${
+                            notification.unread ? "bg-blue-50" : ""
+                          }`}
+                          onClick={async () => {
+                            // Mark as read
+                            try {
+                              await apiClient.markNotificationAsRead(notification.id);
+                              setNotifications(prev =>
+                                prev.map(n =>
+                                  n.id === notification.id ? { ...n, unread: false } : n
+                                )
+                              );
+                            } catch (error) {
+                              console.error('Failed to mark notification as read:', error);
+                            }
+                            setNotificationOpen(false);
+                            
+                            // Navigate based on notification type
+                            if (notification.type === 'project_request') {
+                              navigate('/project-requests');
+                            } else if (notification.type === 'payment') {
+                              navigate('/developer-payments');
+                            } else if (notification.type === 'message') {
+                              navigate('/developer-messages');
+                            }
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 pt-1">
+                              {notification.unread && (
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm text-[#253E44] truncate">
+                                {notification.title}
+                              </p>
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {notification.time}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Declined Documents */}
                       {declinedDocuments.map((doc) => (
-                        <DropdownMenuItem
-                          key={doc.id}
+                        <div
+                          key={`declined-${doc.id}`}
+                          className="p-3 sm:p-4 border-b border-gray-100 hover:bg-red-50 cursor-pointer transition-colors bg-red-50"
                           onClick={() => {
                             setNotificationOpen(false);
                             setSelectedDeclinedDocument(doc);
                           }}
-                          className="flex items-start gap-3 p-3 cursor-pointer hover:bg-red-50"
                         >
-                          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">
-                              {doc.type ? `${doc.type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}` : 'Document'} Declined
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                              {doc.decline_reason ? doc.decline_reason : `${(doc.type || 'Document').replace(/_/g, ' ')} requires reupload`}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-gray-900">
+                                {doc.type ? `${doc.type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}` : 'Document'} Declined
+                              </p>
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                {doc.decline_reason ? doc.decline_reason : `${(doc.type || 'Document').replace(/_/g, ' ')} requires reupload`}
+                              </p>
+                              <p className="text-xs text-red-500 mt-1">Action required</p>
+                            </div>
                           </div>
-                          <Badge className="bg-red-100 text-red-700 text-xs">Action required</Badge>
-                        </DropdownMenuItem>
+                        </div>
                       ))}
-
-                      {messagesUnreadCount > 0 && (
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setNotificationOpen(false);
-                            navigate('/developer-messages');
-                          }}
-                          className="flex items-start gap-3 p-3 cursor-pointer hover:bg-sky-50"
-                        >
-                          <MessageSquare className="h-5 w-5 text-sky-600 flex-shrink-0 mt-0.5" />
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">New Messages</p>
-                            <p className="text-xs text-gray-600 mt-1">You have {messagesUnreadCount} unread message{messagesUnreadCount !== 1 ? 's' : ''}.</p>
-                          </div>
-                          <Badge className="bg-sky-100 text-sky-700 text-xs">Messages</Badge>
-                        </DropdownMenuItem>
-                      )}
-
-                      <DropdownMenuSeparator />
                     </>
                   )}
                 </div>
+                <div className="p-3 border-t border-gray-200 bg-gray-50">
+                  <Button
+                    variant="ghost"
+                    className="w-full text-xs text-[#226F75] hover:bg-[#226F75]/10"
+                    size="sm"
+                    onClick={() => {
+                      setNotificationOpen(false);
+                      setNotificationsModalOpen(true);
+                    }}
+                  >
+                    View All Notifications
+                  </Button>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Notifications Modal */}
+            <NotificationsModal
+              isOpen={notificationsModalOpen}
+              onClose={() => setNotificationsModalOpen(false)}
+              notifications={notifications}
+              onNotificationsChange={setNotifications}
+            />
+
             {/* Declined document alert dialog (opens when user selects an item or auto-opened) */}
             <DeclinedDocumentAlert
               declinedDocument={selectedDeclinedDocument}

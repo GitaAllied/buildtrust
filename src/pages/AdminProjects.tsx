@@ -296,13 +296,33 @@ const AdminProjects = () => {
       return null;
     }
 
+    // If acceptance_status is null/undefined - developer was selected but not officially assigned yet
+    if (!project.acceptance_status) {
+      return {
+        status: "selected_by_client",
+        label: "👤 Selected by Client",
+        color: "info",
+        tooltip: "Client selected this developer. Admin needs to assign to start 72-hour window"
+      };
+    }
+
     // If acceptance_status is pending - show pending badge
     if (project.acceptance_status === 'pending') {
       return {
         status: "pending_request",
         label: "⏳ Pending Request",
         color: "warning",
-        tooltip: "Awaiting response (72-hour window)"
+        tooltip: "Admin assigned - awaiting developer response (72-hour window)"
+      };
+    }
+
+    // If acceptance_status is rejected - show rejected badge
+    if (project.acceptance_status === 'rejected') {
+      return {
+        status: "rejected_request",
+        label: "❌ Request Rejected",
+        color: "destructive",
+        tooltip: "Developer rejected the project assignment"
       };
     }
 
@@ -312,7 +332,7 @@ const AdminProjects = () => {
         status: "expired_request",
         label: "⏰ Request Expired",
         color: "destructive",
-        tooltip: "Developer did not respond within 72 hours"
+        tooltip: "Developer did not respond within 72 hours - reassign needed"
       };
     }
 
@@ -563,8 +583,10 @@ const AdminProjects = () => {
                                     variant={
                                       getProjectAcceptanceStatus(project)?.status === "pending_request" 
                                         ? "outline" 
-                                        : getProjectAcceptanceStatus(project)?.status === "expired_request"
+                                        : getProjectAcceptanceStatus(project)?.status === "expired_request" || getProjectAcceptanceStatus(project)?.status === "rejected_request"
                                         ? "destructive"
+                                        : getProjectAcceptanceStatus(project)?.status === "selected_by_client"
+                                        ? "secondary"
                                         : "default"
                                     }
                                     className={
@@ -572,6 +594,10 @@ const AdminProjects = () => {
                                         ? "bg-yellow-50 text-yellow-700 border-yellow-200" 
                                         : getProjectAcceptanceStatus(project)?.status === "expired_request"
                                         ? "bg-red-50 text-red-700 border-red-200"
+                                        : getProjectAcceptanceStatus(project)?.status === "rejected_request"
+                                        ? "bg-red-50 text-red-700 border-red-200"
+                                        : getProjectAcceptanceStatus(project)?.status === "selected_by_client"
+                                        ? "bg-blue-50 text-blue-700 border-blue-200"
                                         : "bg-green-50 text-green-700 border-green-200"
                                     }
                                   >

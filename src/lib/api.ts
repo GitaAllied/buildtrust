@@ -455,6 +455,12 @@ class ApiClient {
     });
   }
 
+  async debugAllProjects() {
+    return this.request('/projects/admin/debug/all-projects', {
+      method: 'GET',
+    });
+  }
+
   async submitProjectRequest(data: Record<string, unknown>) {
     console.log('📋 SUBMITTING PROJECT REQUEST:', {
       timestamp: new Date().toISOString(),
@@ -579,6 +585,12 @@ class ApiClient {
 
   async getContractById(contractId: number) {
     return this.request(`/projects/admin/contracts/${contractId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getContractTemplate() {
+    return this.request('/projects/contract-template', {
       method: 'GET',
     });
   }
@@ -1057,6 +1069,12 @@ class ApiClient {
   async markNotificationAsRead(notificationId: number | string) {
     return this.request(`/notifications/${notificationId}/read`, {
       method: 'PUT',
+    });
+  }
+
+  async deleteNotification(notificationId: number | string) {
+    return this.request(`/notifications/${notificationId}`, {
+      method: 'DELETE',
     });
   }
 }

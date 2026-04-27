@@ -65,6 +65,7 @@ const ProjectDetails = () => {
   const [project, setProject] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [contractTemplate, setContractTemplate] = useState<string>('');
 
   const [activeTab, setActiveTab] = useState("projects");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -373,6 +374,46 @@ const ProjectDetails = () => {
         });
         
         setProjectFiles(files);
+
+        // Fetch contract template from database
+        try {
+          console.log('📄 Fetching contract template...');
+          const templateResponse = await apiClient.getContractTemplate();
+          console.log('📄 Contract template response:', templateResponse);
+          
+          // Handle different response structures
+          let contractTerms = null;
+          
+          if (templateResponse?.template?.contract_terms) {
+            contractTerms = templateResponse.template.contract_terms;
+            console.log('✅ Contract template loaded (nested structure)');
+          } else if (templateResponse?.contract_terms) {
+            contractTerms = templateResponse.contract_terms;
+            console.log('✅ Contract template loaded (direct structure)');
+          } else if (templateResponse?.data?.contract_terms) {
+            contractTerms = templateResponse.data.contract_terms;
+            console.log('✅ Contract template loaded (data structure)');
+          }
+          
+          if (contractTerms) {
+            setContractTemplate(contractTerms);
+          } else {
+            console.warn('⚠️ Contract template not found in response:', {
+              hasNestedTemplate: !!templateResponse?.template?.contract_terms,
+              hasDirectTerms: !!templateResponse?.contract_terms,
+              hasDataTerms: !!templateResponse?.data?.contract_terms,
+              responseKeys: Object.keys(templateResponse || {})
+            });
+            setContractTemplate('Contract template not available');
+          }
+        } catch (err) {
+          console.error('❌ Failed to fetch contract template:', {
+            error: err,
+            message: (err as any)?.message,
+            status: (err as any)?.status
+          });
+          setContractTemplate('Failed to load contract template');
+        }
       } catch (err) {
         console.error('❌ Failed to fetch project:', err);
         setError('Failed to load project details. Please try again.');
@@ -475,160 +516,19 @@ const ProjectDetails = () => {
 
   const generateContractPDF = async () => {
     try {
-      // Prepare contract content
-      const contractContent = `
-================================================================================
-                    SERVICE AGREEMENT & LEGAL CONTRACT
-                              BuildTrust Africa
-================================================================================
+      console.log('📥 Generating contract download with template from database');
+      
+      // Use ONLY database contract template
+      if (!contractTemplate || contractTemplate === 'No contract template available' || contractTemplate === 'Failed to load contract template') {
+        console.warn('⚠️ Contract template not available:', { contractTemplate });
+        alert('Contract template is not yet loaded. Please wait a moment and try again.');
+        return;
+      }
 
-EXECUTION DATE: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+      console.log('✅ Using database contract template, length:', contractTemplate.length);
 
-PROJECT: ${project.title}
-LOCATION: ${project.location || 'As specified by Client'}
-TYPE: ${project.building_type || 'Professional Construction Services'}
-DURATION: ${formatDuration(project.duration)}
-
-================================================================================
-                        PARTIES & SCOPE (Section 1)
-================================================================================
-
-This binding contract is entered into between:
-(a) CLIENT as Project Owner
-(b) DEVELOPER as Service Provider  
-(c) BuildTrust Africa as Platform Facilitator
-
-The Developer agrees to provide construction/development services as specified 
-below within mutually agreed scope and timeline.
-
-================================================================================
-                    PROJECT SCOPE & DELIVERABLES (Section 2)
-================================================================================
-
-Project Title: ${project.title}
-Project Location: ${project.location || 'As specified by Client'}
-Project Type: ${project.building_type || 'Professional Construction Services'}
-Project Duration: ${formatDuration(project.duration)}
-
-DEVELOPER RESPONSIBILITIES:
-- Quality workmanship and adherence to specifications
-- Timely completion as per agreed timeline
-- Regular progress updates to Client
-- Site safety compliance and regulatory requirements
-- Professional conduct and communication
-
-NOTE: Any work outside this scope requires written approval and separate agreement.
-
-================================================================================
-                 AGREED CONTRACT VALUE & PAYMENT TERMS (Section 3)
-================================================================================
-
-Total Project Value: ${formatBudget(project.budget_min, project.budget_max)}
-
-PAYMENT SCHEDULE:
-- Payments released in milestones upon verified completion of project phases
-- Client shall make payments within 7 days of invoice
-- Late payments incur 2% monthly interest
-- Disputes over payment must be raised within 30 days of invoice
-
-================================================================================
-                       PERFORMANCE & LIABILITY (Section 4)
-================================================================================
-
-- Developer warrants professional execution of all work
-- Developer carries liability insurance covering worksite accidents and property damage
-- BuildTrust provides platform mediation but does not assume contractor liability
-- Client liability is limited to contract value only
-- Maximum dispute compensation equals the project fee paid
-
-================================================================================
-                          BREACH & REMEDIES (Section 5)
-================================================================================
-
-DEVELOPER BREACH:
-Failure to meet quality standards, missing deadlines without documented cause, 
-or abandonment results in:
-  (i) Work withholding
-  (ii) Contract termination with 5-day notice
-  (iii) Funds forfeiture
-  (iv) Negative platform rating
-  (v) Potential legal action for damages
-
-CLIENT BREACH:
-Non-payment beyond 14 days allows Developer to:
-  (i) Suspend work
-  (ii) Charge storage/holding fees
-  (iii) Terminate contract and pursue legal collection
-
-================================================================================
-                       DISPUTE RESOLUTION (Section 6)
-================================================================================
-
-- All disputes first referred to BuildTrust's mediation team (14-day window)
-- If unresolved, disputes proceed to arbitration per project jurisdiction laws
-- Both parties waive right to pursue claims outside platform unless arbitration fails
-- Legal fees borne by the breaching party
-
-================================================================================
-                      TERMINATION & CANCELLATION (Section 7)
-================================================================================
-
-- Client may cancel with 14-day notice and 20% fee forfeiture if no work commenced
-- Developer may terminate only for non-payment after 7-day written notice
-- Premature termination may result in damages claim equal to 15% of remaining 
-  contract value plus verified costs incurred
-
-================================================================================
-                     CONFIDENTIALITY & IP RIGHTS (Section 8)
-================================================================================
-
-- Both parties maintain confidentiality of project specifications
-- Client retains all intellectual property rights to designs and plans
-- Developer may list project in portfolio only with written Client consent
-- Breach of confidentiality allows immediate contract termination and damages
-
-================================================================================
-                       INSURANCE & COMPLIANCE (Section 9)
-================================================================================
-
-- Developer must maintain liability insurance (minimum coverage per project scope)
-- Developer responsible for all regulatory compliance, permits, and licenses
-- Developer indemnifies Client and BuildTrust against third-party claims
-- Failure to maintain insurance voids all contract protections
-
-================================================================================
-                         LEGAL JURISDICTION (Section 10)
-================================================================================
-
-- Contract governed by laws of the project location jurisdiction
-- Both parties submit to BuildTrust's platform policies and legal frameworks
-- Enforcement through platform arbitration initially, then civil courts if necessary
-- All notices must be in writing via registered platform messages
-
-================================================================================
-                         PLATFORM PROTECTIONS (Section 11)
-================================================================================
-
-- BuildTrust Africa holds funds in escrow
-- Funds released only upon verified milestone completion
-- BuildTrust verifies developer credentials and maintains dispute records
-- BuildTrust may freeze accounts for violations
-- Both parties agree to BuildTrust's terms of service and dispute resolution
-- BuildTrust's liability limited to fund safeguarding only
-
-================================================================================
-                          LEGAL NOTICE - BINDING CONTRACT
-================================================================================
-
-⚠️ IMPORTANT: THIS IS A LEGALLY ENFORCEABLE CONTRACT
-
-By affixing digital signature(s) below, all parties acknowledge:
-
-1. Full reading and understanding of entire contract
-2. Legal authority to execute this agreement
-3. Consent to electronic signatures as legally binding
-4. Acceptance of all terms including breach remedies and legal jurisdiction
-5. Agreement that disputes follow platform arbitration before court proceedings
+      // Append signature information to database template
+      const fullContent = `${contractTemplate}
 
 ================================================================================
                               SIGNATURE SECTION
@@ -651,8 +551,10 @@ This document is confidential and legally binding.
 ================================================================================
       `;
 
+      console.log('📄 Contract content prepared for download, total length:', fullContent.length);
+
       // Create a blob from the content
-      const blob = new Blob([contractContent], { type: 'text/plain' });
+      const blob = new Blob([fullContent], { type: 'text/plain' });
       
       // Create temporary download link
       const url = window.URL.createObjectURL(blob);
@@ -663,8 +565,10 @@ This document is confidential and legally binding.
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      console.log('✅ Contract downloaded successfully');
     } catch (error) {
-      console.error('Error downloading contract:', error);
+      console.error('❌ Error downloading contract:', error);
       alert('Failed to download contract. Please try again.');
     }
   };
@@ -989,7 +893,7 @@ This document is confidential and legally binding.
                     </Card>
                   )}
                   {/* Alert when contract needs re-signing */}
-                  {project?.contract?.needs_resign && ['developer', 'client'].includes(user?.role) && (
+                  {project?.contract?.needs_resign && project?.acceptance_status !== 'pending' && ['developer', 'client'].includes(user?.role) && !contractSigned && (
                     <Card className="p-4 border-2 border-yellow-400 bg-yellow-50">
                       <div className="flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
@@ -1031,97 +935,14 @@ This document is confidential and legally binding.
                                 Download
                               </button>
                             </div>
-                            <div className="text-xs space-y-4 text-gray-700 divide-y divide-slate-200">
-                              
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">1. PARTIES & SCOPE</strong>
-                                <p className="text-gray-600 mt-1">
-                                  This binding contract is entered into between: (a) Client as Project Owner, (b) Developer as Service Provider, and (c) BuildTrust Africa as Platform Facilitator. Developer agrees to provide construction/development services as specified below within mutually agreed scope and timeline.
-                                </p>
-                              </div>
-
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">2. PROJECT SCOPE & DELIVERABLES</strong>
-                                <p className="text-gray-600 mt-1">
-                                  <strong>Title:</strong> {project.title}<br/>
-                                  <strong>Location:</strong> {project.location || 'As specified by Client'}<br/>
-                                  <strong>Type:</strong> {project.building_type || 'Professional Construction Services'}<br/>
-                                  <strong>Duration:</strong> {formatDuration(project.duration)}<br/>
-                                  Developer is responsible for quality workmanship, adherence to specifications, timely completion, regular progress updates, and site safety compliance. Any work outside this scope requires written approval and separate agreement.
-                                </p>
-                              </div>
-
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">3. AGREED CONTRACT VALUE & PAYMENT TERMS</strong>
-                                <p className="text-gray-600 mt-1">
-                                  <strong>Total Project Value:</strong> {formatBudget(project.budget_min, project.budget_max)}<br/>
-                                  Payments are released in milestones upon verified completion of project phases. Client shall make payments within 7 days of invoice. Late payments incur 2% monthly interest. Disputes over payment must be raised within 30 days of invoice.
-                                </p>
-                              </div>
-
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">4. PERFORMANCE & LIABILITY</strong>
-                                <p className="text-gray-600 mt-1">
-                                  Developer warrants professional execution of all work. Developer carries liability insurance covering worksite accidents and property damage. BuildTrust provides platform mediation but does not assume contractor liability. Client liability is limited to contract value only. Maximum dispute compensation is the project fee paid.
-                                </p>
-                              </div>
-
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">5. BREACH & REMEDIES</strong>
-                                <p className="text-gray-600 mt-1">
-                                  <strong>Developer Breach:</strong> Failure to meet quality standards, missing deadlines without documented cause, or abandonment results in: (i) work withholding, (ii) contract termination with 5-day notice, (iii) funds forfeiture, (iv) negative platform rating, and (v) potential legal action for damages.<br/>
-                                  <strong>Client Breach:</strong> Non-payment beyond 14 days allows Developer to: (i) suspend work, (ii) charge storage/holding fees, or (iii) terminate contract and pursue legal collection.
-                                </p>
-                              </div>
-
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">6. DISPUTE RESOLUTION</strong>
-                                <p className="text-gray-600 mt-1">
-                                  All disputes are first referred to BuildTrust's mediation team (14-day resolution window). If unresolved, disputes proceed to arbitration in accordance with applicable laws of the project jurisdiction. Both parties waive right to pursue claims outside this platform unless arbitration fails. Legal fees are borne by the breaching party.
-                                </p>
-                              </div>
-
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">7. TERMINATION & CANCELLATION</strong>
-                                <p className="text-gray-600 mt-1">
-                                  Client may cancel with 14-day notice and 20% fee forfeiture if no work commenced. Developer may terminate only for non-payment after 7-day written notice. Premature termination by either party may result in damages claim equal to 15% of remaining contract value plus verified costs incurred.
-                                </p>
-                              </div>
-
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">8. CONFIDENTIALITY & IP RIGHTS</strong>
-                                <p className="text-gray-600 mt-1">
-                                  Both parties shall maintain confidentiality of project specifications and sensitive information. Client retains all intellectual property rights to designs and plans. Developer may list project in portfolio only with written Client consent. Breach of confidentiality allows immediate contract termination and damages.
-                                </p>
-                              </div>
-
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">9. INSURANCE & COMPLIANCE</strong>
-                                <p className="text-gray-600 mt-1">
-                                  Developer must maintain liability insurance (minimum coverage based on project scope). Developer is responsible for all regulatory compliance, permits, and licenses. Developer indemnifies Client and BuildTrust against third-party claims. Failure to maintain insurance voids all protections under this contract.
-                                </p>
-                              </div>
-
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">10. LEGAL JURISDICTION</strong>
-                                <p className="text-gray-600 mt-1">
-                                  This contract is governed by the laws of the project location jurisdiction. Both parties submit to BuildTrust's platform policies and applicable legal frameworks. Enforcement is through platform arbitration initially, then civil courts if necessary. All notices must be in writing via registered platform messages.
-                                </p>
-                              </div>
-
-                              <div className="pt-3">
-                                <strong className="text-[#253E44]">11. PLATFORM PROTECTIONS</strong>
-                                <p className="text-gray-600 mt-1">
-                                  BuildTrust Africa holds funds in escrow, releasing only upon verified milestone completion. BuildTrust verifies developer credentials and maintains dispute records. BuildTrust may freeze accounts for violations. By signing, both parties agree to BuildTrust's terms of service and dispute resolution process. BuildTrust's liability is limited to fund safeguarding only.
-                                </p>
-                              </div>
-
-                              <div className="pt-3 bg-red-50 -mx-4 px-4 py-3 rounded">
-                                <strong className="text-red-700">⚠️ LEGAL NOTICE - BINDING CONTRACT</strong>
-                                <p className="text-red-600 mt-1 text-[11px]">
-                                  By affixing your digital signature below, you acknowledge: (1) You have read and understood this entire contract, (2) You have legal authority to execute this agreement, (3) You consent to electronic signatures as legally binding, (4) You accept all terms including breach remedies and legal jurisdiction, (5) Any disputes will follow platform arbitration before court proceedings. This is a legally enforceable contract.
-                                </p>
-                              </div>
+                            <div className="text-xs space-y-4 text-gray-700 prose prose-sm max-w-none whitespace-pre-wrap">
+                              {contractTemplate && contractTemplate !== 'Loading contract template...' ? (
+                                contractTemplate
+                              ) : contractTemplate === 'Failed to load contract template' ? (
+                                <p className="text-red-500 font-semibold">⚠️ {contractTemplate}</p>
+                              ) : (
+                                <p className="text-gray-500">Loading contract template...</p>
+                              )}
                             </div>
                           </div>
 
