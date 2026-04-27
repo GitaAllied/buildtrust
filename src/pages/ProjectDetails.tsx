@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, type ChangeEvent, type PointerEvent } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Download, AlertCircle } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import {
   FaBook,
@@ -28,43 +28,57 @@ import {
 } from "react-icons/fa6";
 import { useAuth } from "@/hooks/useAuth";
 import SignoutModal from "@/components/ui/signoutModal";
+import { apiClient } from "@/lib/api";
 
-const mockProject = {
-  id: 1,
-  title: "Modern Duplex in Lekki",
-  developer_name: "Engr. Adewale Structures",
-  status: "In Progress",
-  progress: 45,
-  start_date: "2024-08-15",
-  expected_completion: "2025-02-15",
-  budget: "8.5",
-  location: "Lekki, Lagos",
-  image:
-    "https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=1200&h=800&fit=crop",
-  description:
-    "A contemporary duplex project featuring modern high-end finishes, 4 spacious bedrooms, and an open-plan living concept designed for natural ventilation. This sustainable build incorporates solar-ready roofing and water recycling features. Located in the heart of Lekki, this project aims to set a new standard for luxury urban living.",
-  media: [
-    {
-      id: 1,
-      url: "https://images.unsplash.com/photo-1560184897-6af27d7b5a0b?w=1200&h=800&fit=crop",
-    },
-  ],
-  milestones: [
-    { id: 1, title: "Foundation", status: "completed" },
-    { id: 2, title: "Block Work", status: "in_progress" },
-    { id: 3, title: "Roofing", status: "pending" },
-  ],
+// Helper function to construct full image URL
+const getImageUrl = (mediaUrl?: string): string => {
+  if (!mediaUrl) {
+    console.log('⚠️ No media URL provided, using placeholder');
+    return "https://placehold.net/main.svg";
+  }
+
+  if (mediaUrl.startsWith('http')) {
+    console.log('✅ Full URL detected:', mediaUrl);
+    return mediaUrl;
+  }
+
+  const apiBase = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/+$/, '');
+  const backendOrigin = apiBase.startsWith('http')
+    ? apiBase.replace(/\/api$/, '')
+    : window.location.origin;
+
+  let resolvedUrl = mediaUrl;
+  if (!resolvedUrl.startsWith('/')) {
+    resolvedUrl = `/${resolvedUrl}`;
+  }
+
+  const finalUrl = `${backendOrigin}${resolvedUrl}`;
+  console.log('🖼️ Image URL constructed:', { mediaUrl, backendOrigin, finalUrl });
+  return finalUrl;
 };
+
 
 const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const [project, setProject] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState("projects");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signOutModal, setSignOutModal] = useState(false);
+  const [contractSigned, setContractSigned] = useState(false);
+  const [contractTermsAccepted, setContractTermsAccepted] = useState(false);
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string>('');
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [isSubmittingSignature, setIsSubmittingSignature] = useState(false);
+  const [signatureError, setSignatureError] = useState<string | null>(null);
+  const [projectFiles, setProjectFiles] = useState<any[]>([]);
+  const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
 
   // Determine which sidebar items to show based on user role
   const getDefaultSidebarItems = () => {
@@ -94,12 +108,138 @@ const ProjectDetails = () => {
 
   const [sidebarItems, setSidebarItems] = useState(getDefaultSidebarItems());
 
+  useEffect(() => {
+    if (!project || !user?.role) return;
+    const signed = user.role === 'developer'
+      ? !!project.contract?.developer_signed_at
+      : user.role === 'client'
+      ? !!project.contract?.client_signed_at
+      : false;
+    setContractSigned(signed);
+  }, [project, user?.role]);
+
   const handleLogout = async () => {
     try {
       await signOut();
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
+    }
+  };
+
+  const isCanvasBlank = (canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext('2d');
+    if (!context) return true;
+    const pixelBuffer = new Uint32Array(
+      context.getImageData(0, 0, canvas.width, canvas.height).data.buffer
+    );
+    return !pixelBuffer.some(color => color !== 0);
+  };
+
+  const handleSignaturePointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    setIsDrawing(true);
+    lastPointRef.current = { x, y };
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#1F2937';
+  };
+
+  const handleSignaturePointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = signatureCanvasRef.current;
+    if (!canvas || !lastPointRef.current) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    lastPointRef.current = { x, y };
+  };
+
+  const handleSignaturePointerUp = () => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.closePath();
+    setIsDrawing(false);
+    lastPointRef.current = null;
+  };
+
+  const clearSignatureCanvas = () => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignatureFile(null);
+    setSignatureDataUrl('');
+    setSignatureError(null);
+  };
+
+  const handleSignatureUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) return;
+    setSignatureFile(file);
+    setSignatureDataUrl('');
+    setSignatureError(null);
+  };
+
+  const getSignatureDataUrl = (): string | null => {
+    if (signatureFile) return null;
+    const canvas = signatureCanvasRef.current;
+    if (!canvas || isCanvasBlank(canvas)) return null;
+    return canvas.toDataURL('image/png');
+  };
+
+  const handleSignContract = async () => {
+    if (!contractTermsAccepted) {
+      setSignatureError('Please agree to the contract terms before signing.');
+      return;
+    }
+
+    const signatureData = getSignatureDataUrl();
+    if (!signatureFile && !signatureData) {
+      setSignatureError('Draw or upload your signature before signing.');
+      return;
+    }
+
+    setIsSubmittingSignature(true);
+    setSignatureError(null);
+
+    try {
+      const response = await apiClient.signProjectContract(Number(id), {
+        signatureFile: signatureFile ?? undefined,
+        signatureDataUrl: signatureData ?? undefined,
+        role: user?.role || 'developer'
+      });
+
+      setContractSigned(true);
+      if (signatureData) {
+        setSignatureDataUrl(signatureData);
+      }
+      if (response?.signatureUrl) {
+        setSignatureDataUrl(signatureData || response.signatureUrl);
+      }
+    } catch (err) {
+      console.error('Contract signing failed:', err);
+      setSignatureError((err as Error)?.message || 'Failed to sign contract');
+    } finally {
+      setIsSubmittingSignature(false);
     }
   };
 
@@ -153,31 +293,381 @@ const ProjectDetails = () => {
   }, [user?.role]);
 
   useEffect(() => {
-    // For now use mock data. In future replace with apiClient.getProject(id)
-    if (!id) return;
-    // If id matches mock, show it; otherwise still show mock but with id
-    setProject({ ...mockProject, id: Number(id) });
+    if (!id || loading === false && project) return;
+
+    const fetchProject = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await apiClient.getProjectById(id);
+        console.log('📦 Project fetched:', response);
+        console.log('🖼️ Media info:', response?.project?.media);
+        
+        const projectData = response?.project || null;
+        if (!projectData) {
+          setError('Project not found');
+          return;
+        }
+
+        setProject(projectData);
+
+        // Populate projectFiles with contract, signatures, and media
+        const files: any[] = [];
+        
+        // Add contract PDF
+        if (projectData.contract) {
+          files.push({
+            type: 'contract',
+            name: 'Service Agreement',
+            description: 'Contract PDF',
+            date: projectData.contract.created_at || projectData.created_at,
+            icon: FaFileContract,
+            color: 'bg-red-50 text-red-600'
+          });
+        }
+        
+        // Add developer signature
+        if (projectData.contract?.developer_signature) {
+          files.push({
+            type: 'signature',
+            name: 'Developer Signature',
+            description: 'Developer signed',
+            date: projectData.contract.developer_signed_at,
+            icon: FaUser,
+            color: 'bg-green-50 text-green-600'
+          });
+        }
+        
+        // Add client signature
+        if (projectData.contract?.client_signature) {
+          files.push({
+            type: 'signature',
+            name: 'Client Signature',
+            description: 'Client signed',
+            date: projectData.contract.client_signed_at,
+            icon: FaUser,
+            color: 'bg-blue-50 text-blue-600'
+          });
+        }
+        
+        // Add project media
+        if (projectData.media && Array.isArray(projectData.media)) {
+          projectData.media.forEach((media: any) => {
+            files.push({
+              type: 'media',
+              name: media.filename || 'Project File',
+              description: media.description || 'Project media',
+              date: media.created_at,
+              url: media.media_url,
+              icon: FaImages,
+              color: 'bg-purple-50 text-purple-600'
+            });
+          });
+        }
+        
+        // Sort by date descending (newest first)
+        files.sort((a, b) => {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return dateB - dateA;
+        });
+        
+        setProjectFiles(files);
+      } catch (err) {
+        console.error('❌ Failed to fetch project:', err);
+        setError('Failed to load project details. Please try again.');
+        setProject(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProject();
   }, [id]);
 
-  if (!project) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#226F75]/10">
+        <div className="text-center">
+          <svg className="animate-spin h-12 w-12 text-[#226F75] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+          <p className="mt-3 text-sm text-gray-600">Loading project...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const formatBudget = (b: any) => {
-    if (b === null || b === undefined || b === "") return "—";
-    const s = typeof b === "number" ? String(b) : String(b).trim();
-    return /[Mm]/.test(s) ? s : `${s}M`;
+  if (error || !project) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#226F75]/10">
+        <div className="text-center">
+          <p className="text-red-600 font-semibold">{error || 'Project not found'}</p>
+          <Button onClick={() => navigate(-1)} className="mt-4 bg-[#226F75]">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const formatBudget = (min?: number, max?: number) => {
+    if (min && max) {
+      const minFormatted = `$${Number(min).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+      const maxFormatted = `$${Number(max).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+      return `${minFormatted} - ${maxFormatted}`;
+    }
+    return "Budget TBD";
   };
 
-  const targetDate = new Date(2026, 11, 12);
+  const formatDuration = (duration?: string) => {
+    if (!duration) return "Timeline pending";
+    const durationMap: Record<string, string> = {
+      '3-6': '3-6 months',
+      '6-12': '6-12 months',
+      '12-18': '12-18 months',
+      '18+': '18+ months'
+    };
+    return durationMap[duration] || duration;
+  };
 
-  const endDate = targetDate.toLocaleDateString("en-NG", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const formatStartDate = (dateString?: string) => {
+    if (!dateString) return "TBD";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
 
-  const today = new Date();
-  const timeDiff = targetDate.getTime() - today.getTime();
-  const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+  const formatFileDate = (dateString?: string) => {
+    if (!dateString) return "Recently";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  const handleFileDownload = async (file: any) => {
+    try {
+      if (file.type === 'contract') {
+        // Download or generate contract PDF
+        await generateContractPDF();
+      } else if (file.url) {
+        // Download file from URL
+        const link = document.createElement('a');
+        link.href = file.url;
+        link.download = file.name || 'download';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (err) {
+      console.error('Error downloading file:', err);
+    }
+  };
+
+  const daysLeft = project.hours_remaining ? Math.ceil(project.hours_remaining / 24) : null;
+
+  const generateContractPDF = async () => {
+    try {
+      // Prepare contract content
+      const contractContent = `
+================================================================================
+                    SERVICE AGREEMENT & LEGAL CONTRACT
+                              BuildTrust Africa
+================================================================================
+
+EXECUTION DATE: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+PROJECT: ${project.title}
+LOCATION: ${project.location || 'As specified by Client'}
+TYPE: ${project.building_type || 'Professional Construction Services'}
+DURATION: ${formatDuration(project.duration)}
+
+================================================================================
+                        PARTIES & SCOPE (Section 1)
+================================================================================
+
+This binding contract is entered into between:
+(a) CLIENT as Project Owner
+(b) DEVELOPER as Service Provider  
+(c) BuildTrust Africa as Platform Facilitator
+
+The Developer agrees to provide construction/development services as specified 
+below within mutually agreed scope and timeline.
+
+================================================================================
+                    PROJECT SCOPE & DELIVERABLES (Section 2)
+================================================================================
+
+Project Title: ${project.title}
+Project Location: ${project.location || 'As specified by Client'}
+Project Type: ${project.building_type || 'Professional Construction Services'}
+Project Duration: ${formatDuration(project.duration)}
+
+DEVELOPER RESPONSIBILITIES:
+- Quality workmanship and adherence to specifications
+- Timely completion as per agreed timeline
+- Regular progress updates to Client
+- Site safety compliance and regulatory requirements
+- Professional conduct and communication
+
+NOTE: Any work outside this scope requires written approval and separate agreement.
+
+================================================================================
+                 AGREED CONTRACT VALUE & PAYMENT TERMS (Section 3)
+================================================================================
+
+Total Project Value: ${formatBudget(project.budget_min, project.budget_max)}
+
+PAYMENT SCHEDULE:
+- Payments released in milestones upon verified completion of project phases
+- Client shall make payments within 7 days of invoice
+- Late payments incur 2% monthly interest
+- Disputes over payment must be raised within 30 days of invoice
+
+================================================================================
+                       PERFORMANCE & LIABILITY (Section 4)
+================================================================================
+
+- Developer warrants professional execution of all work
+- Developer carries liability insurance covering worksite accidents and property damage
+- BuildTrust provides platform mediation but does not assume contractor liability
+- Client liability is limited to contract value only
+- Maximum dispute compensation equals the project fee paid
+
+================================================================================
+                          BREACH & REMEDIES (Section 5)
+================================================================================
+
+DEVELOPER BREACH:
+Failure to meet quality standards, missing deadlines without documented cause, 
+or abandonment results in:
+  (i) Work withholding
+  (ii) Contract termination with 5-day notice
+  (iii) Funds forfeiture
+  (iv) Negative platform rating
+  (v) Potential legal action for damages
+
+CLIENT BREACH:
+Non-payment beyond 14 days allows Developer to:
+  (i) Suspend work
+  (ii) Charge storage/holding fees
+  (iii) Terminate contract and pursue legal collection
+
+================================================================================
+                       DISPUTE RESOLUTION (Section 6)
+================================================================================
+
+- All disputes first referred to BuildTrust's mediation team (14-day window)
+- If unresolved, disputes proceed to arbitration per project jurisdiction laws
+- Both parties waive right to pursue claims outside platform unless arbitration fails
+- Legal fees borne by the breaching party
+
+================================================================================
+                      TERMINATION & CANCELLATION (Section 7)
+================================================================================
+
+- Client may cancel with 14-day notice and 20% fee forfeiture if no work commenced
+- Developer may terminate only for non-payment after 7-day written notice
+- Premature termination may result in damages claim equal to 15% of remaining 
+  contract value plus verified costs incurred
+
+================================================================================
+                     CONFIDENTIALITY & IP RIGHTS (Section 8)
+================================================================================
+
+- Both parties maintain confidentiality of project specifications
+- Client retains all intellectual property rights to designs and plans
+- Developer may list project in portfolio only with written Client consent
+- Breach of confidentiality allows immediate contract termination and damages
+
+================================================================================
+                       INSURANCE & COMPLIANCE (Section 9)
+================================================================================
+
+- Developer must maintain liability insurance (minimum coverage per project scope)
+- Developer responsible for all regulatory compliance, permits, and licenses
+- Developer indemnifies Client and BuildTrust against third-party claims
+- Failure to maintain insurance voids all contract protections
+
+================================================================================
+                         LEGAL JURISDICTION (Section 10)
+================================================================================
+
+- Contract governed by laws of the project location jurisdiction
+- Both parties submit to BuildTrust's platform policies and legal frameworks
+- Enforcement through platform arbitration initially, then civil courts if necessary
+- All notices must be in writing via registered platform messages
+
+================================================================================
+                         PLATFORM PROTECTIONS (Section 11)
+================================================================================
+
+- BuildTrust Africa holds funds in escrow
+- Funds released only upon verified milestone completion
+- BuildTrust verifies developer credentials and maintains dispute records
+- BuildTrust may freeze accounts for violations
+- Both parties agree to BuildTrust's terms of service and dispute resolution
+- BuildTrust's liability limited to fund safeguarding only
+
+================================================================================
+                          LEGAL NOTICE - BINDING CONTRACT
+================================================================================
+
+⚠️ IMPORTANT: THIS IS A LEGALLY ENFORCEABLE CONTRACT
+
+By affixing digital signature(s) below, all parties acknowledge:
+
+1. Full reading and understanding of entire contract
+2. Legal authority to execute this agreement
+3. Consent to electronic signatures as legally binding
+4. Acceptance of all terms including breach remedies and legal jurisdiction
+5. Agreement that disputes follow platform arbitration before court proceedings
+
+================================================================================
+                              SIGNATURE SECTION
+================================================================================
+
+CLIENT SIGNATURE:
+Signed: ${project.contract?.client_signed_at ? 'YES' : 'PENDING'}
+Date: ${project.contract?.client_signed_at ? new Date(project.contract.client_signed_at).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Awaiting signature'}
+
+DEVELOPER SIGNATURE:
+Signed: ${project.contract?.developer_signed_at ? 'YES' : 'PENDING'}
+Date: ${project.contract?.developer_signed_at ? new Date(project.contract.developer_signed_at).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Awaiting signature'}
+
+================================================================================
+
+Generated by BuildTrust Africa Platform
+Copyright © 2026 BuildTrust Africa. All rights reserved.
+This document is confidential and legally binding.
+
+================================================================================
+      `;
+
+      // Create a blob from the content
+      const blob = new Blob([contractContent], { type: 'text/plain' });
+      
+      // Create temporary download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Contract_${project.title.replace(/\s+/g, '_')}_${new Date().getTime()}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading contract:', error);
+      alert('Failed to download contract. Please try again.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#226F75]/10 flex flex-col md:flex-row">
@@ -282,10 +772,10 @@ const ProjectDetails = () => {
           <div className="max-w-6xl mx-auto space-y-3">
             <div className=" flex items-center gap-2">
               <Badge className="text-[10px] uppercase p-3 py-1">
-                {project.status}
+                {project.status || 'Pending'}
               </Badge>
               <p className=" flex items-center gap-1 text-sm text-gray-600">
-                <FaLocationPin /> {project.location}
+                <FaLocationPin /> {project.location || 'Location TBD'}
               </p>
             </div>
             <div className="flex md:items-center justify-between flex-col md:flex-row items-start gap-3 ">
@@ -294,7 +784,7 @@ const ProjectDetails = () => {
               </h1>
               <div className=" flex items-center gap-4">
                 <Button
-                onClick={() => navigate("/projects")}
+                onClick={() => navigate("/project-requests")}
                 variant="ghost"
                 className=" border"
               >
@@ -312,14 +802,17 @@ const ProjectDetails = () => {
 
             <div className=" py-5 relative">
               <img
-                src="https://placehold.net/main.svg"
-                // src={project.image}
+                src={getImageUrl(project.media?.url)}
                 alt={project.title}
                 className="w-full h-64 sm:h-80 md:h-96 object-cover rounded-3xl"
+                onError={(e) => {
+                  console.error('❌ Image failed to load:', (e.target as HTMLImageElement).src);
+                  (e.target as HTMLImageElement).src = "https://placehold.net/main.svg";
+                }}
               />
               <div className=" absolute bottom-10 left-5">
-                <p className=" text-xs sm:text-sm">Estimated completion</p>
-                <p className=" font-bold text-lg sm:text-xl">{endDate}</p>
+                <p className=" text-xs sm:text-sm text-white">Estimated completion</p>
+                <p className=" font-bold text-lg sm:text-xl text-white">{project.duration ? formatDuration(project.duration) : 'TBD'}</p>
               </div>
             </div>
 
@@ -333,33 +826,29 @@ const ProjectDetails = () => {
                     <p className=" text-xs font-bold text-[#253E44]/50">
                       TOTAL BUDGET
                     </p>
-                    <h1 className=" font-extrabold text-xl sm:text-2xl text-[#253E44]">
-                      N8.5M
+                    <h1 className=" font-extrabold text-lg sm:text-xl text-[#253E44]">
+                      {formatBudget(project.budget_min, project.budget_max)}
                     </h1>
                   </Card>
                   <Card className="p-6 sm:p-8 md:p-10 px-6 sm:px-8 flex flex-col items-center">
                     <p className=" text-xs font-bold text-[#253E44]/50">
                       PROJECT TIMELINE
                     </p>
-                    <h1 className=" font-extrabold text-xl sm:text-2xl text-[#253E44]">
-                      {daysLeft} Days
+                    <h1 className=" font-extrabold text-lg sm:text-xl text-[#253E44]">
+                      {formatDuration(project.duration)}
                     </h1>
-                    <p className=" text-xs text-gray-400">64 days left</p>
+                    {daysLeft && project.acceptance_status === 'pending' && (
+                      <p className=" text-xs text-gray-400">{daysLeft} days left to decide</p>
+                    )}
                   </Card>
                   <Card className="p-6 sm:p-8 md:p-10 px-6 sm:px-8 text-center">
                     <p className=" text-xs font-bold text-[#253E44]/50">
-                      TOTAL PROGRESS
+                      PROJECT STATUS
                     </p>
-                    <div className=" flex items-center gap-2">
-                      <h1 className=" font-extrabold text-xl sm:text-2xl text-[#253E44]">
-                        {project.progress || 0}%
+                    <div className=" flex items-center justify-center gap-2 mt-2">
+                      <h1 className=" font-extrabold text-lg sm:text-xl text-[#253E44]">
+                        {project.acceptance_status === 'pending' ? '⏳ Pending' : project.acceptance_status === 'accepted' ? '✓ Accepted' : 'Rejected'}
                       </h1>
-                      <div className="flex-1">
-                        <Progress
-                          value={project.progress || 0}
-                          className="h-3"
-                        />
-                      </div>
                     </div>
                   </Card>
                 </div>
@@ -367,10 +856,15 @@ const ProjectDetails = () => {
                 <Card className=" p-4 sm:p-6 md:p-8 space-y-3">
                   <h3 className="font-bold text-base sm:text-lg">Project Description</h3>
                   <p className="text-sm text-gray-700 leading-6">
-                    {project.description}
+                    {project.message || 'No description provided'}
                   </p>
+                  {project.building_type && (
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-blue-100 text-blue-800">{project.building_type}</Badge>
+                    </div>
+                  )}
                   <p className=" text-xs text-gray-400 flex items-center gap-1">
-                    <FaCalendar /> Started Aug, 28 2025
+                    <FaCalendar /> Started {formatStartDate(project.start_date)}
                   </p>
                 </Card>
                 {/* milestones */}
@@ -440,122 +934,400 @@ const ProjectDetails = () => {
               {/* section to the right */}
               <div>
                 <div className="space-y-6">
-                  <Card className="">
-                    <div className="p-6 space-y-3">
-                      <p className="text-slate-400 text-xs font-bold uppercase">
-                        Project Developer
-                      </p>
-                      <div className="flex items-center gap-4">
-                        <img
-                          alt="Developer"
-                          className="w-16 h-16 rounded-full object-cover"
-                          src="https://placehold.net/avatar-4.svg"
-                        />
+                  {user?.role !== 'developer' && (
+                    <Card className="">
+                      <div className="p-6 space-y-3">
+                        <p className="text-slate-400 text-xs font-bold uppercase">
+                          Project Developer
+                        </p>
+                        <div className="flex items-center gap-4">
+                          <img
+                            alt={project.developer?.name}
+                            className="w-16 h-16 rounded-full object-cover"
+                            src="https://placehold.net/avatar-4.svg"
+                          />
+                          <div>
+                            <h4 className="font-bold text-[#253E44] ">
+                              {project.developer?.name || 'Assigned Developer'}
+                            </h4>
+                            {project.developer && (
+                              <div className="flex items-center gap-1">
+                                <span className="material-icons-round text-yellow-400 text-[14px]">
+                                  <FaStar/>
+                                </span>
+                                <span className="text-xs font-bold text-slate-700">
+                                  {project.developer.rating || 'N/A'}
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  ({project.developer.total_reviews || 0} reviews)
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <button className="w-full bg-[#253E44] hover:bg-slate-800 text-sm text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                            <FaMessage/>
+                            Message Developer
+                          </button>
+                          <button className="w-full bg-white border border-slate-200 hover:border-[#226F75] text-[#253E44] text-sm font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                            <FaBook/>
+                            Request Inspection
+                          </button>
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 p-4 border-t border-slate-100">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">
+                            Response time
+                          </span>
+                          <span className="font-bold">
+                            &lt; 2 hours
+                          </span>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                  {/* Alert when contract needs re-signing */}
+                  {project?.contract?.needs_resign && ['developer', 'client'].includes(user?.role) && (
+                    <Card className="p-4 border-2 border-yellow-400 bg-yellow-50">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="font-bold text-yellow-900">Contract Requires Re-signing</h4>
+                          <p className="text-sm text-yellow-800 mt-1">
+                            The admin has updated the contract terms. You need to review and re-sign the updated contract below.
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                  {/* Contract Review & Signing Card - Shows when project is accepted */}
+                  {['developer', 'client'].includes(user?.role) && project?.acceptance_status === 'accepted' && (
+                    <Card className={`p-6 space-y-4 border-2 ${contractSigned ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'}`}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <FaFileContract className="text-blue-600 text-xl" />
                         <div>
-                          <h4 className="font-bold text-[#253E44] ">
-                            Engr. Adewale S.
+                          <h4 className={`font-bold text-lg ${contractSigned ? 'text-green-700' : 'text-blue-700'}`}>
+                            {contractSigned ? '✓ Contract Signed' : 'Review & Sign Contract'}
                           </h4>
                           <p className="text-xs text-slate-500">
-                            Adewale Structures Ltd.
+                            {user?.role === 'developer' ? 'Developer contract signature' : 'Client contract signature'}
                           </p>
-                          <div className="flex items-center gap-1">
-                            <span className="material-icons-round text-yellow-400 text-[14px]">
-                              <FaStar/>
-                            </span>
-                            <span className="text-xs font-bold text-slate-700">
-                              4.9
-                            </span>
-                            <span className="text-[10px] text-slate-400">
-                              (42 reviews)
-                            </span>
-                          </div>
                         </div>
                       </div>
-                      <div className="space-y-3">
-                        <button className="w-full bg-[#253E44] hover:bg-slate-800 text-sm text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
-                          <FaMessage/>
-                          Message Developer
-                        </button>
-                        <button className="w-full bg-white border border-slate-200 hover:border-[#226F75] text-[#253E44] text-sm font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
-                          <FaBook/>
-                          Request Inspection
-                        </button>
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 p-4 border-t border-slate-100">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">
-                          Response time
-                        </span>
-                        <span className="font-bold">
-                          &lt; 2 hours
-                        </span>
-                      </div>
-                    </div>
-                  </Card>
+
+                      {!contractSigned ? (
+                        <>
+                          <div className="bg-white p-4 rounded-lg border border-blue-200 max-h-96 overflow-y-auto">
+                            <div className="flex items-center justify-between mb-4">
+                              <h5 className="font-bold text-sm text-[#253E44]">SERVICE AGREEMENT & LEGAL CONTRACT</h5>
+                              <button
+                                onClick={generateContractPDF}
+                                className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Download contract as document"
+                              >
+                                <Download className="w-3 h-3" />
+                                Download
+                              </button>
+                            </div>
+                            <div className="text-xs space-y-4 text-gray-700 divide-y divide-slate-200">
+                              
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">1. PARTIES & SCOPE</strong>
+                                <p className="text-gray-600 mt-1">
+                                  This binding contract is entered into between: (a) Client as Project Owner, (b) Developer as Service Provider, and (c) BuildTrust Africa as Platform Facilitator. Developer agrees to provide construction/development services as specified below within mutually agreed scope and timeline.
+                                </p>
+                              </div>
+
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">2. PROJECT SCOPE & DELIVERABLES</strong>
+                                <p className="text-gray-600 mt-1">
+                                  <strong>Title:</strong> {project.title}<br/>
+                                  <strong>Location:</strong> {project.location || 'As specified by Client'}<br/>
+                                  <strong>Type:</strong> {project.building_type || 'Professional Construction Services'}<br/>
+                                  <strong>Duration:</strong> {formatDuration(project.duration)}<br/>
+                                  Developer is responsible for quality workmanship, adherence to specifications, timely completion, regular progress updates, and site safety compliance. Any work outside this scope requires written approval and separate agreement.
+                                </p>
+                              </div>
+
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">3. AGREED CONTRACT VALUE & PAYMENT TERMS</strong>
+                                <p className="text-gray-600 mt-1">
+                                  <strong>Total Project Value:</strong> {formatBudget(project.budget_min, project.budget_max)}<br/>
+                                  Payments are released in milestones upon verified completion of project phases. Client shall make payments within 7 days of invoice. Late payments incur 2% monthly interest. Disputes over payment must be raised within 30 days of invoice.
+                                </p>
+                              </div>
+
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">4. PERFORMANCE & LIABILITY</strong>
+                                <p className="text-gray-600 mt-1">
+                                  Developer warrants professional execution of all work. Developer carries liability insurance covering worksite accidents and property damage. BuildTrust provides platform mediation but does not assume contractor liability. Client liability is limited to contract value only. Maximum dispute compensation is the project fee paid.
+                                </p>
+                              </div>
+
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">5. BREACH & REMEDIES</strong>
+                                <p className="text-gray-600 mt-1">
+                                  <strong>Developer Breach:</strong> Failure to meet quality standards, missing deadlines without documented cause, or abandonment results in: (i) work withholding, (ii) contract termination with 5-day notice, (iii) funds forfeiture, (iv) negative platform rating, and (v) potential legal action for damages.<br/>
+                                  <strong>Client Breach:</strong> Non-payment beyond 14 days allows Developer to: (i) suspend work, (ii) charge storage/holding fees, or (iii) terminate contract and pursue legal collection.
+                                </p>
+                              </div>
+
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">6. DISPUTE RESOLUTION</strong>
+                                <p className="text-gray-600 mt-1">
+                                  All disputes are first referred to BuildTrust's mediation team (14-day resolution window). If unresolved, disputes proceed to arbitration in accordance with applicable laws of the project jurisdiction. Both parties waive right to pursue claims outside this platform unless arbitration fails. Legal fees are borne by the breaching party.
+                                </p>
+                              </div>
+
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">7. TERMINATION & CANCELLATION</strong>
+                                <p className="text-gray-600 mt-1">
+                                  Client may cancel with 14-day notice and 20% fee forfeiture if no work commenced. Developer may terminate only for non-payment after 7-day written notice. Premature termination by either party may result in damages claim equal to 15% of remaining contract value plus verified costs incurred.
+                                </p>
+                              </div>
+
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">8. CONFIDENTIALITY & IP RIGHTS</strong>
+                                <p className="text-gray-600 mt-1">
+                                  Both parties shall maintain confidentiality of project specifications and sensitive information. Client retains all intellectual property rights to designs and plans. Developer may list project in portfolio only with written Client consent. Breach of confidentiality allows immediate contract termination and damages.
+                                </p>
+                              </div>
+
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">9. INSURANCE & COMPLIANCE</strong>
+                                <p className="text-gray-600 mt-1">
+                                  Developer must maintain liability insurance (minimum coverage based on project scope). Developer is responsible for all regulatory compliance, permits, and licenses. Developer indemnifies Client and BuildTrust against third-party claims. Failure to maintain insurance voids all protections under this contract.
+                                </p>
+                              </div>
+
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">10. LEGAL JURISDICTION</strong>
+                                <p className="text-gray-600 mt-1">
+                                  This contract is governed by the laws of the project location jurisdiction. Both parties submit to BuildTrust's platform policies and applicable legal frameworks. Enforcement is through platform arbitration initially, then civil courts if necessary. All notices must be in writing via registered platform messages.
+                                </p>
+                              </div>
+
+                              <div className="pt-3">
+                                <strong className="text-[#253E44]">11. PLATFORM PROTECTIONS</strong>
+                                <p className="text-gray-600 mt-1">
+                                  BuildTrust Africa holds funds in escrow, releasing only upon verified milestone completion. BuildTrust verifies developer credentials and maintains dispute records. BuildTrust may freeze accounts for violations. By signing, both parties agree to BuildTrust's terms of service and dispute resolution process. BuildTrust's liability is limited to fund safeguarding only.
+                                </p>
+                              </div>
+
+                              <div className="pt-3 bg-red-50 -mx-4 px-4 py-3 rounded">
+                                <strong className="text-red-700">⚠️ LEGAL NOTICE - BINDING CONTRACT</strong>
+                                <p className="text-red-600 mt-1 text-[11px]">
+                                  By affixing your digital signature below, you acknowledge: (1) You have read and understood this entire contract, (2) You have legal authority to execute this agreement, (3) You consent to electronic signatures as legally binding, (4) You accept all terms including breach remedies and legal jurisdiction, (5) Any disputes will follow platform arbitration before court proceedings. This is a legally enforceable contract.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-slate-700">Add your signature</p>
+                              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                                <canvas
+                                  ref={signatureCanvasRef}
+                                  width={520}
+                                  height={140}
+                                  onPointerDown={handleSignaturePointerDown}
+                                  onPointerMove={handleSignaturePointerMove}
+                                  onPointerUp={handleSignaturePointerUp}
+                                  onPointerLeave={handleSignaturePointerUp}
+                                  className="w-full h-36 bg-white"
+                                />
+                              </div>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                                <label className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer">
+                                  Upload image
+                                  <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/gif"
+                                    onChange={handleSignatureUpload}
+                                    className="hidden"
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={clearSignatureCanvas}
+                                  className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                >
+                                  Clear signature
+                                </button>
+                              </div>
+                              {signatureFile && (
+                                <p className="text-xs text-slate-600">Selected file: {signatureFile.name}</p>
+                              )}
+                              {signatureDataUrl && (
+                                <div className="mt-2">
+                                  <p className="text-xs text-slate-600 mb-1">Signature preview:</p>
+                                  <img src={signatureDataUrl} alt="Signature preview" className="max-h-24 rounded-lg border border-slate-200" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                              <input
+                                type="checkbox"
+                                id="contractTerms"
+                                checked={contractTermsAccepted}
+                                onChange={(e) => setContractTermsAccepted(e.target.checked)}
+                                className="mt-1 cursor-pointer"
+                              />
+                              <label htmlFor="contractTerms" className="text-xs text-gray-700 cursor-pointer flex-1">
+                                I have read and fully understand the entire Service Agreement above. I confirm that I am legally authorized to execute this contract on behalf of {user?.role === 'developer' ? 'my business/self as Service Provider' : 'my organization as Project Owner'}. I accept all terms, conditions, breach remedies, liability limitations, and dispute resolution procedures outlined herein. I acknowledge this is a legally binding contract enforceable in the courts of the project jurisdiction. I consent to electronic signature as legally valid.
+                              </label>
+                            </div>
+
+                            {signatureError && (
+                              <p className="text-xs text-red-600">{signatureError}</p>
+                            )}
+
+                            <Button
+                              onClick={handleSignContract}
+                              disabled={!contractTermsAccepted || isSubmittingSignature}
+                              className={`w-full font-bold py-3 ${
+                                contractTermsAccepted
+                                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              }`}
+                            >
+                              <FaFileContract className="mr-2" />
+                              {isSubmittingSignature ? 'Signing...' : 'Sign Contract Digitally'}
+                            </Button>
+
+                            <p className="text-xs text-blue-600 text-center">
+                              💡 Digital signature ensures both parties are legally bound to the terms.
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="bg-white p-4 rounded-lg border-l-4 border-green-500">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs text-gray-700 font-semibold">
+                                ✓ Contract Legally Executed on:{' '}
+                                {new Date(
+                                  user?.role === 'developer'
+                                    ? project.contract?.developer_signed_at
+                                    : project.contract?.client_signed_at || new Date()
+                                ).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                              </p>
+                              <button
+                                onClick={generateContractPDF}
+                                className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                title="Download executed contract"
+                              >
+                                <Download className="w-3 h-3" />
+                                Download
+                              </button>
+                            </div>
+                            <p className="text-xs text-gray-600 leading-relaxed">
+                              Your digital signature has been securely recorded and this contract is now legally binding. Both you and the counterparty are obligated to fulfill all terms. Breach may result in legal action, financial penalties, and negative platform records. BuildTrust has facilitated this agreement and retains copies for dispute resolution.
+                            </p>
+                          </div>
+
+                          <div className="bg-white p-4 rounded-lg border border-slate-200 text-xs text-slate-700">
+                            <p className="font-semibold mb-2">Counterparty status</p>
+                            <p>
+                              {user?.role === 'developer'
+                                ? project.contract?.client_signed_at
+                                  ? 'Client has also signed the contract.'
+                                  : 'Awaiting client signature.'
+                                : project.contract?.developer_signed_at
+                                  ? 'Developer has also signed the contract.'
+                                  : 'Awaiting developer signature.'}
+                            </p>
+                          </div>
+
+                          <Button
+                            onClick={() => navigate(user?.role === 'developer' ? '/developer-messages' : '/messages')}
+                            className="w-full font-bold py-3 bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <FaMessage className="mr-2" />
+                            Message {user?.role === 'developer' ? 'Client' : 'Developer'}
+                          </Button>
+                          <Button
+                            onClick={() => navigate('/upload-update')}
+                            className="w-full font-bold py-3 bg-[#253E44] hover:bg-[#253E44]/90 text-white"
+                          >
+                            <FaUpload className="mr-2" />
+                            Upload Project Update
+                          </Button>
+                        </div>
+                      )}
+                    </Card>
+                  )}
                   <Card className=" p-6 space-y-3" style={{ display: user?.role === "client" ? "block" : "none" }}>
                     <h4 className="font-bold text-[#253E44]">
-                      Project Assets
+                      Project Files
                     </h4>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-200  hover:bg-slate-50 cursor-pointer transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center">
-                            <FaImages/>
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold truncate max-w-[120px]">
-                              Project_Plan.pdf
-                            </p>
-                            <p className="text-[10px] text-slate-400">4.2 MB</p>
-                          </div>
-                        </div>
-                        <span className="material-icons-round text-slate-400">
-                          <FaDownload/>
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-green-50 text-green-600 rounded flex items-center justify-center">
-                            <FaTableCells/>
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold truncate max-w-[120px]">
-                              Budget_Sheet.xlsx
-                            </p>
-                            <p className="text-[10px] text-slate-400">1.8 MB</p>
-                          </div>
-                        </div>
-                        <span className="material-icons-round text-slate-400">
-                          <FaDownload/>
-                        </span>
-                      </div>
+                      {projectFiles.length > 0 ? (
+                        projectFiles.map((file, index) => {
+                          const IconComponent = file.icon;
+                          return (
+                            <div key={index} onClick={() => handleFileDownload(file)} className="flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 ${file.color} rounded flex items-center justify-center`}>
+                                  <IconComponent/>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold truncate max-w-[120px]">
+                                    {file.name}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400">{formatFileDate(file.date)}</p>
+                                </div>
+                              </div>
+                              <span className="material-icons-round text-slate-400">
+                                <FaDownload/>
+                              </span>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-xs text-slate-500 py-4">No project files yet.</p>
+                      )}
                     </div>
-                    <button className="w-full mt-4 text-xs font-bold text-[#253E44] hover:underline">
-                      Download All Reports
-                    </button>
+                    {projectFiles.length > 0 && (
+                      <button className="w-full mt-4 text-xs font-bold text-[#253E44] hover:underline">
+                        Download All Files
+                      </button>
+                    )}
                   </Card>
                   <Card className=" p-6 space-y-3" style={{ display: user?.role === "developer" ? "block" : "none" }}>
                     <h4 className="font-bold text-[#253E44]">
-                      Latest Updates
+                      Project Files
                     </h4>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center">
-                            <FaImages/>
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold truncate max-w-[120px]">
-                              Update_Week_1.zip
-                            </p>
-                            <p className="text-[10px] text-slate-400">2 days ago</p>
-                          </div>
-                        </div>
-                        <span className="material-icons-round text-slate-400">
-                          <FaDownload/>
-                        </span>
-                      </div>
+                      {projectFiles.length > 0 ? (
+                        projectFiles.map((file, index) => {
+                          const IconComponent = file.icon;
+                          return (
+                            <div key={index} onClick={() => handleFileDownload(file)} className="flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 ${file.color} rounded flex items-center justify-center`}>
+                                  <IconComponent/>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold truncate max-w-[120px]">
+                                    {file.name}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400">{formatFileDate(file.date)}</p>
+                                </div>
+                              </div>
+                              <span className="material-icons-round text-slate-400">
+                                <FaDownload/>
+                              </span>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-xs text-slate-500 py-4">No project files yet.</p>
+                      )}
                     </div>
                     <Button onClick={() => navigate("/upload-update")} className="w-full mt-4 text-xs font-bold bg-[#253E44] hover:bg-[#253E44]/90">
                       Upload New Update
@@ -589,6 +1361,8 @@ const ProjectDetails = () => {
                       Message Client
                     </Button>
                   </Card>
+
+
                 </div>
               </div>
             </div>

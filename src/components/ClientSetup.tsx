@@ -7,6 +7,7 @@ import { apiClient } from "@/lib/api";
 import PersonalInfo from "./setup/PersonalInfo";
 import ProgressTracker from "./setup/ProgressTracker";
 import NavigationButtons from "./setup/NavigationButtons";
+import IdentityVerification from "./setup/IdentityVerification";
 import Logo from '../assets/Logo.png'
 
 interface ClientSetupProps {
@@ -21,11 +22,26 @@ interface PersonalFormData extends Record<string, unknown> {
   preferredContact?: string;
 }
 
+interface FileData {
+  file: File;
+  name: string;
+  size: number;
+  type: string;
+}
+
+interface DocumentsFormData extends Record<string, unknown> {
+  id?: FileData;
+  cac?: FileData;
+  selfie?: FileData;
+  passport?: FileData;
+  idCard?: FileData;
+}
+
 const ClientSetup = ({ onExit }: ClientSetupProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     personal: {} as PersonalFormData,
-    documents: {} as Record<string, any>
+    documents: {} as DocumentsFormData
   });
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
@@ -39,7 +55,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
   }, [user, navigate]);
 
   const handleStepComplete = async () => {
-    if (currentStep < 2) {
+    if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
       // Define profileData outside try to avoid ReferenceError in catch
@@ -63,20 +79,37 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
       try {
         setUploadingDocuments(true);
         
-        // Upload any identity documents if they exist
+        // Upload client identity documents (only passport and idCard for clients)
         if (user?.id && formData.documents) {
-          const docTypes = ['id', 'cac', 'selfie'];
-          for (const docType of docTypes) {
-            const doc = formData.documents[docType];
+          const clientDocTypes = ['passport', 'idCard'] as const;
+          for (const docType of clientDocTypes) {
+            const doc = formData.documents[docType] as FileData | undefined;
+            console.log(`🔍 CHECKING ${docType}:`, {
+              exists: !!doc,
+              hasFile: !!(doc && doc.file),
+              isFileInstance: !!(doc && doc.file instanceof File),
+              fileName: doc?.name,
+              fileSize: doc?.size,
+              fileType: doc?.type
+            });
+            
             if (doc && doc.file instanceof File) {
               try {
-                console.log(`📤 Uploading ${docType} document...`);
-                await apiClient.uploadDocument(user.id, docType, doc.file);
-                console.log(`✅ ${docType} document uploaded`);
+                console.log(`📤 UPLOADING ${docType} document...`);
+                const result = await apiClient.uploadDocument(user.id, docType, doc.file);
+                console.log(`✅ ${docType} document uploaded successfully:`, result);
               } catch (uploadErr) {
-                console.error(`❌ Failed to upload ${docType}:`, uploadErr);
+                console.error(`❌ FAILED to upload ${docType}:`, uploadErr);
+                console.error(`❌ Error details:`, {
+                  message: uploadErr.message,
+                  status: uploadErr.status,
+                  body: uploadErr.body,
+                  url: uploadErr.url
+                });
                 // Continue with other documents even if one fails
               }
+            } else {
+              console.log(`⚠️ SKIPPING ${docType} - no valid file`);
             }
           }
         }
@@ -150,7 +183,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
             />
             <NavigationButtons
               currentStep={currentStep}
-              totalSteps={2}
+              totalSteps={3}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
@@ -160,6 +193,25 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
           </div>
         );
       case 2:
+        return (
+          <div>
+            <IdentityVerification
+              data={formData.documents}
+              onChange={(data) => updateFormData('documents', data)}
+              userType="client"
+            />
+            <NavigationButtons
+              currentStep={currentStep}
+              totalSteps={3}
+              onNext={handleStepComplete}
+              onPrev={handleStepBack}
+              canContinue={!!((formData.documents?.passport?.file instanceof File || formData.documents?.passport?.name) && (formData.documents?.idCard?.file instanceof File || formData.documents?.idCard?.name))}
+              formData={formData.documents}
+              userType="client"
+            />
+          </div>
+        );
+      case 3:
         return (
           <div>
             <div className="text-center mb-6 sm:mb-8">
@@ -178,6 +230,12 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
                   <span className="text-gray-600 text-sm sm:text-base">Personal information completed</span>
                 </div>
                 <div className="flex items-center space-x-3">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="text-gray-600 text-sm sm:text-base">Identity documents uploaded</span>
+                </div>
+                <div className="flex items-center space-x-3">
                   <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
                   <span className="text-gray-600 text-sm sm:text-base">Ready to connect with developers</span>
                 </div>
@@ -186,7 +244,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
 
             <NavigationButtons
               currentStep={currentStep}
-              totalSteps={2}
+              totalSteps={3}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
@@ -205,7 +263,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
             />
             <NavigationButtons
               currentStep={currentStep}
-              totalSteps={2}
+              totalSteps={3}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
@@ -236,7 +294,7 @@ const ClientSetup = ({ onExit }: ClientSetupProps) => {
 
       {/* Progress Tracker */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <ProgressTracker currentStep={currentStep} totalSteps={2} />
+        <ProgressTracker currentStep={currentStep} totalSteps={3} userType="client" />
       </div>
 
       {/* Main Content */}

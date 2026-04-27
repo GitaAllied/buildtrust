@@ -33,69 +33,309 @@ import {
 } from "react-icons/fa6";
 import { useAuth } from "@/hooks/useAuth";
 
-// Mock contract details data
-const mockContractDetails = {
-  id: 1,
-  title: "Modern Duplex Construction Contract",
-  contract_number: "BTRUST-2024-001",
-  developer: "Engr. Adewale Structures",
-  developer_email: "adewale@structures.com",
-  project: "Modern Duplex in Lekki",
-  location: "Lekki, Lagos",
-  value: "₦8,500,000",
-  status: "Active",
-  start_date: "2024-01-15",
-  end_date: "2024-12-15",
-  description:
-    "Comprehensive construction contract for a modern duplex with contemporary finishes, 4 bedrooms, open plan living, and sustainable features including solar installation and water harvesting.",
-  terms: [
-    {
-      title: "Payment Terms",
-      details:
-        "50% upfront, 30% at foundation completion, 20% at final handover",
-    },
-    // { title: "Project Duration", details: "12 months from commencement date" },
-    {
-      title: "Warranty Period",
-      details: "2 years on all structural work, 1 year on finishes",
-    },
-    { title: "Site Access", details: "Monday to Friday, 8 AM to 5 PM" },
-  ],
-  milestones: [
-    {
-      id: 1,
-      title: "Foundation & Excavation",
-      status: "completed",
-      dueDate: "2024-03-15",
-      payment: "₦2,550,000",
-    },
-    {
-      id: 2,
-      title: "Block Work & Columns",
-      status: "completed",
-      dueDate: "2024-05-15",
-      payment: "₦2,550,000",
-    },
-    {
-      id: 3,
-      title: "Roof & Windows",
-      status: "in_progress",
-      dueDate: "2024-08-15",
-      payment: "₦1,700,000",
-    },
-    {
-      id: 4,
-      title: "Electrical & Plumbing",
-      status: "pending",
-      dueDate: "2024-10-15",
-      payment: "₦1,200,000",
-    },
-  ],
-  attachments: [
-    { id: 1, name: "Contract_Agreement.pdf", size: "2.4 MB", type: "PDF" },
-    { id: 2, name: "Architectural_Plans.pdf", size: "5.2 MB", type: "PDF" },
-    { id: 3, name: "Safety_Protocol.docx", size: "800 KB", type: "DOCX" },
-  ],
+// Mock contract details data with multiple contracts
+const mockContractDatabase: Record<number, any> = {
+  1: {
+    id: 1,
+    title: "Modern Duplex Construction Contract",
+    contract_number: "BTRUST-2024-001",
+    developer: "Engr. Adewale Structures",
+    developer_email: "adewale@structures.com",
+    project: "Modern Duplex in Lekki",
+    location: "Lekki, Lagos",
+    value: "₦8,500,000",
+    status: "Active",
+    start_date: "2024-01-15",
+    end_date: "2024-12-15",
+    description:
+      "Comprehensive construction contract for a modern duplex with contemporary finishes, 4 bedrooms, open plan living, and sustainable features including solar installation and water harvesting.",
+    terms: [
+      {
+        title: "Payment Terms",
+        details:
+          "50% upfront, 30% at foundation completion, 20% at final handover",
+      },
+      {
+        title: "Warranty Period",
+        details: "2 years on all structural work, 1 year on finishes",
+      },
+      { title: "Site Access", details: "Monday to Friday, 8 AM to 5 PM" },
+    ],
+    milestones: [
+      {
+        id: 1,
+        title: "Foundation & Excavation",
+        status: "completed",
+        dueDate: "2024-03-15",
+        payment: "₦2,550,000",
+      },
+      {
+        id: 2,
+        title: "Block Work & Columns",
+        status: "completed",
+        dueDate: "2024-05-15",
+        payment: "₦2,550,000",
+      },
+      {
+        id: 3,
+        title: "Roof & Windows",
+        status: "in_progress",
+        dueDate: "2024-08-15",
+        payment: "₦1,700,000",
+      },
+      {
+        id: 4,
+        title: "Electrical & Plumbing",
+        status: "pending",
+        dueDate: "2024-10-15",
+        payment: "₦1,200,000",
+      },
+    ],
+    attachments: [
+      { id: 1, name: "Contract_Agreement.pdf", size: "2.4 MB", type: "PDF" },
+      { id: 2, name: "Architectural_Plans.pdf", size: "5.2 MB", type: "PDF" },
+      { id: 3, name: "Safety_Protocol.docx", size: "800 KB", type: "DOCX" },
+    ],
+  },
+  2: {
+    id: 2,
+    title: "Commercial Plaza Development Contract",
+    contract_number: "BTRUST-2024-002",
+    developer: "BuildCore Developments",
+    developer_email: "contact@buildcore.com",
+    project: "Commercial Plaza - Victoria Island",
+    location: "Victoria Island, Lagos",
+    value: "₦45,000,000",
+    status: "Active",
+    start_date: "2024-02-01",
+    end_date: "2025-06-30",
+    description:
+      "Large-scale commercial development project featuring modern office spaces, retail units, and parking facilities with green building certifications.",
+    terms: [
+      {
+        title: "Payment Terms",
+        details:
+          "30% upfront, 40% at mid-completion, 30% at final handover",
+      },
+      {
+        title: "Warranty Period",
+        details: "3 years comprehensive warranty on all installations",
+      },
+      { title: "Site Access", details: "24/7 access with security clearance" },
+    ],
+    milestones: [
+      {
+        id: 1,
+        title: "Site Preparation & Foundation",
+        status: "completed",
+        dueDate: "2024-04-01",
+        payment: "₦13,500,000",
+      },
+      {
+        id: 2,
+        title: "Structural Framework",
+        status: "in_progress",
+        dueDate: "2024-08-01",
+        payment: "₦18,000,000",
+      },
+      {
+        id: 3,
+        title: "Interior & Finishes",
+        status: "pending",
+        dueDate: "2025-04-01",
+        payment: "₦9,000,000",
+      },
+      {
+        id: 4,
+        title: "Final Inspection & Handover",
+        status: "pending",
+        dueDate: "2025-06-30",
+        payment: "₦4,500,000",
+      },
+    ],
+    attachments: [
+      { id: 1, name: "Master_Plan.pdf", size: "8.5 MB", type: "PDF" },
+      { id: 2, name: "Engineering_Specs.pdf", size: "6.2 MB", type: "PDF" },
+      { id: 3, name: "Environmental_Report.pdf", size: "3.1 MB", type: "PDF" },
+    ],
+  },
+  3: {
+    id: 3,
+    title: "Residential Estate Infrastructure",
+    contract_number: "BTRUST-2024-003",
+    developer: "Crown Estate Builders",
+    developer_email: "projects@crownestate.com",
+    project: "Crown Heights Estate - Phase 2",
+    location: "Ibeju-Lekki, Lagos",
+    value: "₦22,000,000",
+    status: "Completed",
+    start_date: "2023-06-01",
+    end_date: "2024-03-31",
+    description:
+      "Infrastructure development for Phase 2 of Crown Heights Estate including roads, drainage systems, street lighting, and utility installations.",
+    terms: [
+      {
+        title: "Payment Terms",
+        details: "40% upfront, 35% at mid-project, 25% at completion",
+      },
+      {
+        title: "Warranty Period",
+        details: "2 years on infrastructure systems, 5 years on roads",
+      },
+      { title: "Site Access", details: "Monday to Saturday, 6 AM to 6 PM" },
+    ],
+    milestones: [
+      {
+        id: 1,
+        title: "Road Network & Drainage",
+        status: "completed",
+        dueDate: "2023-08-31",
+        payment: "₦8,800,000",
+      },
+      {
+        id: 2,
+        title: "Street Lighting Installation",
+        status: "completed",
+        dueDate: "2023-11-30",
+        payment: "₦6,600,000",
+      },
+      {
+        id: 3,
+        title: "Utilities & Final Testing",
+        status: "completed",
+        dueDate: "2024-02-28",
+        payment: "₦4,400,000",
+      },
+      {
+        id: 4,
+        title: "Handover & Documentation",
+        status: "completed",
+        dueDate: "2024-03-31",
+        payment: "₦2,200,000",
+      },
+    ],
+    attachments: [
+      { id: 1, name: "Infrastructure_Plan.pdf", size: "4.8 MB", type: "PDF" },
+      { id: 2, name: "Completion_Certificate.pdf", size: "1.2 MB", type: "PDF" },
+    ],
+  },
+  4: {
+    id: 4,
+    title: "Office Complex Renovation",
+    contract_number: "BTRUST-2024-004",
+    developer: "Prestige Constructions Ltd",
+    developer_email: "info@prestigeconstruct.com",
+    project: "Downtown Office Complex Upgrade",
+    location: "Ikoyi, Lagos",
+    value: "₦12,500,000",
+    status: "Draft",
+    start_date: null,
+    end_date: null,
+    description:
+      "Comprehensive renovation of existing office complex including modern HVAC systems, updated electrical infrastructure, and contemporary interior design.",
+    terms: [
+      {
+        title: "Payment Terms",
+        details: "To be negotiated",
+      },
+      {
+        title: "Warranty Period",
+        details: "To be confirmed",
+      },
+      { title: "Site Access", details: "To be arranged" },
+    ],
+    milestones: [
+      {
+        id: 1,
+        title: "Design & Planning",
+        status: "pending",
+        dueDate: "TBD",
+        payment: "₦1,250,000",
+      },
+      {
+        id: 2,
+        title: "Structural Assessment",
+        status: "pending",
+        dueDate: "TBD",
+        payment: "₦1,875,000",
+      },
+      {
+        id: 3,
+        title: "Renovation Work",
+        status: "pending",
+        dueDate: "TBD",
+        payment: "₦7,500,000",
+      },
+      {
+        id: 4,
+        title: "Final Inspection",
+        status: "pending",
+        dueDate: "TBD",
+        payment: "₦1,875,000",
+      },
+    ],
+    attachments: [],
+  },
+  5: {
+    id: 5,
+    title: "Hospital Wing Construction",
+    contract_number: "BTRUST-2024-005",
+    developer: "MedBuild Contractors",
+    developer_email: "medbuild@contractors.com",
+    project: "Teaching Hospital - New Wing",
+    location: "Ibadan, Oyo State",
+    value: "₦35,000,000",
+    status: "Pending",
+    start_date: "2024-05-01",
+    end_date: "2025-12-31",
+    description:
+      "Construction of modern healthcare facility with state-of-the-art medical equipment spaces, patient wards, emergency departments, and supporting infrastructure.",
+    terms: [
+      {
+        title: "Payment Terms",
+        details: "45% upfront, 35% at 50% completion, 20% at handover",
+      },
+      {
+        title: "Warranty Period",
+        details: "3 years on medical installations, 5 years on structural",
+      },
+      { title: "Site Access", details: "Restricted access with medical protocols" },
+    ],
+    milestones: [
+      {
+        id: 1,
+        title: "Site Preparation & Foundation",
+        status: "pending",
+        dueDate: "2024-07-31",
+        payment: "₦7,000,000",
+      },
+      {
+        id: 2,
+        title: "Structural & MEP Work",
+        status: "pending",
+        dueDate: "2024-12-31",
+        payment: "₦14,000,000",
+      },
+      {
+        id: 3,
+        title: "Medical Systems Installation",
+        status: "pending",
+        dueDate: "2025-09-30",
+        payment: "₦10,500,000",
+      },
+      {
+        id: 4,
+        title: "Testing & Handover",
+        status: "pending",
+        dueDate: "2025-12-31",
+        payment: "₦3,500,000",
+      },
+    ],
+    attachments: [
+      { id: 1, name: "Medical_Specifications.pdf", size: "7.8 MB", type: "PDF" },
+      { id: 2, name: "Safety_Requirements.pdf", size: "2.5 MB", type: "PDF" },
+    ],
+  },
 };
 
 const ContractDetails = () => {
@@ -104,7 +344,8 @@ const ContractDetails = () => {
   const { signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const contract = { ...mockContractDetails, id: Number(id) };
+  const contractId = parseInt(id || "1", 10);
+  const contract = mockContractDatabase[contractId] || mockContractDatabase[1];
 
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", icon: <FaUser /> },
@@ -193,7 +434,7 @@ const ContractDetails = () => {
           </Link>
         </div>
         <button
-          onClick={() => dispatch(openAdminSidebar(!isOpen))}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
           className="p-1.5 sm:p-2 hover:bg-[#226F75]/10 rounded-lg transition-colors"
         >
           {sidebarOpen ? (
@@ -300,11 +541,11 @@ const ContractDetails = () => {
                     Start Date
                   </span>
                   <span className="text-base md:text-lg font-bold">
-                    {new Date(contract.start_date).toLocaleDateString("en-NG", {
+                    {contract.start_date ? new Date(contract.start_date).toLocaleDateString("en-NG", {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
-                    })}
+                    }) : "TBD"}
                   </span>
                 </div>
                 <div className="flex flex-col">
@@ -312,11 +553,11 @@ const ContractDetails = () => {
                     End Date
                   </span>
                   <span className="text-base md:text-lg font-bold">
-                    {new Date(contract.end_date).toLocaleDateString("en-NG", {
+                    {contract.end_date ? new Date(contract.end_date).toLocaleDateString("en-NG", {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
-                    })}
+                    }) : "TBD"}
                   </span>
                 </div>
                 <div className="flex flex-col">
@@ -363,7 +604,7 @@ const ContractDetails = () => {
                               {milestone.title}
                             </h4>
                             <p className="text-sm text-gray-500">
-                              Due: {new Date(milestone.dueDate).toLocaleDateString("en-NG", {
+                              Due: {milestone.dueDate === "TBD" ? "TBD" : new Date(milestone.dueDate).toLocaleDateString("en-NG", {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",

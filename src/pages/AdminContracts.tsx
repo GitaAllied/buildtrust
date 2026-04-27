@@ -27,8 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-// MOCK DATA: Replace with apiClient once backend is ready
-import { getAllContracts, updateContract } from "@/lib/mockData";
+import { apiClient } from "@/lib/api";
 import {
   Search,
   MoreHorizontal,
@@ -42,6 +41,8 @@ import {
   Loader2,
   ArrowLeft,
   FileText,
+  Edit2,
+  Save,
 } from "lucide-react";
 import { FaMoneyBill } from "react-icons/fa6";
 
@@ -49,14 +50,15 @@ import { FaMoneyBill } from "react-icons/fa6";
 interface Contract {
   id: number;
   project_id: number;
-  developer_id: number;
-  agreed_amount: number;
   status: string;
-  start_date?: string;
-  end_date?: string;
+  contract_terms?: string;
+  needs_resign?: boolean;
   created_at: string;
   project_title?: string;
   developer_name?: string;
+  assigned_at?: string | null;
+  acceptance_status?: string;
+  budget?: number;
 }
 
 const AdminContracts = () => {
@@ -67,22 +69,97 @@ const AdminContracts = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isContractTemplateModalOpen, setIsContractTemplateModalOpen] = useState(false);
+  const [isEditingTemplate, setIsEditingTemplate] = useState(false);
+  const [contractTemplateContent, setContractTemplateContent] = useState("");
   const [newStatus, setNewStatus] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    status: "",
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Helper function: Check if developer is assigned (not expired and has assigned_at)
+  const isDeveloperAssigned = (contract: Contract): boolean => {
+    // Developer is considered unassigned if:
+    // 1. acceptance_status is 'expired' (72-hour timer expired without response)
+    // 2. assigned_at is null (no developer was ever assigned)
+    return contract.acceptance_status !== 'expired' && !!contract.assigned_at;
+  };
+
+  // Helper function: Auto-check if assigned_at dates are due and update status in DB
+  const checkAndUpdateExpiredAcceptances = async () => {
+    try {
+      console.log('🔍 Checking for expired project acceptances...');
+      const response = await apiClient.checkExpiredProjectAcceptances();
+      
+      if (response.expiredCount > 0) {
+        console.log(`⏰ ${response.expiredCount} project acceptance(s) expired and updated`);
+        toast({
+          title: "Acceptances Updated",
+          description: `${response.expiredCount} project acceptance(s) expired and marked as expired.`,
+          variant: "default"
+        });
+        // Refresh the contracts list to show updated status
+        await loadContracts();
+      } else {
+        console.log('✓ No expired acceptances found');
+      }
+      return response;
+    } catch (error) {
+      console.error('Error checking expired acceptances:', error);
+      toast({
+        title: "Error",
+        description: "Failed to check for expired acceptances",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     loadContracts();
+    loadContractTemplate();
   }, []);
+
+  const loadContractTemplate = async () => {
+    try {
+      const response = await apiClient.getContractTemplate();
+      if (response?.template?.contract_terms) {
+        setContractTemplateContent(response.template.contract_terms);
+      }
+    } catch (err) {
+      console.error("Error loading contract template:", err);
+      // Use default template if fetch fails
+    }
+  };
 
   const loadContracts = async () => {
     try {
       setLoading(true);
       setError(null);
-      // MOCK DATA: Using mock data - replace with apiClient.getContracts() when ready
-      const mockContracts = getAllContracts();
-      setContracts(mockContracts);
+      
+      // Fetch all contracts with project details joined from backend
+      const response = await apiClient.getAllContracts();
+      const contractsData = response?.contracts || [];
+      
+      // Map to Contract interface
+      const contractsWithDetails = contractsData.map((contract: any) => ({
+        id: contract.id,
+        project_id: contract.project_id,
+        status: contract.status || 'active',
+        contract_terms: contract.contract_terms || '',
+        needs_resign: contract.needs_resign || false,
+        created_at: contract.created_at,
+        project_title: contract.project_title || 'Untitled Project',
+        developer_name: contract.developer_name || 'Unassigned',
+        assigned_at: contract.assigned_at,
+        acceptance_status: contract.acceptance_status,
+        budget: contract.budget || 0,
+      }));
+      
+      setContracts(contractsWithDetails);
     } catch (err) {
       console.error("Error loading contracts:", err);
       setError("Failed to load contracts");
@@ -92,12 +169,47 @@ const AdminContracts = () => {
     }
   };
 
+  const handleEditContract = (contract: Contract) => {
+    setSelectedContract(contract);
+    setEditFormData({
+      status: contract.status || "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveContract = async () => {
+    if (!selectedContract) {
+      toast({ title: "Error", description: "No contract selected", variant: "destructive" });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updateData: Record<string, any> = {};
+      
+      if (editFormData.status) updateData.status = editFormData.status;
+
+      await apiClient.updateProjectContract(selectedContract.project_id, updateData);
+      
+      toast({ title: "Success", description: "Contract updated successfully" });
+      setIsEditDialogOpen(false);
+      loadContracts();
+    } catch (err) {
+      console.error("Error updating contract:", err);
+      toast({ title: "Error", description: "Failed to update contract", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+
   const filteredContracts = contracts.filter((contract) => {
     const matchesSearch = 
       contract.project_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contract.developer_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "all" || contract.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const isDeveloper = isDeveloperAssigned(contract);
+    return matchesSearch && matchesStatus && isDeveloper;
   });
 
   const getStatusBadge = (status: string) => {
@@ -132,8 +244,7 @@ const AdminContracts = () => {
 
     setSaving(true);
     try {
-      // MOCK DATA: Using mock update - replace with apiClient.updateProjectStatus() when ready
-      updateContract(selectedContract.id, { status: newStatus });
+      await apiClient.updateProjectContract(selectedContract.project_id, { status: newStatus });
       toast({ title: "Success", description: "Contract status updated" });
       setIsStatusDialogOpen(false);
       setNewStatus("");
@@ -149,12 +260,22 @@ const AdminContracts = () => {
     if (!confirm("Are you sure you want to delete this contract?")) return;
 
     try {
-      // MOCK DATA: Delete functionality - replace with backend endpoint when ready
-      console.log("Delete contract:", contractId);
-      toast({ title: "Success", description: "Contract deleted" });
+      setSaving(true);
+      // Find the contract to get projectId
+      const contract = contracts.find(c => c.id === contractId);
+      if (!contract) {
+        toast({ title: "Error", description: "Contract not found", variant: "destructive" });
+        return;
+      }
+
+      await apiClient.deleteProjectContract(contract.project_id);
+      toast({ title: "Success", description: "Contract deleted successfully" });
       loadContracts();
     } catch (err) {
+      console.error('Error deleting contract:', err);
       toast({ title: "Error", description: "Failed to delete contract", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -188,14 +309,8 @@ const AdminContracts = () => {
             </div>
           </div>
           <div className="flex gap-2 flex-wrap justify-end">
-            <Button variant="outline" size="sm" onClick={() => navigate("/admin/users")}>
-              Users
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/admin/projects")}>
-              Projects
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/admin/developers")}>
-              Developers
+            <Button className="bg-[#253E44] hover:bg-[#253E44]/90" onClick={() => setIsContractTemplateModalOpen(true)}>
+              Contract Template
             </Button>
           </div>
         </div>
@@ -272,12 +387,18 @@ const AdminContracts = () => {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <p className="text-sm text-gray-900">{contract.developer_name}</p>
+                          <div className="flex items-center gap-2">
+                            {isDeveloperAssigned(contract) ? (
+                              <p className="text-sm text-gray-900">{contract.developer_name}</p>
+                            ) : (
+                              <p className="text-sm text-gray-600">Unassigned</p>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-1 text-gray-900 font-medium">
                             <FaMoneyBill className="h-4 w-4" />
-                            <span>{contract.agreed_amount.toFixed(2)}</span>
+                            <span>${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(contract.budget || 0))}</span>
                           </div>
                         </td>
                         <td className="py-3 px-4">
@@ -375,6 +496,274 @@ const AdminContracts = () => {
                 ) : (
                   "Update Status"
                 )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Contract Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Update Contract Status</DialogTitle>
+              <DialogDescription>
+                Update status for contract on "{selectedContract?.project_title}"
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select value={editFormData.status} onValueChange={(value) => setEditFormData({ ...editFormData, status: value })}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="disputed">Disputed</SelectItem>
+                    <SelectItem value="terminated">Terminated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveContract}
+                disabled={saving}
+                className="bg-[#253E44] hover:bg-[#253E44]/90"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Contract Template Modal */}
+        <Dialog open={isContractTemplateModalOpen} onOpenChange={setIsContractTemplateModalOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <DialogTitle>Standard Contract Template</DialogTitle>
+                  <DialogDescription>
+                    Official BuildTrust Service Agreement and Legal Contract
+                  </DialogDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingTemplate(!isEditingTemplate)}
+                  className="ml-4"
+                >
+                  {isEditingTemplate ? "Cancel" : "Edit"}
+                </Button>
+              </div>
+            </DialogHeader>
+            {isEditingTemplate ? (
+              <div className="space-y-4">
+                <div className="border border-gray-300 rounded-lg overflow-hidden shadow-md">
+                  {/* Rich Text Toolbar */}
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-300 p-3 flex flex-wrap gap-2 items-center">
+                    {/* Text Formatting */}
+                    <div className="flex gap-1 items-center">
+                      <button
+                        className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-[#253E44] hover:text-white font-bold text-sm transition"
+                        title="Bold"
+                      >
+                        B
+                      </button>
+                      <button
+                        className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-[#253E44] hover:text-white italic text-sm transition"
+                        title="Italic"
+                      >
+                        I
+                      </button>
+                      <button
+                        className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-[#253E44] hover:text-white underline text-sm transition"
+                        title="Underline"
+                      >
+                        U
+                      </button>
+                    </div>
+                    <div className="border-l border-gray-300 h-6"></div>
+                    
+                    {/* Font Size */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-600 font-semibold">Size:</span>
+                      <select className="px-2 py-1.5 bg-white border border-gray-300 rounded text-xs font-medium hover:border-[#253E44] transition">
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Normal</option>
+                        <option value="large">Large</option>
+                        <option value="xl">XL</option>
+                      </select>
+                    </div>
+                    <div className="border-l border-gray-300 h-6"></div>
+                    
+                    {/* Text Color */}
+                    <div className="flex items-center gap-1">
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <span className="text-xs text-gray-600 font-semibold">Text:</span>
+                        <input
+                          type="color"
+                          defaultValue="#000000"
+                          className="w-7 h-7 border border-gray-300 rounded cursor-pointer"
+                          title="Text Color"
+                        />
+                      </label>
+                    </div>
+                    
+                    {/* Background Color */}
+                    <div className="flex items-center gap-1">
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <span className="text-xs text-gray-600 font-semibold">BG:</span>
+                        <input
+                          type="color"
+                          defaultValue="#ffffff"
+                          className="w-7 h-7 border border-gray-300 rounded cursor-pointer"
+                          title="Background Color"
+                        />
+                      </label>
+                    </div>
+                    <div className="border-l border-gray-300 h-6"></div>
+                    
+                    {/* List Options */}
+                    <div className="flex gap-1 items-center">
+                      <button
+                        className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-[#253E44] hover:text-white text-sm transition"
+                        title="Bullet Point"
+                      >
+                        •
+                      </button>
+                      <button
+                        className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-[#253E44] hover:text-white text-sm transition"
+                        title="Numbered List"
+                      >
+                        1.
+                      </button>
+                    </div>
+                    <div className="border-l border-gray-300 h-6"></div>
+                    
+                    {/* Reset Button */}
+                    <button
+                      onClick={() => {
+                        setContractTemplateContent(
+                          `BUILDTRUST SERVICE AGREEMENT & LEGAL CONTRACT\n\n1. PARTIES & SCOPE\nThis binding contract is entered into between: (a) Client as Project Owner, (b) Developer as Service Provider, and (c) BuildTrust Africa as Platform Facilitator.\n\n2. PROJECT SCOPE & DELIVERABLES\nDeveloper is responsible for quality workmanship, adherence to specifications, timely completion, regular progress updates, and site safety compliance.\n\n3. AGREED CONTRACT VALUE & PAYMENT TERMS\nPayments are released in milestones upon verified completion of project phases. Client shall make payments within 7 days of invoice.\n\n4. PERFORMANCE & LIABILITY\nDeveloper warrants professional execution of all work. BuildTrust provides platform mediation but does not assume contractor liability.\n\n5. BREACH & REMEDIES\nFailure to meet standards results in contract termination, funds adjustment, and potential legal action.\n\n6. DISPUTE RESOLUTION\nAll disputes are referred to BuildTrust's mediation team (14-day resolution window).\n\n7. TERMINATION & CANCELLATION\nClient may cancel with 14-day notice and 20% fee forfeiture if no work commenced.\n\n8. CONFIDENTIALITY & IP RIGHTS\nBoth parties maintain confidentiality. Client retains all intellectual property rights.\n\n9. INSURANCE & COMPLIANCE\nDeveloper must maintain liability insurance and comply with all regulations.\n\n10. LEGAL JURISDICTION\nThis contract is governed by applicable laws of the project location.\n\n11. PLATFORM PROTECTIONS\nBuildTrust holds funds in escrow, releasing only upon verified completion.`
+                        );
+                      }}
+                      className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-orange-50 hover:border-orange-300 text-sm transition text-orange-600 font-semibold"
+                      title="Reset to Default Template"
+                    >
+                      ↻ Reset
+                    </button>
+                  </div>
+                  
+                  {/* Editor Area */}
+                  <textarea
+                    value={contractTemplateContent}
+                    onChange={(e) => setContractTemplateContent(e.target.value)}
+                    rows={18}
+                    className="w-full px-4 py-4 border-0 focus:outline-none focus:ring-0 font-serif text-sm leading-relaxed resize-none bg-white"
+                    style={{ fontFamily: '"Georgia", serif', lineHeight: '1.8' }}
+                    placeholder="Enter contract template content..."
+                  />
+                </div>
+                
+                {/* Statistics */}
+                <div className="flex justify-between items-center text-xs text-gray-600 bg-gray-50 p-3 rounded">
+                  <div className="space-x-4">
+                    <span>📄 Words: {contractTemplateContent.split(/\s+/).filter(w => w.length > 0).length}</span>
+                    <span>🔤 Characters: {contractTemplateContent.length}</span>
+                  </div>
+                  <span className="text-gray-400">Last edited: just now</span>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditingTemplate(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      setSaving(true);
+                      try {
+                        // Save template to database
+                        await apiClient.updateContractTemplate({
+                          contract_terms: contractTemplateContent
+                        });
+                        
+                        toast({
+                          title: "Success",
+                          description: "Contract template saved. New projects will use this template.",
+                        });
+                        setIsEditingTemplate(false);
+                      } catch (err) {
+                        console.error("Error saving template:", err);
+                        toast({
+                          title: "Error",
+                          description: "Failed to save contract template",
+                          variant: "destructive"
+                        });
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                    disabled={saving}
+                    className="bg-[#253E44] hover:bg-[#253E44]/90"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Template
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 text-xs text-gray-700">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <p className="text-sm text-blue-700">
+                      <strong>ℹ️ Master Template</strong> - Changes to this template apply to all future projects. Existing contracts are not affected.
+                    </p>
+                  </div>
+                  
+                  <h5 className="font-bold text-center text-sm text-[#253E44] mb-4">
+                    {contractTemplateContent.split('\n')[0] || 'BUILDTRUST SERVICE AGREEMENT & LEGAL CONTRACT'}
+                  </h5>
+
+                  <div className="space-y-3 text-sm text-gray-700 whitespace-pre-wrap font-serif leading-relaxed">
+                    {contractTemplateContent}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button 
+                onClick={() => setIsContractTemplateModalOpen(false)}
+                className="bg-[#253E44] hover:bg-[#253E44]/90"
+              >
+                Close
               </Button>
             </DialogFooter>
           </DialogContent>

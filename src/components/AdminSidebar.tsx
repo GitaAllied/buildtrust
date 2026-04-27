@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api";
 import Logo from "../assets/Logo.png";
 import {
   FaBook,
@@ -16,6 +17,7 @@ import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
 import { useDispatch, useSelector } from "react-redux";
 import { openAdminSidebar, openSignoutModal } from "@/redux/action";
+import { Badge } from "@/components/ui/badge";
 
 const AdminSidebar = ({active}) => {
     const [activeTab, setActiveTab] = useState(active);
@@ -24,6 +26,56 @@ const AdminSidebar = ({active}) => {
   const { toast } = useToast();
   const dispatch = useDispatch()
   const isOpen = useSelector((state:any) => state.sidebar.adminSidebar)
+  
+  // Notification counts state
+  const [notificationCounts, setNotificationCounts] = useState({
+    projects: 0,
+    messages: 0,
+    support: 5,
+  });
+
+  // Fetch and count open projects
+  useEffect(() => {
+    const fetchOpenProjectsCount = async () => {
+      try {
+        const response = await apiClient.getAllProjects();
+        const projectsArray = Array.isArray(response) ? response : response?.projects || [];
+        
+        // Count projects with status "open"
+        const openProjectsCount = projectsArray.filter(
+          (p: any) => p.status === 'open'
+        ).length;
+        
+        setNotificationCounts(prev => ({
+          ...prev,
+          projects: openProjectsCount
+        }));
+      } catch (error) {
+        console.error('Error fetching projects count:', error);
+      }
+    };
+
+    fetchOpenProjectsCount();
+  }, []);
+
+  // Fetch and count unread messages
+  useEffect(() => {
+    const fetchUnreadMessagesCount = async () => {
+      try {
+        const response = await apiClient.getUnreadMessageCount();
+        const unreadCount = response?.unread_count || 0;
+        
+        setNotificationCounts(prev => ({
+          ...prev,
+          messages: unreadCount
+        }));
+      } catch (error) {
+        console.error('Error fetching unread messages count:', error);
+      }
+    };
+
+    fetchUnreadMessagesCount();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -37,13 +89,13 @@ const AdminSidebar = ({active}) => {
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", icon: <FaUser />, active: true },
     { id: "users", label: "User Management", icon: <FaUsers /> },
-    { id: "projects", label: "Projects", icon: <FaHandshake /> },
+    { id: "projects", label: "Projects", icon: <FaHandshake />, count: notificationCounts.projects },
     { id: "contracts", label: "Contracts", icon: <FaBook /> },
     { id: "developers", label: "Developers", icon: <FaUser /> },
-    { id: "messages", label: "Messages", icon: <FaMessage /> },
+    { id: "messages", label: "Messages", icon: <FaMessage />, count: notificationCounts.messages },
     { id: "reports", label: "Reports", icon: <FaBook /> },
     { id: "settings", label: "Settings", icon: <FaGear /> },
-    { id: "support", label: "Support", icon: <FaHandshake /> },
+    { id: "support", label: "Support", icon: <FaHandshake />, count: notificationCounts.support },
   ];
 
   const handleNavigation = (itemId: string) => {
@@ -56,7 +108,10 @@ const AdminSidebar = ({active}) => {
         navigate("/admin/users");
         break;
       case "projects":
+        setActiveTab(itemId);
         navigate("/admin/projects");
+        // Clear projects count when admin views projects
+        setNotificationCounts(prev => ({ ...prev, projects: 0 }));
         break;
       case "contracts":
         navigate("/admin/contracts");
@@ -65,7 +120,10 @@ const AdminSidebar = ({active}) => {
         navigate("/admin/developers");
         break;
       case "messages":
+        setActiveTab(itemId);
         navigate("/admin/messages");
+        // Clear messages count when admin views messages
+        setNotificationCounts(prev => ({ ...prev, messages: 0 }));
         break;
       case "reports":
         navigate("/admin/reports");
@@ -74,7 +132,10 @@ const AdminSidebar = ({active}) => {
         navigate("/admin/settings");
         break;
       case "support":
+        setActiveTab(itemId);
         navigate("/admin/support");
+        // Clear support count when admin views support
+        setNotificationCounts(prev => ({ ...prev, support: 0 }));
         break;
       case "logout":
         handleLogout();
@@ -111,14 +172,21 @@ const AdminSidebar = ({active}) => {
                     handleNavigation(item.id);
                     dispatch(openAdminSidebar(false))
                   }}
-                  className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center ${
+                  className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-md sm:rounded-xl mb-1 transition-all text-sm sm:text-sm font-medium flex gap-2 items-center justify-between relative group ${
                     activeTab === item.id
                       ? "bg-gradient-to-r from-[#226F75]/10 to-[#253E44]/10 text-[#226F75] border-[#226F75]"
                       : "text-gray-600 hover:bg-[#226F75]/5 hover:text-[#226F75]"
                   }`}
                 >
-                  {item.icon}
-                  {item.label}
+                  <span className="flex gap-2 items-center">
+                    {item.icon}
+                    {item.label}
+                  </span>
+                  {item.count > 0 && (
+                    <Badge className="h-5 w-5 rounded-full bg-red-500 hover:bg-red-600 text-xs p-0 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
+                      {item.count > 99 ? "99+" : item.count}
+                    </Badge>
+                  )}
                 </button>
               ))}
             </nav>

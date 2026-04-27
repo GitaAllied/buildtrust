@@ -470,8 +470,8 @@ const AdminUserView = () => {
               </CardContent>
             </Card>
 
-            {/* Developer Documents Card - Only show for Developers */}
-            {user?.role?.toLowerCase() === "developer" && (
+            {/* Documents Card - Show for all users with documents */}
+            {documents && documents.length > 0 && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">

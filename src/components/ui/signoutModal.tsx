@@ -19,10 +19,14 @@ const signoutModal = ({ isOpen, onClose }: SignoutModalProps) => {
 
   const handleLogout = async () => {
     try {
+      // Close the modal immediately before signing out
+      dispatch(openSignoutModal(false));
       await signOut();
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
+      // Make sure modal is closed even on error
+      dispatch(openSignoutModal(false));
     }
   };
 

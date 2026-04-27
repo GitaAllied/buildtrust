@@ -20,7 +20,9 @@ import {
   Users,
   UserCheck,
   X,
-  Menu
+  Menu,
+  Archive,
+  ArchiveRestore
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -78,7 +80,7 @@ const AdminMessages = () => {
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("active");
   const dispatch = useDispatch()
   const isOpen = useSelector((state:any) => state.sidebar.adminSidebar)
   const messageListRef = useRef<HTMLDivElement | null>(null);
@@ -185,18 +187,29 @@ const AdminMessages = () => {
 
         // Create a map of user ID to last message info
         const lastMessageMap: Record<number, { lastMessage: string; lastMessageTime: string }> = {};
+        // Create a map of user ID to conversation metadata (id, status, etc)
+        const conversationMetaMap: Record<number, { conversation_id: number; status: string }> = {};
+        
         backendConversations.forEach((conv: any) => {
           const otherId = conv.other_id || conv.participant2_id || conv.participant1_id;
-          if (otherId && conv.last_message_at) {
-            let lastMessage = conv.last_message_content || conv.last_message;
-            // If backend doesn't provide, try to get from messages array (local fallback)
-            if (!lastMessage && Array.isArray(conv.messages) && conv.messages.length > 0) {
-              lastMessage = conv.messages[conv.messages.length - 1].content;
-            }
-            lastMessageMap[otherId] = {
-              lastMessage: lastMessage || '',
-              lastMessageTime: conv.last_message_at,
+          if (otherId) {
+            // Store conversation metadata
+            conversationMetaMap[otherId] = {
+              conversation_id: conv.conversation_id || conv.id,
+              status: conv.status || 'active'
             };
+            
+            if (conv.last_message_at) {
+              let lastMessage = conv.last_message_content || conv.last_message;
+              // If backend doesn't provide, try to get from messages array (local fallback)
+              if (!lastMessage && Array.isArray(conv.messages) && conv.messages.length > 0) {
+                lastMessage = conv.messages[conv.messages.length - 1].content;
+              }
+              lastMessageMap[otherId] = {
+                lastMessage: lastMessage || '',
+                lastMessageTime: conv.last_message_at,
+              };
+            }
           }
         });
 
@@ -210,6 +223,15 @@ const AdminMessages = () => {
           return roleOk && setupCompleted;
         });
 
+        // Create a map of user ID to unread count
+        const unreadCountMap: Record<number, number> = {};
+        backendConversations.forEach((conv: any) => {
+          const otherId = conv.other_id || conv.participant2_id || conv.participant1_id;
+          if (otherId) {
+            unreadCountMap[otherId] = conv.unread_count || 0;
+          }
+        });
+
         const convs = filteredUsers.map((u: any) => {
           const lastInfo = lastMessageMap[u.id];
           let lastMessage = 'No messages yet';
@@ -220,25 +242,28 @@ const AdminMessages = () => {
             lastMessageTime = lastInfo.lastMessageTime;
           }
 
+          // Get conversation metadata for this user
+          const convMeta = conversationMetaMap[u.id] || { conversation_id: undefined, status: 'active' };
+
           // Robust online detection: check multiple possible fields and fallbacks
           const now = Date.now();
           const truthy = (v: any) => v === true || v === 1 || v === '1' || v === 'true' || v === 'on';
           const lastSeenField = u.last_seen || u.lastSeen || u.last_login || u.lastLogin || u.last_activity || u.lastActivity;
           let isOnline = false;
 
+          // Check explicit online status fields first
+          if (!isOnline) {
+            if (truthy(u.is_online) || truthy(u.session_active)) {
+              isOnline = true;
+            }
+          }
+
           // If this record matches the currently authenticated user, prefer true
           if (currentUser && u.id === currentUser.id) {
             isOnline = true;
           }
 
-          // explicit boolean/string flags that indicate online
-          if (!isOnline) {
-            if (truthy(u.session_active) || truthy(u.sessionActive) || truthy(u.is_online) || truthy(u.isOnline) || truthy(u.online) || truthy(u.online_status)) {
-              isOnline = true;
-            }
-          }
-
-          // last seen / last login timestamps (consider online if within 5 minutes)
+          // Fallback to last seen / last login timestamps (consider online if within 5 minutes)
           if (!isOnline && lastSeenField) {
             const ts = Date.parse(lastSeenField);
             if (!isNaN(ts)) {
@@ -248,6 +273,7 @@ const AdminMessages = () => {
 
           return {
             id: u.id,
+            conversation_id: convMeta.conversation_id,
             userId: u.id,
             userName: u.name || u.email || `User ${u.id}`,
             userRole: u.role === 'developer' ? 'developer' : 'client',
@@ -256,8 +282,8 @@ const AdminMessages = () => {
             lastMessageTime,
             userOnline: isOnline,
             lastSeen: lastSeenField,
-            unreadCount: 0,
-            status: 'active',
+            unreadCount: unreadCountMap[u.id] || 0,
+            status: convMeta.status as 'active' | 'archived',
           } as Conversation;
         });
 
@@ -284,18 +310,59 @@ const AdminMessages = () => {
     };
 
     loadUsers();
+    
+    // Also load unread counts for all conversations
+    const loadUnreadCounts = async () => {
+      try {
+        let convList: any[] = [];
+        try {
+          convList = await apiClient.getConversations();
+          if (!Array.isArray(convList)) {
+            convList = [];
+          }
+        } catch (e) {
+          return; // continue without unread counts
+        }
+
+        // Build unread count map: user_id -> unread count
+        const unreadMap: Record<number, number> = {};
+        for (const conv of convList) {
+          const otherId = conv.other_id || conv.participant2_id || conv.participant1_id;
+          if (!otherId) continue;
+          
+          // Use the unread_count from backend
+          unreadMap[otherId] = conv.unread_count || 0;
+        }
+
+        // Update conversations with unread counts
+        setConversations((prevConvs) =>
+          prevConvs.map((conv) => ({
+            ...conv,
+            unreadCount: unreadMap[conv.userId] || 0,
+          }))
+        );
+      } catch (e) {
+        // silently continue without unread counts
+      }
+    };
+
+    loadUnreadCounts();
     interval = setInterval(loadUsers, 30000); // Poll every 30s
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
   const filteredConversations = conversations.filter((conversation) => {
+    // Hide conversations with no messages
+    if (conversation.lastMessage === 'No messages yet') {
+      return false;
+    }
+
     const matchesSearch = conversation.userName
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesRole =
       filterRole === "all" || conversation.userRole === filterRole;
-    const matchesStatus =
-      filterStatus === "all" || conversation.status === filterStatus;
+    const matchesStatus = conversation.status === filterStatus;
     return matchesSearch && matchesRole && matchesStatus;
   }).sort((a, b) => {
     // Sort by latest messages first (descending order)
@@ -469,27 +536,58 @@ const AdminMessages = () => {
         };
         
         setConversationMessages((prev) => [...prev, backendMsg]);
-        
-        // Update conversation in list
-        setConversations((prevConvs) =>
-          prevConvs.map((conv) =>
-            conv.userId === selectedConversation.userId
-              ? {
-                  ...conv,
-                  lastMessage: msg.content,
-                  lastMessageTime: msg.timestamp,
-                  conversation_id: resp.conversation_id || selectedConversation.conversation_id,
-                }
-              : conv
-          )
-        );
+        setNewMessage("");
 
         // Update selectedConversation with conversation_id from backend
         if (resp && resp.conversation_id) {
           setSelectedConversation((s) => s ? { ...s, conversation_id: resp.conversation_id } : s);
         }
-        
-        setNewMessage("");
+
+        // Refresh conversations list from backend to get updated last_message_at and recalculate unread counts
+        try {
+          let backendConversations: any[] = [];
+          try {
+            backendConversations = await apiClient.getConversations();
+            if (!Array.isArray(backendConversations)) {
+              backendConversations = [];
+            }
+          } catch (e) {
+            // Could not fetch conversations - continue
+          }
+
+          // Create a map of user ID to last message info
+          const lastMessageMap: Record<number, { lastMessage: string; lastMessageTime: string }> = {};
+          backendConversations.forEach((conv: any) => {
+            const otherId = conv.other_id || conv.participant2_id || conv.participant1_id;
+            if (otherId && conv.last_message_at) {
+              let lastMessage = conv.last_message_content || conv.last_message;
+              if (!lastMessage && Array.isArray(conv.messages) && conv.messages.length > 0) {
+                lastMessage = conv.messages[conv.messages.length - 1].content;
+              }
+              lastMessageMap[otherId] = {
+                lastMessage: lastMessage || '',
+                lastMessageTime: conv.last_message_at,
+              };
+            }
+          });
+
+          // Update conversations with fresh data from backend
+          setConversations((prevConvs) => {
+            return prevConvs.map((conv) => {
+              const lastInfo = lastMessageMap[conv.userId];
+              if (lastInfo) {
+                return {
+                  ...conv,
+                  lastMessage: lastInfo.lastMessage,
+                  lastMessageTime: lastInfo.lastMessageTime,
+                };
+              }
+              return conv;
+            });
+          });
+        } catch (e) {
+          // If refresh fails, that's ok - we still updated locally
+        }
       } catch (e) {
         console.error('Message sending error:', e);
         alert('Message sending failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
@@ -497,6 +595,42 @@ const AdminMessages = () => {
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Failed to send message. Please try again.');
+    }
+  };
+
+  const handleArchiveConversation = async (conversation: Conversation, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!conversation.conversation_id) {
+      alert('Cannot archive conversation without conversation ID');
+      return;
+    }
+
+    try {
+      // Call backend to archive/unarchive the conversation
+      const newStatus = conversation.status === 'archived' ? 'active' : 'archived';
+      await apiClient.archiveConversation(conversation.conversation_id, newStatus);
+
+      // Update local conversation state
+      setConversations((prevConvs) =>
+        prevConvs.map((conv) =>
+          conv.id === conversation.id
+            ? { ...conv, status: newStatus as any }
+            : conv
+        )
+      );
+
+      // If archiving the currently selected conversation, deselect it
+      if (selectedConversation?.id === conversation.id) {
+        setSelectedConversation(null);
+      }
+
+      // Show success message
+      const action = newStatus === 'archived' ? 'archived' : 'unarchived';
+      console.log(`✅ Conversation ${action}`);
+    } catch (error) {
+      console.error('Error archiving conversation:', error);
+      alert('Failed to archive conversation. Please try again.');
     }
   };
 
@@ -543,6 +677,15 @@ const AdminMessages = () => {
               return { ...s, conversation_id: conv.conversation_id };
             });
 
+            // Clear unread count for this conversation since messages are now marked as read
+            setConversations((prevConvs) =>
+              prevConvs.map((c) =>
+                c.userId === selectedConversation.userId
+                  ? { ...c, unreadCount: 0 }
+                  : c
+              )
+            );
+
             try {
               // explicitly mark as read on backend (ensures read receipts update)
               await apiClient.markConversationRead(conv.conversation_id);
@@ -570,8 +713,15 @@ const AdminMessages = () => {
           const now = Date.now();
           const truthy = (v: any) => v === true || v === 1 || v === '1' || v === 'true' || v === 'on';
           let isOnline = false;
+          
+          // Check explicit online status fields first
+          if (!isOnline) {
+            if (truthy(u.is_online) || truthy(u.session_active)) {
+              isOnline = true;
+            }
+          }
+          
           if (currentUser && u.id === currentUser.id) isOnline = true;
-          if (!isOnline && (truthy(u.session_active) || truthy(u.sessionActive) || truthy(u.is_online) || truthy(u.isOnline) || truthy(u.online))) isOnline = true;
           if (!isOnline && lastSeenField) {
             const ts = Date.parse(lastSeenField);
             if (!isNaN(ts)) isOnline = (now - ts) < 5 * 60 * 1000;
@@ -627,13 +777,52 @@ const AdminMessages = () => {
     const ts = message.timestamp || message.created_at || message.createdAt;
     if (!ts) return 'Recently';
     try {
-      const d = new Date(ts);
-      if (isNaN(d.getTime())) {
-        // fallback to splitting when it's a string like '2024-01-09 14:30'
-        const parts = String(ts).split(' ');
-        return parts.length > 1 ? parts[1] : String(ts);
+      let parseTs = Date.parse(ts);
+      
+      // Handle MySQL DATETIME format (YYYY-MM-DD HH:MM:SS) if standard parsing fails
+      if (isNaN(parseTs) && typeof ts === 'string') {
+        parseTs = Date.parse(ts.replace(' ', 'T'));
       }
-      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      if (isNaN(parseTs)) return String(ts);
+      
+      const d = new Date(parseTs);
+      const now = new Date();
+      
+      // Normalize to start of day for comparison
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const nowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      const diffMs = nowStart.getTime() - dayStart.getTime();
+      const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+      
+      // Today - show time only
+      if (diffDays === 0) {
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      
+      // Yesterday
+      if (diffDays === 1) {
+        return 'Yesterday';
+      }
+      
+      // Within a week (2-6 days ago) - show day name
+      if (diffDays > 1 && diffDays < 7) {
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return dayNames[d.getDay()];
+      }
+      
+      // Older than a week - show formatted date (like WhatsApp: "5 Feb" or "5 Feb 2025")
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = monthNames[d.getMonth()];
+      const day = d.getDate();
+      
+      // Include year if different from current year
+      if (d.getFullYear() !== now.getFullYear()) {
+        return `${day} ${month} ${d.getFullYear()}`;
+      }
+      
+      return `${day} ${month}`;
     } catch {
       return String(ts);
     }
@@ -685,6 +874,109 @@ const AdminMessages = () => {
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     } catch {
       return lastSeen;
+    }
+  };
+
+  const getMessageAgeLabel = (timestamp: string | undefined) => {
+    if (!timestamp) return 'Older messages';
+    try {
+      let ts = Date.parse(timestamp);
+      
+      // Handle MySQL DATETIME format (YYYY-MM-DD HH:MM:SS) if standard parsing fails
+      if (isNaN(ts) && typeof timestamp === 'string') {
+        ts = Date.parse(timestamp.replace(' ', 'T'));
+      }
+      
+      if (isNaN(ts)) return 'Older messages';
+      
+      const d = new Date(ts);
+      const now = new Date();
+      
+      // Normalize to start of day for comparison
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const nowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      const diffMs = nowStart.getTime() - dayStart.getTime();
+      const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+      
+      // Today (0 days)
+      if (diffDays === 0) {
+        return 'Today';
+      }
+      
+      // Yesterday (1 day ago)
+      if (diffDays === 1) {
+        return 'Yesterday';
+      }
+      
+      // Within a week (2-6 days ago) - show full day name
+      if (diffDays > 1 && diffDays < 7) {
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return dayNames[d.getDay()];
+      }
+      
+      // Older than a week - show formatted date (like WhatsApp: "5 Feb" or "5 Feb 2025")
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = monthNames[d.getMonth()];
+      const day = d.getDate();
+      
+      // Include year if different from current year
+      if (d.getFullYear() !== now.getFullYear()) {
+        return `${day} ${month} ${d.getFullYear()}`;
+      }
+      
+      return `${day} ${month}`;
+    } catch {
+      return 'Older messages';
+    }
+  };
+
+  const getMessageTimeGroup = (timestamp: string | undefined) => {
+    if (!timestamp) return 'unknown';
+    try {
+      let ts = Date.parse(timestamp);
+      
+      // Handle MySQL DATETIME format (YYYY-MM-DD HH:MM:SS) if standard parsing fails
+      if (isNaN(ts) && typeof timestamp === 'string') {
+        // Try replacing space with 'T' for ISO format
+        ts = Date.parse(timestamp.replace(' ', 'T'));
+      }
+      
+      if (isNaN(ts)) return 'unknown';
+      
+      const d = new Date(ts);
+      const now = new Date();
+      
+      // Normalize to start of day for comparison
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const nowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      const diffMs = nowStart.getTime() - dayStart.getTime();
+      const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+      
+      // Today
+      if (diffDays === 0) {
+        return 'today';
+      }
+      
+      // Yesterday
+      if (diffDays === 1) {
+        return 'yesterday';
+      }
+      
+      // This week (2-6 days ago) - group by day of week
+      if (diffDays > 1 && diffDays < 7) {
+        return `week-${d.getDay()}`;
+      }
+      
+      // Older - group by date
+      return d.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined 
+      });
+    } catch {
+      return 'unknown';
     }
   };
 
@@ -774,6 +1066,7 @@ const AdminMessages = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
+                  
                   {/* Filters */}
                   <div className="p-4 border-b">
                     <div className="space-y-4">
@@ -810,7 +1103,6 @@ const AdminMessages = () => {
                             <SelectValue placeholder="Filter by status" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
                             <SelectItem value="active">Active</SelectItem>
                             <SelectItem value="archived">Archived</SelectItem>
                           </SelectContent>
@@ -820,7 +1112,7 @@ const AdminMessages = () => {
                   </div>
 
                   {/* Conversations */}
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="h-96 min-h-96 overflow-y-auto">
                     {filteredConversations.map((conversation) => (
                       <div
                         key={conversation.id}
@@ -830,10 +1122,12 @@ const AdminMessages = () => {
                                 setSelectedStatus({ userOnline: conversation.userOnline, lastSeen: conversation.lastSeen });
                               }
                             }}
-                        className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                        className={`p-4 border-b cursor-pointer transition-colors group hover:bg-gray-50 ${
                           selectedConversation?.id === conversation.id
                             ? "bg-[#226F75]/10 border-[#226F75]/20"
-                            : ""
+                            : conversation.unreadCount > 0
+                            ? "bg-gray-400 hover:bg-gray-450"
+                            : "hover:bg-gray-50"
                         }`}
                       >
                         <div className="flex items-start space-x-3">
@@ -859,28 +1153,47 @@ const AdminMessages = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className={`text-sm truncate ${
+                                conversation.unreadCount > 0 ? 'font-bold text-gray-900' : 'font-medium text-gray-900'
+                              }`}>
                                 {conversation.userName}
                               </p>
-                              <span className="text-xs text-gray-500">
-                                {formatMessageTime({ timestamp: conversation.lastMessageTime })}
-                              </span>
+                              <div className="flex items-center gap-2 ml-2">
+                                <span className="text-xs text-gray-500">
+                                  {formatMessageTime({ timestamp: conversation.lastMessageTime })}
+                                </span>
+                                <button
+                                  onClick={(e) => handleArchiveConversation(conversation, e)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
+                                  title={conversation.status === 'archived' ? 'Unarchive' : 'Archive'}
+                                >
+                                  {conversation.status === 'archived' ? (
+                                    <ArchiveRestore className="h-4 w-4 text-gray-500" />
+                                  ) : (
+                                    <Archive className="h-4 w-4 text-gray-500" />
+                                  )}
+                                </button>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-2 mt-1">
-                              {getRoleIcon(conversation.userRole)}
-                              <span className="text-xs text-gray-500 capitalize">
-                                {conversation.userRole}
-                              </span>
+                            <div className="flex items-center justify-between mt-1">
+                              <div className="flex items-center space-x-2">
+                                {getRoleIcon(conversation.userRole)}
+                                <span className="text-xs text-gray-500 capitalize">
+                                  {conversation.userRole}
+                                </span>
+                              </div>
                               {conversation.unreadCount > 0 && (
                                 <Badge
                                   variant="destructive"
-                                  className="text-xs"
+                                  className="text-xs flex-shrink-0"
                                 >
                                   {conversation.unreadCount}
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-600 truncate mt-1">
+                            <p className={`text-sm truncate mt-2 ${
+                              conversation.unreadCount > 0 ? 'font-semibold text-gray-800' : 'text-gray-600'
+                            }`}>
                               {conversation.lastMessage}
                             </p>
                           </div>
@@ -971,25 +1284,25 @@ const AdminMessages = () => {
                       >
                         {currentMessages.map((message, idx, arr) => {
                           const tsStr = message.timestamp || message.created_at || message.createdAt;
-                          const ts = tsStr ? Date.parse(tsStr) : NaN;
-                          const isOld = !isNaN(ts) && (Date.now() - ts) > 24 * 60 * 60 * 1000;
+                          const currentGroup = getMessageTimeGroup(tsStr);
                           const prev = idx > 0 ? arr[idx - 1] : null;
                           const prevTsStr = prev ? (prev.timestamp || prev.created_at || prev.createdAt) : null;
-                          const prevTs = prevTsStr ? Date.parse(prevTsStr) : NaN;
-                          const prevIsOld = !isNaN(prevTs) && (Date.now() - prevTs) > 24 * 60 * 60 * 1000;
+                          const prevGroup = prev ? getMessageTimeGroup(prevTsStr) : null;
 
-                          const showDivider = isOld && !prevIsOld;
+                          // Show divider when time group changes
+                          const showDivider = idx > 0 && currentGroup !== prevGroup;
 
                           // Support both senderId and sender_id for backend compatibility
                           const isCurrentUser = message.senderId === currentUserId || message.sender_id === currentUserId;
                           return (
                             <div key={`m-${message.id}-${idx}`}>
                               {showDivider && (
-                                <div className="py-2">
-                                  <div className="flex items-center justify-center">
-                                    <span className="text-xs text-gray-400">Older messages</span>
+                                <div className="py-4 flex items-center justify-center">
+                                  <div className="flex items-center gap-3 w-full">
+                                    <div className="flex-1 border-t border-gray-300" />
+                                    <span className="text-xs font-medium text-gray-500 px-2 whitespace-nowrap">{getMessageAgeLabel(tsStr)}</span>
+                                    <div className="flex-1 border-t border-gray-300" />
                                   </div>
-                                  <div className="my-2 border-t" />
                                 </div>
                               )}
 

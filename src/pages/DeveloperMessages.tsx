@@ -49,6 +49,13 @@ const DeveloperMessages = () => {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
   // Find admin userId and load conversation/messages
   useEffect(() => {
     const loadAdminAndConversation = async () => {
@@ -101,9 +108,13 @@ const DeveloperMessages = () => {
       const backendMsg = {
         id: resp.id || Date.now(),
         senderId: user?.id,
+        sender_id: user?.id,
         recipientId: adminUserId,
         content: newMessage,
         timestamp: resp.created_at || new Date().toISOString(),
+        is_read: resp.is_read || false,
+        delivered: resp.delivered || true,
+        status: resp.status || 'delivered'
       };
       setMessages((prev) => [...prev, backendMsg]);
       setNewMessage("");
@@ -117,6 +128,42 @@ const DeveloperMessages = () => {
     } catch (e: any) {
       alert('Message sending failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
     }
+  };
+
+  // Render message status ticks
+  const renderTicks = (message: any) => {
+    // Only show ticks for messages sent by current user (the developer)
+    if (message.senderId !== user?.id && message.sender_id !== user?.id) return null;
+
+    // Determine status: prefer explicit `status`, then `is_read`/`delivered`
+    const isRead = message.is_read === 1 || message.is_read === true;
+    const isDelivered = message.delivered === true || message.delivered === 1;
+    const status = message.status || (isRead ? 'read' : isDelivered ? 'delivered' : 'sent');
+
+    if (status === 'read') {
+      return (
+        <span className="text-blue-500 text-xs flex items-center">
+          <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19.2 20 8.2l-1.5-1.5z"></path></svg>
+          <svg className="h-3 w-3 -ml-1" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19.2 20 8.2l-1.5-1.5z"></path></svg>
+        </span>
+      );
+    }
+
+    if (status === 'delivered') {
+      return (
+        <span className="text-gray-400 text-xs flex items-center">
+          <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19.2 20 8.2l-1.5-1.5z"></path></svg>
+          <svg className="h-3 w-3 -ml-1" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19.2 20 8.2l-1.5-1.5z"></path></svg>
+        </span>
+      );
+    }
+
+    // sent (single tick)
+    return (
+      <span className="text-gray-400 text-xs flex items-center">
+        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M21 7L9 19l-5-5 1.5-1.5L9 16l10.5-10.5z"></path></svg>
+      </span>
+    );
   };
 
   return (
@@ -160,48 +207,48 @@ const DeveloperMessages = () => {
         </div>
 
         <div className="flex h-[calc(100vh-80px)] flex-col">
-          {/* Chat Area */}
-          <div className="flex-1 flex flex-col">
-            {/* Chat Header */}
-            <div className="bg-white border-b p-3 sm:p-4">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
-                  <AvatarFallback className="text-xs">AD</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <h3 className="font-medium text-xs sm:text-sm truncate">
-                    Management
-                  </h3>
-                  <p className="text-xs text-gray-500 truncate">
-                    Admin
-                  </p>
-                </div>
+          {/* Chat Header */}
+          <div className="bg-white border-b p-3 sm:p-4 flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
+                <AvatarFallback className="text-xs">AD</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <h3 className="font-medium text-xs sm:text-sm truncate">
+                  Management
+                </h3>
+                <p className="text-xs text-gray-500 truncate">
+                  Admin
+                </p>
               </div>
             </div>
+          </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
-              {loading ? (
-                <div className="text-center text-gray-400">Loading messages...</div>
-              ) : messages.length === 0 ? (
-                <div className="text-center text-gray-400">No messages yet. Start the conversation!</div>
-              ) : (
-                messages.map((msg: any, idx: number) => {
-                  // Use senderId to determine alignment
-                  const isOwn = msg.senderId === user?.id || msg.sender_id === user?.id;
-                  return (
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
+            {loading ? (
+              <div className="text-center text-gray-400">Loading messages...</div>
+            ) : messages.length === 0 ? (
+              <div className="text-center text-gray-400">No messages yet. Start the conversation!</div>
+            ) : (
+              messages.map((msg: any, idx: number) => {
+                // Use senderId to determine alignment
+                const isOwn = msg.senderId === user?.id || msg.sender_id === user?.id;
+                return (
+                  <div
+                    key={msg.id || idx}
+                    className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                  >
                     <div
-                      key={msg.id || idx}
-                      className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                      className={`max-w-xs sm:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm ${
+                        isOwn ? "bg-[#253E44] text-white" : "bg-white border"
+                      }`}
                     >
-                      <div
-                        className={`max-w-xs sm:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm ${
-                          isOwn ? "bg-[#253E44] text-white" : "bg-white border"
-                        }`}
-                      >
-                        <p>{msg.content || msg.message}</p>
+                      <p>{msg.content || msg.message}</p>
+                      <div className="flex items-center justify-end gap-1.5 mt-1">
+                        {isOwn && renderTicks(msg)}
                         <p
-                          className={`text-xs mt-1 ${
+                          className={`text-xs ${
                             isOwn ? "text-white" : "text-gray-500"
                           }`}
                         >
@@ -209,30 +256,30 @@ const DeveloperMessages = () => {
                         </p>
                       </div>
                     </div>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
 
-            {/* Message Input */}
-            <div className="bg-white border-t p-3 sm:p-4">
-              <div className="flex gap-2 sm:gap-4">
-                <Textarea
-                  placeholder="Type your message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  className="flex-1 min-h-[36px] sm:min-h-[40px] max-h-32 text-xs sm:text-sm"
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                />
-                <Button
-                  className="bg-[#253E44] hover:bg-[#253E44]/70 h-9 sm:h-10 px-2 sm:px-3"
-                  onClick={handleSendMessage}
-                  disabled={!newMessage.trim()}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+          {/* Message Input */}
+          <div className="bg-white border-t p-3 sm:p-4 flex-shrink-0">
+            <div className="flex gap-2 sm:gap-4">
+              <Textarea
+                placeholder="Type your message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                className="flex-1 min-h-[36px] sm:min-h-[40px] max-h-32 text-xs sm:text-sm"
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+              />
+              <Button
+                className="bg-[#253E44] hover:bg-[#253E44]/70 h-9 sm:h-10 px-2 sm:px-3"
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim()}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>

@@ -53,6 +53,27 @@ import DeveloperSidebar from "@/components/DeveloperSidebar";
 import { useDispatch, useSelector } from "react-redux";
 import { openDeveloperSidebar, openSignoutModal } from "@/redux/action";
 
+// Helper function to format relative time
+const formatTimeAgo = (dateString: string): string => {
+  const now = new Date();
+  const assignedDate = new Date(dateString);
+  const diffMs = now.getTime() - assignedDate.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 30) return `${diffDays}d ago`;
+  
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffWeeks < 4) return `${diffWeeks}w ago`;
+  
+  const diffMonths = Math.floor(diffDays / 30);
+  return `${diffMonths}mo ago`;
+};
+
 const DeveloperDashboard = () => {
   const dispatch = useDispatch();
   const isOpen = useSelector((state:any) => state.sidebar.developerSidebar);
@@ -64,59 +85,81 @@ const DeveloperDashboard = () => {
   const [declinedDocuments, setDeclinedDocuments] = useState<any[]>([]);
   const [selectedDeclinedDocument, setSelectedDeclinedDocument] = useState<any | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [projectRequests, setProjectRequests] = useState<any[]>([]);
+  const [ongoingProjectsData, setOngoingProjectsData] = useState<any[]>([]);
   const navigate = useNavigate();
   const { user, signOut, loading } = useAuth();
 
-  const projectRequests = [
-    {
-      id: 1,
-      client: "Divine Okechukwu",
-      project: "Modern Duplex",
-      location: "Lekki, Lagos",
-      budget: "₦8.5M - ₦12M",
-      timeline: "6 months",
-      received: "2 hours ago",
-    },
-    {
-      id: 2,
-      client: "Sarah Ibrahim",
-      project: "Bungalow Renovation",
-      location: "Abuja",
-      budget: "₦4M - ₦6M",
-      timeline: "3 months",
-      received: "1 day ago",
-    },
-    {
-      id: 3,
-      client: "Michael Eze",
-      project: "Commercial Building",
-      location: "Port Harcourt",
-      budget: "₦20M - ₦30M",
-      timeline: "12 months",
-      received: "3 days ago",
-    },
-  ];
+  // Helper to refresh both pending and active projects
+  const refreshProjects = async () => {
+    try {
+      // Fetch pending projects
+      const pendingResponse = await apiClient.getDeveloperProjects();
+      const allProjects = Array.isArray(pendingResponse?.projects) ? pendingResponse.projects : [];
+      
+      const durationMap: Record<string, string> = {
+        '3-6': '3-6 months',
+        '6-12': '6-12 months',
+        '12-18': '12-18 months',
+        '18+': '18+ months'
+      };
 
-  const ongoingProjects = [
-    {
-      id: 1,
-      client: "Chioma Adeleke",
-      title: "Family Duplex",
-      progress: 65,
-      deadline: "Dec 15, 2024",
-      lastUpdate: "3 days ago",
-      status: "On Track",
-    },
-    {
-      id: 2,
-      client: "James Okonkwo",
-      title: "Office Complex",
-      progress: 30,
-      deadline: "Mar 20, 2025",
-      lastUpdate: "1 week ago",
-      status: "Needs Update",
-    },
-  ];
+      const formatProject = (project: any) => {
+        const timeline = durationMap[project.duration] || project.duration || 'Timeline pending';
+        let budgetDisplay = 'Budget TBD';
+        if (project.budget_min || project.budget_max) {
+          const min = project.budget_min ? `$${Number(project.budget_min).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : 'N/A';
+          const max = project.budget_max ? `$${Number(project.budget_max).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : 'N/A';
+          budgetDisplay = `${min} - ${max}`;
+        } else if (project.budget) {
+          budgetDisplay = project.budget;
+        }
+
+        return {
+          id: project.id,
+          client: project.client?.name || 'Unknown Client',
+          project: project.title,
+          location: project.location || 'Location pending',
+          timeline: timeline,
+          budget: budgetDisplay,
+          received: formatTimeAgo(project.assigned_at || project.created_at),
+          description: project.description,
+          building_type: project.building_type,
+          start_date: project.start_date,
+          status: project.status,
+          acceptance_status: project.acceptance_status,
+          hours_remaining: project.hours_remaining
+        };
+      };
+
+      // Filter to only pending requests
+      const pendingRequests = allProjects
+        .filter((p: any) => p.acceptance_status === 'pending')
+        .map(formatProject);
+      setProjectRequests(pendingRequests);
+
+      // Fetch active projects
+      const activeResponse = await apiClient.getDeveloperActiveProjects();
+      const activeProjects = Array.isArray(activeResponse?.projects) ? activeResponse.projects : [];
+
+      const ongoingFormatted = activeProjects.map((project: any) => ({
+        id: project.id,
+        client: project.client_name || 'Unknown Client',
+        title: project.title,
+        progress: project.progress || 0,
+        deadline: project.start_date 
+          ? new Date(new Date(project.start_date).getTime() + 180 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US')
+          : 'TBD',
+        lastUpdate: formatTimeAgo(project.updated_at || project.created_at),
+        status: 'On Track',
+        budget_min: project.budget_min,
+        budget_max: project.budget_max
+      }));
+      setOngoingProjectsData(ongoingFormatted);
+    } catch (error) {
+      console.error('Failed to refresh projects:', error);
+    }
+  };
 
   const recentReviews = [
     {
@@ -223,6 +266,108 @@ const DeveloperDashboard = () => {
     fetchUnreadMessages();
   }, [user, loading]);
 
+  // Fetch assigned projects (pending) and active projects (accepted/ongoing)
+  useEffect(() => {
+    if (!user || loading) return;
+
+    const fetchProjects = async () => {
+      try {
+        // Fetch pending project requests (not yet accepted)
+        const pendingResponse = await apiClient.getDeveloperProjects();
+        console.log('📦 Pending projects received:', pendingResponse);
+        
+        const allProjects = Array.isArray(pendingResponse?.projects) ? pendingResponse.projects : [];
+        
+        // DEBUG: Log the first project to see all fields
+        if (allProjects.length > 0) {
+          console.log('🔍 First project raw data:', {
+            id: allProjects[0].id,
+            title: allProjects[0].title,
+            budget: allProjects[0].budget,
+            budget_min: allProjects[0].budget_min,
+            budget_max: allProjects[0].budget_max,
+            acceptance_status: allProjects[0].acceptance_status,
+            allKeys: Object.keys(allProjects[0])
+          });
+        }
+
+        // Helper to format project
+        const formatProject = (project: any) => {
+          const durationMap: Record<string, string> = {
+            '3-6': '3-6 months',
+            '6-12': '6-12 months',
+            '12-18': '12-18 months',
+            '18+': '18+ months'
+          };
+          const timeline = durationMap[project.duration] || project.duration || 'Timeline pending';
+
+          let budgetDisplay = 'Budget TBD';
+          if (project.budget_min || project.budget_max) {
+            const min = project.budget_min ? `$${Number(project.budget_min).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : 'N/A';
+            const max = project.budget_max ? `$${Number(project.budget_max).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : 'N/A';
+            budgetDisplay = `${min} - ${max}`;
+          } else if (project.budget) {
+            budgetDisplay = project.budget;
+          }
+
+          return {
+            id: project.id,
+            client: project.client?.name || 'Unknown Client',
+            project: project.title,
+            location: project.location || 'Location pending',
+            timeline: timeline,
+            budget: budgetDisplay,
+            received: formatTimeAgo(project.assigned_at || project.created_at),
+            description: project.description,
+            building_type: project.building_type,
+            start_date: project.start_date,
+            status: project.status,
+            acceptance_status: project.acceptance_status,
+            hours_remaining: project.hours_remaining
+          };
+        };
+
+        // Filter to only show PENDING projects in requests section
+        const pendingRequests = allProjects
+          .filter((p: any) => p.acceptance_status === 'pending')
+          .map(formatProject);
+
+        console.log('📋 Formatted pending requests:', pendingRequests);
+        setProjectRequests(pendingRequests);
+
+        // Fetch ACCEPTED/ACTIVE projects for ongoing section
+        const activeResponse = await apiClient.getDeveloperActiveProjects();
+        console.log('📦 Active projects received:', activeResponse);
+        
+        const activeProjects = Array.isArray(activeResponse?.projects) ? activeResponse.projects : [];
+
+        // Transform active projects for ongoing display
+        const ongoingFormatted = activeProjects.map((project: any) => ({
+          id: project.id,
+          client: project.client_name || 'Unknown Client',
+          title: project.title,
+          progress: project.progress || 0, // Would need to calculate from milestones if available
+          deadline: project.start_date 
+            ? new Date(new Date(project.start_date).getTime() + 180 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US')
+            : 'TBD',
+          lastUpdate: formatTimeAgo(project.updated_at || project.created_at),
+          status: 'On Track', // Could be updated based on actual progress
+          budget_min: project.budget_min,
+          budget_max: project.budget_max
+        }));
+
+        console.log('📋 Formatted ongoing projects:', ongoingFormatted);
+        setOngoingProjectsData(ongoingFormatted);
+      } catch (error) {
+        console.error('Failed to fetch projects:', error);
+        setProjectRequests([]);
+        setOngoingProjectsData([]);
+      }
+    };
+
+    fetchProjects();
+  }, [user, loading]);
+
   // keep combined unread count in sync with messages + declined documents
   useEffect(() => {
     setUnreadCount((messagesUnreadCount || 0) + (declinedDocuments?.length || 0));
@@ -308,9 +453,9 @@ const DeveloperDashboard = () => {
           <div className="flex sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
               <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
-                <AvatarImage src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop" />
+                <AvatarImage src={user?.profile_image || "https://placehold.net/avatar.svg"} alt={user?.name} />
                 <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
-                  EA
+                  {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'D'}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
@@ -432,6 +577,7 @@ const DeveloperDashboard = () => {
             {/* Left Column */}
             <div className="lg:col-span-3 space-y-3 sm:space-y-4 md:space-y-6">
               {/* Incoming Project Requests */}
+              {projectRequests.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-4 px-1">
                   <h2 className="text-sm sm:text-base md:text-lg font-bold text-[#253E44]">
@@ -442,7 +588,7 @@ const DeveloperDashboard = () => {
                   </Badge>
                 </div>
                 <div className="space-y-4 sm:space-y-5">
-                  {projectRequests.map((request) => (
+                  {projectRequests.slice(0, 3).map((request) => (
                     <Card
                       key={request.id}
                       className="hover:shadow-xl transition-all duration-300 border border-white/50 bg-white/80 rounded-2xl overflow-hidden group w-full"
@@ -454,9 +600,20 @@ const DeveloperDashboard = () => {
                               <h3 className="font-bold text-xs sm:text-sm md:text-base text-[#253E44] truncate">
                                 {request.project}
                               </h3>
-                              <Badge className="bg-[#226F75]/10 text-[#226F75] text-xs font-medium flex-shrink-0">
-                                {request.received}
-                              </Badge>
+                              <div className="flex gap-2 flex-wrap">
+                                <Badge className="bg-[#226F75]/10 text-[#226F75] text-xs font-medium flex-shrink-0">
+                                  {request.received}
+                                </Badge>
+                                {request.acceptance_status === 'pending' ? (
+                                  <Badge className="bg-orange-100 text-orange-800 text-xs font-medium flex-shrink-0">
+                                    ⏳ {request.hours_remaining}h left
+                                  </Badge>
+                                ) : request.acceptance_status === 'accepted' ? (
+                                  <Badge className="bg-green-100 text-green-800 text-xs font-medium flex-shrink-0">
+                                    ✓ Accepted
+                                  </Badge>
+                                ) : null}
+                              </div>
                             </div>
                             <p className="text-xs sm:text-sm text-gray-600 mb-1">
                               Client:{" "}
@@ -480,29 +637,67 @@ const DeveloperDashboard = () => {
                               {request.budget}
                             </p>
                           </div>
-                          <div className="flex flex-col md:flex-row md:justify-between gap-2 w-full sm:w-auto min-w-[100px]">
-                            <Button
-                              size="sm"
-                              className=" bg-transparent text-[#253E44] hover:bg-[#226F75]/10 border border-gray-100 text-xs w-full sm:w-[33%] shadow-md"
-                              onClick={() => navigate("/project-requests")}
-                            >
-                              View Details
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-400 text-xs w-full sm:w-[33%] shadow-md"
-                              onClick={() => navigate("/active-projects")}
-                            >
-                              Accept
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="bg-red-600 hover:bg-red-400 text-xs w-full sm:w-[33%] shadow-md text-white"
-                              variant="outline"
-                            >
-                              {/* <X className="h-3 w-3" /> */}
-                              Reject
-                            </Button>
+                          <div className="flex flex-col gap-3 w-full pt-2">
+                            {request.acceptance_status === 'pending' ? (
+                              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                                <Button
+                                  size="sm"
+                                  className="bg-transparent text-[#253E44] hover:bg-[#226F75]/10 border border-gray-100 text-xs flex-1 shadow-md"
+                                  onClick={() => navigate(`/project/${request.id}`)}
+                                >
+                                  View Details
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white text-xs flex-1 shadow-md"
+                                  onClick={async () => {
+                                    try {
+                                      await apiClient.acceptProjectAssignment(request.id);
+                                      await refreshProjects();
+                                    } catch (error) {
+                                      console.error('Failed to accept project:', error);
+                                      alert('Failed to accept project. Please try again.');
+                                    }
+                                  }}
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-red-600 hover:bg-red-700 text-white text-xs flex-1 shadow-md"
+                                  onClick={async () => {
+                                    if (confirm('Are you sure you want to reject this project?')) {
+                                      try {
+                                        await apiClient.rejectProjectAssignment(request.id);
+                                        await refreshProjects();
+                                      } catch (error) {
+                                        console.error('Failed to reject project:', error);
+                                        alert('Failed to reject project. Please try again.');
+                                      }
+                                    }
+                                  }}
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            ) : request.acceptance_status === 'accepted' ? (
+                              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                                <Button
+                                  size="sm"
+                                  className="bg-transparent text-[#253E44] hover:bg-[#226F75]/10 border border-gray-100 text-xs flex-1 shadow-md"
+                                  onClick={() => navigate(`/project/${request.id}`)}
+                                >
+                                  View Details
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-[#226F75] hover:bg-[#226F75]/80 text-white text-xs flex-1 shadow-md"
+                                  onClick={() => navigate("/active-projects")}
+                                >
+                                  Go to Project
+                                </Button>
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       </CardContent>
@@ -510,6 +705,7 @@ const DeveloperDashboard = () => {
                   ))}
                 </div>
               </div>
+              )}
 
               {/* Ongoing Projects */}
               <div>
@@ -517,78 +713,84 @@ const DeveloperDashboard = () => {
                   Ongoing Projects Overview
                 </h2>
                 <div className="space-y-4 sm:space-y-5">
-                  {ongoingProjects.map((project) => (
-                    <Card
-                      key={project.id}
-                      className="hover:shadow-xl transition-all duration-300 border border-white/50 bg-white/80 rounded-2xl overflow-hidden group"
-                    >
-                      <CardContent className="p-4 sm:p-5 md:p-6">
-                        <div className="flex flex-col gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className=" flex justify-between">
-                              <div>
-                                <h3 className="font-bold text-xs sm:text-sm md:text-base text-[#253E44] mb-2 truncate">
-                                  {project.title}
-                                </h3>
-                                <p className="text-xs sm:text-sm text-gray-600 mb-3">
-                                  Client:{" "}
-                                  <span className="font-medium text-gray-700">
-                                    {project.client}
-                                  </span>
-                                </p>
+                  {ongoingProjectsData.length > 0 ? (
+                    ongoingProjectsData.map((project) => (
+                      <Card
+                        key={project.id}
+                        className="hover:shadow-xl transition-all duration-300 border border-white/50 bg-white/80 rounded-2xl overflow-hidden group"
+                      >
+                        <CardContent className="p-4 sm:p-5 md:p-6">
+                          <div className="flex flex-col gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className=" flex justify-between">
+                                <div>
+                                  <h3 className="font-bold text-xs sm:text-sm md:text-base text-[#253E44] mb-2 truncate">
+                                    {project.title}
+                                  </h3>
+                                  <p className="text-xs sm:text-sm text-gray-600 mb-3">
+                                    Client:{" "}
+                                    <span className="font-medium text-gray-700">
+                                      {project.client}
+                                    </span>
+                                  </p>
+                                </div>
+                                <Badge
+                                  className={`
+                                  ${
+                                    project.status === "On Track"
+                                      ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                                      : "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-md"
+                                  }
+                                w-fit h-fit p-1.5 px-4`}
+                                >
+                                  {project.status}
+                                </Badge>
                               </div>
-                              <Badge
-                                className={`
-                                ${
-                                  project.status === "On Track"
-                                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
-                                    : "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-md"
-                                }
-                              w-fit h-fit p-1.5 px-4`}
-                              >
-                                {project.status}
-                              </Badge>
-                            </div>
 
-                            <div className="mb-4">
-                              <div className="flex justify-between text-xs sm:text-sm mb-2 text-[#226F75] font-medium">
-                                <span>Progress</span>
-                                <span>{project.progress}%</span>
+                              <div className="mb-4">
+                                <div className="flex justify-between text-xs sm:text-sm mb-2 text-[#226F75] font-medium">
+                                  <span>Progress</span>
+                                  <span>{project.progress}%</span>
+                                </div>
+                                <Progress
+                                  value={project.progress}
+                                  className="h-2.5 bg-[#226F75]/10"
+                                />
                               </div>
-                              <Progress
-                                value={project.progress}
-                                className="h-2.5 bg-[#226F75]/10"
-                              />
-                            </div>
 
-                            <div className="flex items-center gap-4 sm:gap-5 text-xs sm:text-sm text-gray-500 flex-wrap">
-                              <span>Deadline: {project.deadline}</span>
-                              <span>Last update: {project.lastUpdate}</span>
+                              <div className="flex items-center gap-4 sm:gap-5 text-xs sm:text-sm text-gray-500 flex-wrap">
+                                <span>Deadline: {project.deadline}</span>
+                                <span>Last update: {project.lastUpdate}</span>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex flex-col md:flex-row justify-between gap-2 w-full">
-                            <div className=" flex flex-col md:flex-row md:justify-between items-center gap-2 w-full">
-                              <Button
-                                size="sm"
-                                className="bg-[#226F75] border border-gray-100 bg-opacity-10 text-[#253E44] w-full md:px-5 md:w-[49%] hover:bg-[#226F75]/30"
-                                onClick={() => navigate("/upload-update")}
-                              >
-                                Update Progress
-                              </Button>
-                              <Button
-                                size="sm"
-                                className="bg-[#226F75] border border-gray-100 bg-opacity-10 text-[#253E44] w-full md:w-[49%] md:px-5 hover:bg-[#226F75]/30"
-                                onClick={() => navigate("/developer-messages")}
-                              >
-                                <MessageSquare className="h-3 w-3 mr-1" />
-                                Message
-                              </Button>
+                            <div className="flex flex-col md:flex-row justify-between gap-2 w-full">
+                              <div className=" flex flex-col md:flex-row md:justify-between items-center gap-2 w-full">
+                                <Button
+                                  size="sm"
+                                  className="bg-[#226F75] border border-gray-100 bg-opacity-10 text-[#253E44] w-full md:px-5 md:w-[49%] hover:bg-[#226F75]/30"
+                                  onClick={() => navigate("/upload-update")}
+                                >
+                                  Update Progress
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-[#226F75] border border-gray-100 bg-opacity-10 text-[#253E44] w-full md:w-[49%] md:px-5 hover:bg-[#226F75]/30"
+                                  onClick={() => navigate("/developer-messages")}
+                                >
+                                  <MessageSquare className="h-3 w-3 mr-1" />
+                                  Message
+                                </Button>
                             </div>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p className="text-sm">No ongoing projects yet. Accept a project request to get started!</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

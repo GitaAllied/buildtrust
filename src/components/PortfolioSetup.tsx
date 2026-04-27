@@ -56,6 +56,8 @@ interface FormData {
     id?: FileData;
     cac?: FileData;
     selfie?: FileData;
+    passport?: FileData;
+    idCard?: FileData;
   };
   credentials: {
     licenses?: any[];
@@ -204,7 +206,8 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
   }, [userType, formData.personal.role]);
 
   const handleStepComplete = async () => {
-    if (currentStep < 6) {
+    const maxSteps = userType === 'client' ? 3 : 6;
+    if (currentStep < maxSteps) {
       setCurrentStep(currentStep + 1);
     } else {
       try {
@@ -291,6 +294,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
   };
 
   const renderCurrentStep = () => {
+    const totalSteps = userType === 'client' ? 3 : 6;
     switch (currentStep) {
       case 1:
         return (
@@ -302,7 +306,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             />
             <NavigationButtons 
               currentStep={currentStep}
-              totalSteps={6}
+              totalSteps={userType === 'client' ? 3 : 6}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
@@ -312,41 +316,67 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
           </div>
         );
       case 2:
+        const identityComplete = userType === 'client'
+          ? !!(formData.identity.passport && formData.identity.idCard)
+          : !!(formData.identity.id && formData.identity.cac && formData.identity.selfie);
         return (
           <div>
             <IdentityVerification
               data={formData.identity}
               onChange={(data) => updateFormData('identity', data)}
+              userType={userType}
             />
             <NavigationButtons
               currentStep={currentStep}
-              totalSteps={6}
+              totalSteps={userType === 'client' ? 3 : 6}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
-              canContinue={true}
+              canContinue={identityComplete}
               formData={formData.identity}
               userType={userType}
             />
           </div>
         );
       case 3:
-        return (
-          <div>
-            <LicensesCredentials
-              data={formData.credentials}
-              onChange={(data) => updateFormData('credentials', data)}
-            />
-            <NavigationButtons
-              currentStep={currentStep}
-              totalSteps={6}
-              onNext={handleStepComplete}
-              onPrev={handleStepBack}
-              canContinue={formData.credentials?.licenses?.length > 0 && formData.credentials?.certifications?.length > 0 && formData.credentials?.testimonials?.length > 0}
-              formData={formData.credentials}
-              userType={userType}
-            />
-          </div>
-        );
+        if (userType === 'client') {
+          // For clients, step 3 is ProfilePreview
+          return (
+            <div>
+              <ProfilePreview 
+                formData={formData}
+                onStepChange={(step) => setCurrentStep(step)}
+              />
+              <NavigationButtons 
+                currentStep={currentStep}
+                totalSteps={totalSteps}
+                onNext={handleStepComplete}
+                onPrev={handleStepBack}
+                canContinue={true}
+                formData={formData as any}
+                userType={userType}
+              />
+            </div>
+          );
+        } else {
+          // For developers, step 3 is LicensesCredentials
+          return (
+            <div>
+              <LicensesCredentials
+                data={formData.credentials}
+                onChange={(data) => updateFormData('credentials', data)}
+              />
+              <NavigationButtons
+                currentStep={currentStep}
+                totalSteps={totalSteps}
+                onNext={handleStepComplete}
+                onPrev={handleStepBack}
+                canContinue={formData.credentials?.licenses?.length > 0 && formData.credentials?.certifications?.length > 0 && formData.credentials?.testimonials?.length > 0}
+                formData={formData.credentials}
+                userType={userType}
+              />
+            </div>
+          );
+        }
       case 4:
         const projects = Array.isArray(formData.projects) ? formData.projects : [];
         const hasCompleteProject = projects.length > 0 && projects.some(project => {
@@ -369,7 +399,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             />
             <NavigationButtons 
               currentStep={currentStep}
-              totalSteps={6}
+              totalSteps={totalSteps}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={!!hasCompleteProject}
@@ -387,7 +417,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             />
             <NavigationButtons 
               currentStep={currentStep}
-              totalSteps={6}
+              totalSteps={totalSteps}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
@@ -405,7 +435,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             />
             <NavigationButtons 
               currentStep={currentStep}
-              totalSteps={6}
+              totalSteps={totalSteps}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
@@ -424,7 +454,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
             />
             <NavigationButtons 
               currentStep={currentStep}
-              totalSteps={6}
+              totalSteps={totalSteps}
               onNext={handleStepComplete}
               onPrev={handleStepBack}
               canContinue={true}
@@ -492,7 +522,7 @@ const PortfolioSetup = ({ onExit }: PortfolioSetupProps) => {
 
       {/* Progress Tracker */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <ProgressTracker currentStep={currentStep} totalSteps={6} />
+        <ProgressTracker currentStep={currentStep} totalSteps={userType === 'client' ? 3 : 6} userType={userType} />
       </div>
 
       {/* Main Content */}

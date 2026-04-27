@@ -32,6 +32,31 @@ import { openClientSidebar, openSignoutModal } from "@/redux/action";
 
 const PROJECT_PLACEHOLDER = "https://placehold.net/main.svg";
 
+// API origin for resolving media URLs
+const API_BASE = (
+  import.meta.env.VITE_API_URL ?? '/api'
+).replace(/\/+$/, "");
+const API_ORIGIN = API_BASE.replace(/\/api$/, "");
+
+// Resolve media URL: handle absolute URLs, relative '/uploads/..', 'uploads/..', or media.filename
+const resolveMediaUrl = (media: any) => {
+  if (!media) return null;
+  let url = media.url ?? media.filename ?? null;
+  if (!url) return null;
+  url = String(url);
+  if (url.startsWith("http")) return url;
+  // ensure leading slash
+  if (!url.startsWith("/")) url = `/${url}`;
+  return `${API_ORIGIN}${url}`;
+};
+
+const getProjectImageSrc = (project: any) => {
+  const mediaUrl = resolveMediaUrl(project.media);
+  if (mediaUrl) return mediaUrl;
+  if (project.image) return project.image;
+  return PROJECT_PLACEHOLDER;
+};
+
 const ClientDashboard = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate = useNavigate();
@@ -44,6 +69,7 @@ const ClientDashboard = () => {
   const [activeProjects, setActiveProjects] = useState([]);
   const [recentUpdates, setRecentUpdates] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [currentImageIndices, setCurrentImageIndices] = useState<Record<number, number>>({}); // Track current image per project
   const [stats, setStats] = useState({
     totalInvestment: "₦0",
     completedProjects: 0,
@@ -121,10 +147,19 @@ const ClientDashboard = () => {
             progress: p.progress ?? 0, // From milestone calculation
             developer: p.developer_name || "Assigned Developer",
             image: p.media?.url || PROJECT_PLACEHOLDER,
+            media: p.media, // Include full media object for URL resolution
+            mediaArray: Array.isArray(p.media_array) ? p.media_array : (p.media ? [p.media] : []), // Support multiple images
             status: p.status === "open" ? "Pending" : "In Progress",
           }));
 
         setActiveProjects(activeProjects);
+        
+        // Initialize image indices for rotation
+        const indices: Record<number, number> = {};
+        activeProjects.forEach((proj: any) => {
+          indices[proj.id] = 0;
+        });
+        setCurrentImageIndices(indices);
 
         setRecentUpdates([
           {
@@ -210,7 +245,40 @@ const ClientDashboard = () => {
     }
   }, [user]);
 
-  // Fetch real notifications based on user DB activity
+  // Rotate project images every 5 seconds if multiple images exist
+  useEffect(() => {
+    if (activeProjects.length === 0) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndices((prev) => {
+        const newIndices = { ...prev };
+        activeProjects.forEach((project: any) => {
+          if (project.mediaArray && project.mediaArray.length > 1) {
+            newIndices[project.id] = (newIndices[project.id] || 0) + 1;
+            if (newIndices[project.id] >= project.mediaArray.length) {
+              newIndices[project.id] = 0;
+            }
+          }
+        });
+        return newIndices;
+      });
+    }, 5000); // Rotate every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [activeProjects]);
+
+  // Helper to get current image for a project
+  const getCurrentProjectImage = (project: any) => {
+    if (!project.mediaArray || project.mediaArray.length === 0) {
+      return getProjectImageSrc(project);
+    }
+    const currentIdx = currentImageIndices[project.id] || 0;
+    const currentMedia = project.mediaArray[currentIdx];
+    const mediaUrl = resolveMediaUrl(currentMedia);
+    if (mediaUrl) return mediaUrl;
+    if (project.image) return project.image;
+    return PROJECT_PLACEHOLDER;
+  };
   useEffect(() => {
     const fetchNotifications = async () => {
       if (!user?.id) return;
@@ -530,19 +598,31 @@ const ClientDashboard = () => {
                         className="hover:shadow-xl transition-all duration-300 border border-black/10 bg-white/80 rounded-2xl overflow-hidden group"
                       >
                         <CardContent className="p-4 sm:p-2 md:p-3 flex flex-col md:flex-row gap-5">
-                          <img
-                            src={
-                              project.image.length === 0
-                                ? PROJECT_PLACEHOLDER
-                                : project.image
-                            }
-                            alt={project.title}
-                            onError={(e: any) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = PROJECT_PLACEHOLDER;
-                            }}
-                            className="w-full sm:w-32 md:w-40 rounded-xl object-cover flex-shrink-0 group-hover:scale-105 transition-transform duration-300"
-                          />
+                          <div className="relative flex-shrink-0 w-full sm:w-32 md:w-40 h-auto sm:h-32 md:h-40 overflow-hidden rounded-xl group">
+                            <img
+                              src={getCurrentProjectImage(project)}
+                              alt={project.title}
+                              onError={(e: any) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = PROJECT_PLACEHOLDER;
+                              }}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ease-in-out"
+                            />
+                            {project.mediaArray && project.mediaArray.length > 1 && (
+                              <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+                                {project.mediaArray.map((_, idx: number) => (
+                                  <div
+                                    key={idx}
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                                      idx === (currentImageIndices[project.id] || 0)
+                                        ? "bg-white w-4"
+                                        : "bg-white/50 w-1.5"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
                           <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 w-full">
                             <div className="flex-1 min-w-0">
                               <h3 className="font-bold text-sm sm:text-base text-[#253E44] line-clamp-2">

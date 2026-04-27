@@ -163,6 +163,16 @@ const NavigationButtons = ({
       return hasId && hasCac && hasSelfie;
     }
 
+    // For client step 2 (IdentityVerification), check if identity is complete (only passport and idCard required)
+    if (userType === 'client' && currentStep === 2) {
+      const passportData = formData.passport as any;
+      const idCardData = formData.idCard as any;
+      const hasPassport = passportData && (passportData.file instanceof File || passportData.name);
+      const hasIdCard = idCardData && (idCardData.file instanceof File || idCardData.name);
+      console.log('🔍 CLIENT STEP 2 VALIDATION:', { passportData, idCardData, hasPassport, hasIdCard });
+      return hasPassport && hasIdCard;
+    }
+
     // For developer step 3 (LicensesCredentials), check if all credential types have files
     if (userType === 'developer' && currentStep === 3) {
       const licenses = (formData.licenses as any[]) || [];
@@ -203,10 +213,21 @@ const NavigationButtons = ({
 
   const isFormComplete = validateFormIsComplete();
   
-  // For step 4 (ProjectGallery), use the canContinue prop instead of validateFormIsComplete
-  const continueDisabled = userType === 'developer' && currentStep === 4 
+  // For step 4 (ProjectGallery) and client step 2, use the canContinue prop instead of validateFormIsComplete
+  const continueDisabled = (userType === 'developer' && currentStep === 4) || (userType === 'client' && currentStep === 2)
     ? !canContinue 
     : !isFormComplete;
+
+  console.log('🔍 NAVIGATION BUTTONS STATE:', {
+    currentStep,
+    totalSteps,
+    userType,
+    canContinue,
+    isFormComplete,
+    continueDisabled,
+    formData,
+    buttonDisabled: currentStep === totalSteps ? submitting || !isProfileComplete : continueDisabled
+  });
 
   // For final step (ProfilePreview/Step 6), use isProfileComplete state
   const buttonDisabled = currentStep === totalSteps 

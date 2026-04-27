@@ -149,6 +149,19 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
     return Object.keys(errors).length === 0;
   };
 
+  const parseBudgetRange = (budgetRange: string): { budget_min: number; budget_max: number } => {
+    const budgetMap: Record<string, { budget_min: number; budget_max: number }> = {
+      '5-15': { budget_min: 5000, budget_max: 15000 },
+      '15-30': { budget_min: 15000, budget_max: 30000 },
+      '30-50': { budget_min: 30000, budget_max: 50000 },
+      '50-100': { budget_min: 50000, budget_max: 100000 },
+      '100+': { budget_min: 100000, budget_max: 999999 }
+    };
+    
+    const parsed = budgetMap[budgetRange];
+    return parsed || { budget_min: 0, budget_max: 0 };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -190,6 +203,9 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
         return;
       }
 
+      // Parse budget range into min and max
+      const { budget_min, budget_max } = parseBudgetRange(formData.budgetRange);
+
       // Submit the project request
       const response = await apiClient.submitProjectRequest({
         developerId,
@@ -197,14 +213,12 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
         location: formData.location,
         buildingType: formData.buildingType,
         budgetRange: formData.budgetRange,
+        budget_min,
+        budget_max,
         startDate: formData.startDate,
         duration: formData.duration,
         message: formData.message,
-        sitePlan: formData.sitePlan ? {
-          url: `/uploads/project-requests/${formData.sitePlan.name}`,
-          filename: formData.sitePlan.name,
-          mimeType: formData.sitePlan.type
-        } : null
+        sitePlan: formData.sitePlan // Send the File object directly
       });
 
       if (response.success) {
@@ -536,11 +550,11 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
                   <SelectValue placeholder="Select budget range" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="5-15">₦5M - ₦15M</SelectItem>
-                  <SelectItem value="15-30">₦15M - ₦30M</SelectItem>
-                  <SelectItem value="30-50">₦30M - ₦50M</SelectItem>
-                  <SelectItem value="50-100">₦50M - ₦100M</SelectItem>
-                  <SelectItem value="100+">₦100M+</SelectItem>
+                  <SelectItem value="5-15">$5,000 - $15,000</SelectItem>
+                  <SelectItem value="15-30">$15,000 - $30,000</SelectItem>
+                  <SelectItem value="30-50">$30,000 - $50,000</SelectItem>
+                  <SelectItem value="50-100">$50,000 - $100,000</SelectItem>
+                  <SelectItem value="100+">$100,000+</SelectItem>
                 </SelectContent>
               </Select>
               {fieldErrors.budgetRange && (

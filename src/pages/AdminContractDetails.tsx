@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -11,88 +12,163 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api";
 import {
   ArrowLeft,
-  DollarSign,
-  Calendar,
-  CheckCircle,
-  Clock,
-  AlertCircle,
   Edit2,
   Loader2,
   Save,
-  FileText,
+  AlertCircle,
+  CheckCircle,
+  Clock,
 } from "lucide-react";
-import {
-  getContractById,
-  getProjectById,
-  getDeveloperById,
-  updateContract,
-  Contract,
-} from "@/lib/mockData";
-import { FaBusinessTime, FaDownload, FaMoneyBills, FaUserGear } from "react-icons/fa6";
+
+interface ContractData {
+  id: number;
+  project_id: number;
+  developer_id?: number;
+  agreed_amount: number;
+  status: string;
+  contract_terms?: string;
+  needs_resign?: boolean;
+  developer_signature_url?: string;
+  client_signature_url?: string;
+  developer_signed_at?: string;
+  client_signed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ProjectData {
+  id: number;
+  title: string;
+  location?: string;
+  building_type?: string;
+  budget_min?: number;
+  budget_max?: number;
+  budget?: number;
+  duration?: string;
+  client_id?: number;
+  developer_id?: number;
+  developer_name?: string;
+  client_name?: string;
+  assigned_at?: string | null;
+  developer?: { name: string };
+  client?: { name: string };
+}
 
 const AdminContractDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [contract, setContract] = useState<Contract | null>(null);
+  const [contract, setContract] = useState<ContractData | null>(null);
+  const [project, setProject] = useState<ProjectData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [contractTemplate, setContractTemplate] = useState("");
   const [formData, setFormData] = useState({
     status: "",
-    agreed_amount: "",
-    start_date: "",
-    end_date: "",
+    contract_terms: "",
   });
 
   useEffect(() => {
-    const contractId = parseInt(id || "0");
-    const foundContract = getContractById(contractId);
+    loadContractTemplate();
+    loadContractData();
+  }, [id]);
 
-    if (foundContract) {
-      setContract(foundContract);
+  const loadContractTemplate = async () => {
+    try {
+      const response = await apiClient.getContractTemplate();
+      const template = response?.template?.contract_terms || "";
+      setContractTemplate(template);
+    } catch (err) {
+      console.error("Error loading contract template:", err);
+    }
+  };
+
+  const loadContractData = async () => {
+    try {
+      setLoading(true);
+      const contractId = parseInt(id || "0");
+      
+      // Fetch contract by contract ID with full project data via JOIN
+      const response = await apiClient.getContractById(contractId);
+      const contractData = response?.contract;
+
+      if (!contractData) {
+        toast({
+          title: "Error",
+          description: "Contract not found",
+          variant: "destructive",
+        });
+        navigate("/admin/contracts");
+        return;
+      }
+
+      setContract(contractData);
+      
+      // Project data is already joined in the response
+      const projectData = {
+        id: contractData.project_id,
+        title: contractData.project_title,
+        location: contractData.location,
+        building_type: contractData.building_type,
+        duration: contractData.duration,
+        budget_min: contractData.budget_min,
+        budget_max: contractData.budget_max,
+        budget: contractData.budget,
+        developer_id: contractData.developer_id,
+        developer_name: contractData.developer_name,
+        assigned_at: contractData.assigned_at,
+        client_id: contractData.client_id,
+        client_name: contractData.client_name,
+        developer: contractData.developer_name ? { name: contractData.developer_name } : undefined,
+        client: contractData.client_name ? { name: contractData.client_name } : undefined,
+      };
+      
+      setProject(projectData as ProjectData);
       setFormData({
-        status: foundContract.status,
-        agreed_amount: foundContract.agreed_amount.toString(),
-        start_date: foundContract.start_date || "",
-        end_date: foundContract.end_date || "",
+        status: contractData.status || "",
+        contract_terms: contractData.contract_terms || contractTemplate,
       });
-    } else {
+    } catch (err) {
+      console.error("Error loading contract:", err);
       toast({
         title: "Error",
-        description: "Contract not found",
+        description: "Failed to load contract details",
         variant: "destructive",
       });
       navigate("/admin/contracts");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-  }, [id, navigate, toast]);
+  };
 
   const handleSave = async () => {
-    if (!contract) return;
+    if (!project || !contract) return;
 
     setSaving(true);
     try {
-      const updatedContract = updateContract(contract.id, {
-        status: formData.status,
-        agreed_amount: parseFloat(formData.agreed_amount),
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-      });
+      const updateData: Record<string, any> = {};
 
-      if (updatedContract) {
-        setContract(updatedContract);
-        setIsEditing(false);
-        toast({
-          title: "Success",
-          description: "Contract updated successfully",
-        });
-      }
+      if (formData.status) updateData.status = formData.status;
+      if (formData.contract_terms) updateData.contract_terms = formData.contract_terms;
+
+      // Update contract by project ID (backend finds the contract)
+      await apiClient.updateProjectContract(project.id, updateData);
+
+      toast({
+        title: "Success",
+        description: formData.contract_terms !== (contract.contract_terms || contractTemplate)
+          ? "Contract updated. Parties must review and re-sign."
+          : "Contract updated successfully",
+      });
+      setIsEditing(false);
+      loadContractData();
     } catch (err) {
+      console.error("Error updating contract:", err);
       toast({
         title: "Error",
         description: "Failed to update contract",
@@ -100,30 +176,6 @@ const AdminContractDetails = () => {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
-      active: "default",
-      completed: "default",
-      terminated: "destructive",
-      disputed: "secondary",
-    };
-
-    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-6 w-6 text-green-600" />;
-      case "active":
-        return <Clock className="h-6 w-6 text-blue-600" />;
-      case "disputed":
-        return <AlertCircle className="h-6 w-6 text-orange-600" />;
-      default:
-        return null;
     }
   };
 
@@ -135,10 +187,10 @@ const AdminContractDetails = () => {
     );
   }
 
-  if (!contract) {
+  if (!contract || !project) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-8">
           <Card className="border-red-200 bg-red-50">
             <CardContent className="pt-6">
               <p className="text-red-700">Contract not found</p>
@@ -148,6 +200,11 @@ const AdminContractDetails = () => {
       </div>
     );
   }
+
+  const budgetDisplay = `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(project.budget_min || 0))} - $${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(project.budget_max || 0))}`;
+
+  const bothSigned = contract.developer_signature_url && contract.client_signature_url;
+  const needsResign = contract.needs_resign;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -166,199 +223,135 @@ const AdminContractDetails = () => {
               <h1 className="md:text-2xl font-bold text-gray-900">
                 Contract #{contract.id}
               </h1>
-              <p className="text-sm text-gray-500">{contract.project_title}</p>
+              <p className="text-sm text-gray-500">{project.title}</p>
             </div>
           </div>
-          <Button
-            onClick={() => setIsEditing(!isEditing)}
-            className="bg-[#253E44] hover:bg-[#253E44]/90"
-          >
-            <Edit2 className="h-4 w-4 md:mr-2" />
-            <p className=" hidden md:block">{isEditing ? "Cancel" : "Edit"}</p>
-          </Button>
+          {!isEditing && (
+            <Button
+              onClick={() => setIsEditing(true)}
+              className="bg-[#253E44] hover:bg-[#253E44]/90"
+            >
+              <Edit2 className="h-4 w-4 md:mr-2" />
+              <p className="hidden md:block">Edit Contract</p>
+            </Button>
+          )}
         </div>
       </div>
 
-      <div className=" px-2 sm:px-3 lg:px-8 py-2 sm:py-3 lg:py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Status Alert */}
+        {needsResign && (
+          <Card className="mb-6 border-yellow-200 bg-yellow-50">
+            <CardContent className="pt-6 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-yellow-900">Contract Requires Re-signing</p>
+                <p className="text-sm text-yellow-800">The contract terms have been updated by admin. Both parties need to review and re-sign the updated contract.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {!isEditing ? (
-          <main className="px-6 py-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="p-6 ">
-                <p className="text-sm font-bold uppercase text-slate-500 mb-2">
-                  Contract Status
-                </p>
-                <span className="text-3xl font-bold capitalize tracking-wider">
-                  {contract.status.replace("_", " ")}
-                </span>
+          <div className="space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="p-4">
+                <p className="text-xs font-bold uppercase text-gray-500 mb-2">Status</p>
+                <div className="flex items-center gap-2">
+                  {contract.status === 'active' && <Clock className="h-5 w-5 text-blue-600" />}
+                  {contract.status === 'completed' && <CheckCircle className="h-5 w-5 text-green-600" />}
+                  <span className="text-lg font-bold capitalize">{contract.status}</span>
+                </div>
               </Card>
-              <Card className="p-6">
-                <p className="text-sm font-bold uppercase text-slate-500 mb-2">
-                  Contract Value
-                </p>
-                <p className="text-3xl font-bold text-slate-900">${contract.agreed_amount.toLocaleString()}</p>
+
+              <Card className="p-4">
+                <p className="text-xs font-bold uppercase text-gray-500 mb-2">Contract Amount</p>
+                <p className="text-lg font-bold">${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(project.budget || 0))}</p>
               </Card>
-              <Card className="p-6">
-                <p className="text-sm font-bold uppercase text-slate-500 mb-2">
-                  Signed Date
-                </p>
-                <p className="text-2xl font-semibold text-slate-900">
-                  {new Date(contract.start_date).toLocaleDateString()}
+
+              <Card className="p-4">
+                <p className="text-xs font-bold uppercase text-gray-500 mb-2">Budget Range</p>
+                <p className="text-base font-bold">{budgetDisplay}</p>
+              </Card>
+
+              <Card className="p-4">
+                <p className="text-xs font-bold uppercase text-gray-500 mb-2">Signatures</p>
+                <p className="text-lg font-bold">
+                  {bothSigned ? "✓ Both Signed" : "⏳ Pending"}
                 </p>
               </Card>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <Card className="overflow-hidden">
-                  <div className="px-6 py-5 border-b border-slate-100">
-                    <h2 className="text-lg font-bold text-slate-900">
-                      Contract Information
-                    </h2>
+
+            {/* Project & Developer Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <h3 className="font-bold text-lg mb-4">Project Information</h3>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="text-gray-500">Project Title</p>
+                    <p className="font-semibold">{project.title}</p>
                   </div>
-                  <div className="p-6 space-y-8">
-                    <div className="flex md:items-center flex-col md:flex-row gap-4">
-                      <div className="bg-slate-100 p-5 rounded-lg w-fit">
-                        <span className="material-icons-outlined text-slate-600">
-                          <FaBusinessTime/>
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                          Project Name
-                        </p>
-                        <p className="text-md font-medium text-slate-900">
-                          {contract.project_title}
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          ID: PRJ-2024-00{contract.project_id}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex md:items-center flex-col md:flex-row gap-4">
-                      <div className="bg-slate-100 p-5 rounded-lg w-fit">
-                        <span className="material-icons-outlined text-slate-600">
-                          <FaUserGear/>
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                          Primary Developer
-                        </p>
-                        <p className="text-md font-medium text-slate-900">
-                          John Smith
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          Senior Structural Engineer
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-6 pt-4 border-t border-slate-50">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                          Start Date
-                        </p>
-                        <p className="text-base font-medium text-slate-900">
-                          {new Date(contract.start_date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric"
-                          })}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                          End Date
-                        </p>
-                        <p className="text-base font-medium text-slate-900">
-                          {new Date(contract.end_date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric"
-                          })}
-                        </p>
-                      </div>
-                    </div>
+                  <div>
+                    <p className="text-gray-500">Location</p>
+                    <p className="font-semibold">{project.location || "N/A"}</p>
                   </div>
-                </Card>
-              </div>
-              <div className="space-y-6">
-                <Card className="overflow-hidden">
-                  <div className="px-6 py-5 border-b border-slate-100 flex flex-col md:flex-row justify-between md:items-center">
-                    <h2 className="text-lg font-bold text-slate-900">
-                      Financial Summary
-                    </h2>
-                    <span className="text-xs text-slate-400">
-                      Last updated: Today, 09:42 AM
-                    </span>
+                  <div>
+                    <p className="text-gray-500">Building Type</p>
+                    <p className="font-semibold">{project.building_type || "N/A"}</p>
                   </div>
-                  <div className="p-6">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between py-4 px-4 hover:bg-slate-50 rounded-lg transition-colors">
-                        <span className="text-slate-600 font-medium">
-                          Agreed Amount
-                        </span>
-                        <span className="text-lg font-bold text-slate-900">
-                          ${contract.agreed_amount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between py-4 px-4 hover:bg-slate-50 rounded-lg transition-colors">
-                        <span className="text-slate-600 font-medium">
-                          Paid to Date
-                        </span>
-                        <span className="text-lg font-bold text-primary">
-                          $10,000
-                        </span>
-                      </div>
-                      <div className="border-t border-slate-100 my-2"></div>
-                      <div className="flex items-center justify-between py-4 px-4 bg-slate-50 rounded-lg">
-                        <span className="text-slate-900 font-bold">
-                          Balance Remaining
-                        </span>
-                        <div className="text-right">
-                          <span className="text-xl font-black text-slate-900">
-                            ${Number(contract.agreed_amount)-Number(10000)}
-                          </span>
-                          <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
-                            {100 - Number(((Number(10000) / Number(contract.agreed_amount)) * 100).toFixed(1))}% Outstanding
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-8 px-4">
-                      <div className="flex justify-between text-xs font-bold text-slate-400 uppercase mb-2">
-                        <span>Payment Progress</span>
-                        <span>{((Number(10000)/Number(contract.agreed_amount))*100).toFixed(1)}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-3">
-                        <div className="bg-primary h-3 rounded-full w-[66.7%]"></div>
-                      </div>
-                    </div>
-                    <div className="mt-8 grid grid-cols-1 gap-3">
-                      <button className="w-full py-3 px-4 bg-primary text-white font-bold rounded-lg hover:brightness-110 transition-all flex items-center justify-center gap-2">
-                        <span className="material-icons-outlined text-sm">
-                          <FaMoneyBills/>
-                        </span>
-                        Record New Payment
-                      </button>
-                      <button className="w-full py-3 px-4 border border-slate-200text-slate-600 font-semibold rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                        <span className="material-icons-outlined text-sm">
-                          <FaDownload/>
-                        </span>
-                        Download Statement
-                      </button>
-                    </div>
+                  <div>
+                    <p className="text-gray-500">Duration</p>
+                    <p className="font-semibold">{project.duration ? `${project.duration} months` : "N/A"}</p>
                   </div>
-                </Card>
-              </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="font-bold text-lg mb-4">Assigned Developer</h3>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="text-gray-500">Developer Name</p>
+                    <p className="font-semibold">{project.developer?.name || "Unassigned"}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Assigned Date</p>
+                    <p className="font-semibold">
+                      {project.assigned_at 
+                        ? new Date(project.assigned_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                        : "Not assigned"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Client Name</p>
+                    <p className="font-semibold">{project.client?.name || "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Signature Status</p>
+                    <p className="font-semibold">
+                      {contract.developer_signed_at ? "✓ Developer Signed" : "⏳ Awaiting"}
+                    </p>
+                  </div>
+                </div>
+              </Card>
             </div>
-          </main>
+
+            {/* Contract Terms Display */}
+            <Card className="p-6">
+              <h3 className="font-bold text-lg mb-4">Contract Terms</h3>
+              <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
+                  {contract.contract_terms || contractTemplate}
+                </p>
+              </div>
+            </Card>
+          </div>
         ) : (
-          <>
-            {/* Edit Mode */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Edit Contract</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
+          // Edit Mode
+          <Card className="p-6 space-y-6">
+            <div>
+              <h3 className="font-bold text-lg mb-4">Edit Contract</h3>
+              <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium">Status</label>
                   <Select
@@ -380,47 +373,22 @@ const AdminContractDetails = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">Agreed Amount</label>
-                  <input
-                    type="number"
-                    value={formData.agreed_amount}
+
+                  <label className="text-sm font-medium">Contract Terms</label>
+                  <textarea
+                    value={formData.contract_terms}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        agreed_amount: e.target.value,
+                        contract_terms: e.target.value,
                       })
                     }
-                    className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
+                    rows={12}
+                    className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Start Date</label>
-                    <input
-                      type="date"
-                      value={formData.start_date}
-                      onChange={(e) =>
-                        setFormData({ ...formData, start_date: e.target.value })
-                      }
-                      className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">End Date</label>
-                    <input
-                      type="date"
-                      value={formData.end_date}
-                      onChange={(e) =>
-                        setFormData({ ...formData, end_date: e.target.value })
-                      }
-                      className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-4">
+                <div className="flex justify-end gap-4">
                   <Button variant="outline" onClick={() => setIsEditing(false)}>
                     Cancel
                   </Button>
@@ -442,9 +410,9 @@ const AdminContractDetails = () => {
                     )}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </>
+              </div>
+            </div>
+          </Card>
         )}
       </div>
     </div>

@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useDispatch } from "react-redux";
+import { openSignoutModal } from "@/redux/action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,6 +75,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, refreshUser } = useAuth();
+  const dispatch = useDispatch();
 
   // Check for developer setup intent
   const searchParams = new URLSearchParams(window.location.search);
@@ -126,6 +129,9 @@ export default function Auth() {
 
       localStorage.setItem("auth_token", response.token);
       await refreshUser();
+      
+      // Close the signout modal if it's open from a previous session
+      dispatch(openSignoutModal(false));
 
       toast({
         title: "Welcome back!",

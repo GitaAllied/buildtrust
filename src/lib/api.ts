@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  (import.meta.env.VITE_API_URL ?? 'https://buildtrust-backend.onrender.com/api').replace(/\/+$/, ''); // remove trailing slash(es)
+  (import.meta.env.VITE_API_URL ?? '/api').replace(/\/+$/, ''); // remove trailing slash(es)
 
 
 export interface User {
@@ -21,6 +21,7 @@ export interface User {
   rating?: number | null;
   total_reviews?: number | null;
   trust_score?: number | null;
+  profile_image?: string | null;
   setup_completed?: boolean;
   created_at?: string;
   email_verified?: boolean;
@@ -405,12 +406,23 @@ class ApiClient {
     return this.request('/messages/conversations', { method: 'GET' });
   }
 
+  async getUnreadMessageCount() {
+    return this.request('/messages/unread-count', { method: 'GET' });
+  }
+
   async getConversationMessages(conversationId: number | string) {
     return this.request(`/messages/${conversationId}`, { method: 'GET' });
   }
 
   async markConversationRead(conversationId: number | string) {
     return this.request(`/messages/${conversationId}/read`, { method: 'POST' });
+  }
+
+  async archiveConversation(conversationId: number | string, status: 'active' | 'archived') {
+    return this.request(`/messages/${conversationId}/archive`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
   }
 
   async sendMessage(recipientId: number, content: string, conversationId?: number) {
@@ -448,15 +460,125 @@ class ApiClient {
       timestamp: new Date().toISOString(),
       requestData: data
     });
-    return this.request('/projects/request/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    
+    // Check if data contains a File object (for file uploads)
+    const hasFile = data.sitePlan instanceof File;
+    
+    if (hasFile) {
+      // Use FormData for file upload
+      const formData = new FormData();
+      
+      // Add all fields to FormData
+      Object.keys(data).forEach(key => {
+        if (key === 'sitePlan' && data[key] instanceof File) {
+          formData.append('sitePlan', data[key] as File);
+        } else if (data[key] !== null && data[key] !== undefined) {
+          formData.append(key, String(data[key]));
+        }
+      });
+
+      return this.request('/projects/request/submit', {
+        method: 'POST',
+        body: formData, // Don't set Content-Type, browser will set it with boundary
+      });
+    } else {
+      // No file, use JSON
+      return this.request('/projects/request/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    }
   }
 
   async getClientProjects() {
     return this.request('/projects', {
+      method: 'GET',
+    });
+  }
+
+  async getDeveloperProjects() {
+    return this.request('/projects/developer/assigned', {
+      method: 'GET',
+    });
+  }
+
+  async getDeveloperActiveProjects() {
+    return this.request('/projects/developer/active', {
+      method: 'GET',
+    });
+  }
+
+  async acceptProjectAssignment(projectId: number) {
+    return this.request(`/projects/${projectId}/accept`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectProjectAssignment(projectId: number) {
+    return this.request(`/projects/${projectId}/reject`, {
+      method: 'POST',
+    });
+  }
+
+  async getProjectById(projectId: number | string) {
+    return this.request(`/projects/${projectId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getProjectMedia(projectId: number | string) {
+    return this.request(`/projects/${projectId}/media`, {
+      method: 'GET',
+    });
+  }
+
+  async getProjectContract(projectId: number | string) {
+    return this.request(`/projects/${projectId}/contract`, {
+      method: 'GET',
+    });
+  }
+
+  async updateProjectContract(projectId: number | string, data: Record<string, unknown>) {
+    return this.request(`/projects/${projectId}/contract`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteProjectContract(projectId: number | string) {
+    return this.request(`/projects/${projectId}/contract`, {
+      method: 'DELETE',
+    });
+  }
+
+  async checkExpiredProjectAcceptances() {
+    return this.request('/projects/admin/check-expired-acceptances', {
+      method: 'POST',
+    });
+  }
+
+  async getContractTemplate() {
+    return this.request('/projects/contract-template', {
+      method: 'GET',
+    });
+  }
+
+  async updateContractTemplate(data: Record<string, unknown>) {
+    return this.request('/projects/admin/contract-template', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getAllContracts() {
+    return this.request('/projects/admin/contracts', {
+      method: 'GET',
+    });
+  }
+
+  async getContractById(contractId: number) {
+    return this.request(`/projects/admin/contracts/${contractId}`, {
       method: 'GET',
     });
   }
@@ -561,6 +683,30 @@ class ApiClient {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
+    });
+  }
+
+  async updateProject(projectId: number, data: Record<string, unknown>) {
+    return this.request(`/projects/${projectId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async signProjectContract(projectId: number, data: { signatureFile?: File | Blob; signatureDataUrl?: string; role: string }) {
+    const form = new FormData();
+    if (data.signatureFile) {
+      form.append('signature', data.signatureFile as File | Blob);
+    }
+    if (data.signatureDataUrl) {
+      form.append('signatureDataUrl', data.signatureDataUrl);
+    }
+    form.append('role', data.role);
+
+    return this.request(`/projects/${projectId}/sign`, {
+      method: 'POST',
+      body: form,
     });
   }
 
@@ -905,6 +1051,12 @@ class ApiClient {
   async getRecentMessages(userId: number | string) {
     return this.request(`/users/${userId}/messages/recent`, {
       method: 'GET',
+    });
+  }
+
+  async markNotificationAsRead(notificationId: number | string) {
+    return this.request(`/notifications/${notificationId}/read`, {
+      method: 'PUT',
     });
   }
 }

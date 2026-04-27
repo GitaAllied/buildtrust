@@ -24,7 +24,7 @@ import { openClientSidebar, openSignoutModal } from "@/redux/action";
 
 // Derive backend origin to resolve media URLs stored as "/uploads/...".
 const API_BASE = (
-  import.meta.env.VITE_API_URL ?? "https://buildtrust-backend.onrender.com/api"
+  import.meta.env.VITE_API_URL ?? '/api'
 ).replace(/\/+$/, "");
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
@@ -49,9 +49,9 @@ const Projects = () => {
         const response = await apiClient.getClientProjects();
         // Transform API response to match the UI structure if needed
         const projectsData = response.projects || [];
-        // Normalize budget field: prefer backend `budget_range` (snake_case) or `budgetRange` (camelCase)
+        // Use budget_min and budget_max from backend
         const mapped = projectsData.map((p: any) => {
-          const budget = p.budget_range ?? p.budgetRange ?? p.budget ?? "";
+          const budget = p.budget_min && p.budget_max ? `${p.budget_min} - ${p.budget_max}` : p.budget ?? "";
           return { ...p, budget };
         });
         setProjects(mapped);
@@ -95,7 +95,7 @@ const Projects = () => {
         return "bg-green-600";
       case "In Progress":
         return "bg-blue-600";
-      case "Planning":
+      case "open":
         return "bg-orange-600";
       default:
         return "bg-gray-600";
@@ -123,7 +123,7 @@ const Projects = () => {
   const completedCount = projects.filter(
     (p) => p.status === "Completed",
   ).length;
-  const planningCount = projects.filter((p) => p.status === "Planning").length;
+  const planningCount = projects.filter((p) => p.status === "open").length;
 
   const PLACEHOLDER_IMAGE = "https://placehold.net/main.svg";
 
@@ -212,7 +212,7 @@ const Projects = () => {
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
                 <option value="all">All Status</option>
-                <option value="planning">Planning</option>
+                <option value="open">Open</option>
                 <option value="progress">In Progress</option>
                 <option value="completed">Completed</option>
               </select>
@@ -257,7 +257,7 @@ const Projects = () => {
                   {planningCount}
                 </p>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Planning
+                  Open
                 </p>
               </CardContent>
             </Card>

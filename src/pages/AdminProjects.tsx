@@ -27,12 +27,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-// MOCK DATA: Replace with apiClient once backend is ready
-import {
-  getAllProjects,
-  getAllDevelopers,
-  updateProject,
-} from "@/lib/mockData";
+// API Client for database operations
+import { apiClient } from "@/lib/api";
 import {
   Search,
   MoreHorizontal,
@@ -64,11 +60,18 @@ interface Project {
   client_id: number;
   developer_id?: number;
   status: string;
-  budget: number;
+  acceptance_status?: string;
+  budget?: number;
+  budget_min?: number;
+  budget_max?: number;
   created_at: string;
   updated_at: string;
   client_name?: string;
   developer_name?: string;
+  contract_id?: number;
+  developer_signed_at?: string | null;
+  client_signed_at?: string | null;
+  application_status?: string | null;
 }
 
 const AdminProjects = () => {
@@ -83,11 +86,26 @@ const AdminProjects = () => {
   const [developers, setDevelopers] = useState<any[]>([]);
   const [selectedDeveloper, setSelectedDeveloper] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const navigate = useNavigate();
   const { toast } = useToast();
   const dispatch = useDispatch()
   const isOpen = useSelector((state:any) => state.sidebar.adminSidebar)
     const signOutModal = useSelector((state:any) => state.signout) 
+
+  // Helper function to format budget display
+  const formatBudget = (project: Project): string => {
+    if (project.budget_min || project.budget_max) {
+      const min = project.budget_min ? `$${Number(project.budget_min).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : 'N/A';
+      const max = project.budget_max ? `$${Number(project.budget_max).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : 'N/A';
+      return `${min} - ${max}`;
+    }
+    if (project.budget) {
+      return `$${Number(project.budget).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    }
+    return 'N/A';
+  }; 
 
 
   useEffect(() => {
@@ -95,26 +113,43 @@ const AdminProjects = () => {
     loadDevelopers();
   }, []);
 
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
+
   const loadProjects = async () => {
     try {
       setLoading(true);
       setError(null);
-      // MOCK DATA: Using mock data - replace with apiClient.getAllProjects() when ready
-      const response = getAllProjects();
-      const projectsWithNames = response.map((p: any) => ({
+      console.log("📡 Loading projects from API...");
+      const response = await apiClient.getAllProjects();
+      console.log("✅ API Response received:", response);
+      
+      // Handle both array and object responses
+      const projectsArray = Array.isArray(response) ? response : response?.projects || [];
+      console.log("📦 Projects array:", projectsArray);
+      
+      if (!Array.isArray(projectsArray)) {
+        throw new Error("Invalid response format: expected array");
+      }
+
+      const projectsWithNames = projectsArray.map((p: any) => ({
         ...p,
         client_name: p.client_name || `Client ${p.client_id}`,
         developer_name:
           p.developer_name ||
           (p.developer_id ? `Developer ${p.developer_id}` : "Unassigned"),
       }));
+      console.log("✅ Processed projects:", projectsWithNames);
       setProjects(projectsWithNames);
-    } catch (err) {
-      console.error("Error loading projects:", err);
-      setError("Failed to load projects");
+    } catch (err: any) {
+      console.error("❌ Error loading projects:", err);
+      const errorMsg = err?.message || "Failed to load projects";
+      setError(errorMsg);
       toast({
         title: "Error",
-        description: "Failed to load projects",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
@@ -124,23 +159,52 @@ const AdminProjects = () => {
 
   const loadDevelopers = async () => {
     try {
-      // MOCK DATA: Using mock data - replace with apiClient.getDevelopers() when ready
-      const response = getAllDevelopers();
-      setDevelopers(response);
+      console.log("📡 Loading developers from API...");
+      const response = await apiClient.getDevelopers();
+      console.log("✅ Developers received:", response);
+      
+      // Handle both array and object responses
+      const developersArray = Array.isArray(response) ? response : response?.developers || response || [];
+      setDevelopers(Array.isArray(developersArray) ? developersArray : []);
     } catch (err) {
-      console.error("Error loading developers:", err);
+      console.error("❌ Error loading developers:", err);
       setDevelopers([]);
     }
   };
 
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch =
-      project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.client_name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      filterStatus === "all" || project.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredProjects = projects
+    .filter((project) => {
+      const matchesSearch =
+        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.client_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        filterStatus === "all" || project.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1);
+  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
@@ -152,7 +216,7 @@ const AdminProjects = () => {
 
     const statusLabels: Record<string, string> = {
       open: "Open",
-      in_progress: "In Progress",
+      in_progress: "In_Progress",
       completed: "Completed",
       cancelled: "Cancelled",
     };
@@ -177,6 +241,84 @@ const AdminProjects = () => {
     }
   };
 
+  const getContractStatus = (project: Project) => {
+    // No developer assigned
+    if (!project.developer_id) {
+      return null;
+    }
+
+    // Developer assigned but no contract yet
+    if (!project.contract_id) {
+      return null;
+    }
+
+    // Contract exists - check signature status
+    // Show awaiting signature if developer has accepted (either through application or direct acceptance)
+    if (project.contract_id && !project.developer_signed_at) {
+      // Check if application was accepted OR project was directly accepted
+      const developerAccepted = project.application_status === 'accepted' || project.acceptance_status === 'accepted';
+      
+      if (developerAccepted) {
+        return {
+          status: "pending_signature",
+          label: "⏳ Awaiting Signature",
+          color: "warning",
+          tooltip: "Developer accepted - waiting for digital signature"
+        };
+      }
+      return null;
+    }
+
+    if (project.contract_id && project.developer_signed_at && !project.client_signed_at) {
+      return {
+        status: "developer_signed",
+        label: "👤 Developer Signed",
+        color: "info",
+        tooltip: "Developer has signed - awaiting client signature"
+      };
+    }
+
+    if (project.contract_id && project.developer_signed_at && project.client_signed_at) {
+      return {
+        status: "fully_signed",
+        label: "✅ Fully Signed",
+        color: "success",
+        tooltip: "Contract fully signed by both parties"
+      };
+    }
+
+    return null;
+  };
+
+  const getProjectAcceptanceStatus = (project: Project) => {
+    // Only show if developer is assigned
+    if (!project.developer_id) {
+      return null;
+    }
+
+    // If acceptance_status is pending - show pending badge
+    if (project.acceptance_status === 'pending') {
+      return {
+        status: "pending_request",
+        label: "⏳ Pending Request",
+        color: "warning",
+        tooltip: "Awaiting response (72-hour window)"
+      };
+    }
+
+    // If acceptance_status is expired - show expired badge
+    if (project.acceptance_status === 'expired') {
+      return {
+        status: "expired_request",
+        label: "⏰ Request Expired",
+        color: "destructive",
+        tooltip: "Developer did not respond within 72 hours"
+      };
+    }
+
+    return null;
+  };
+
   const handleAssignDeveloper = async () => {
     if (!selectedProject || !selectedDeveloper) {
       toast({
@@ -189,10 +331,10 @@ const AdminProjects = () => {
 
     setSaving(true);
     try {
-      // MOCK DATA: Using mock update - replace with apiClient.assignDeveloperToProject() when ready
-      updateProject(selectedProject.id, {
-        developer_id: parseInt(selectedDeveloper),
-      });
+      await apiClient.assignDeveloperToProject(
+        selectedProject.id,
+        parseInt(selectedDeveloper)
+      );
       toast({ title: "Success", description: "Developer assigned to project" });
       setIsDeveloperDialogOpen(false);
       setSelectedDeveloper("");
@@ -212,8 +354,7 @@ const AdminProjects = () => {
     if (!confirm("Are you sure you want to delete this project?")) return;
 
     try {
-      // MOCK DATA: Delete functionality - replace with apiClient.deleteProject() when ready
-      console.log("Delete project:", projectId);
+      await apiClient.deleteProject(projectId);
       toast({ title: "Success", description: "Project deleted" });
       loadProjects();
     } catch (err) {
@@ -385,7 +526,7 @@ const AdminProjects = () => {
                         </td>
                       </tr>
                     ) : (
-                      filteredProjects.map((project) => (
+                      paginatedProjects.map((project) => (
                         <tr
                           key={project.id}
                           className="border-b border-gray-100 hover:bg-gray-50"
@@ -408,13 +549,59 @@ const AdminProjects = () => {
                             </p>
                           </td>
                           <td className="py-3 px-4">
-                            <Badge
-                              variant={
-                                project.developer_id ? "secondary" : "outline"
-                              }
-                            >
-                              {project.developer_name}
-                            </Badge>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge
+                                variant={
+                                  project.status === "open" || !project.developer_id ? "outline" : "secondary"
+                                }
+                              >
+                                {project.status === "open" ? "Unassigned" : project.developer_name}
+                              </Badge>
+                              {getProjectAcceptanceStatus(project) && (
+                                <div title={getProjectAcceptanceStatus(project)?.tooltip}>
+                                  <Badge 
+                                    variant={
+                                      getProjectAcceptanceStatus(project)?.status === "pending_request" 
+                                        ? "outline" 
+                                        : getProjectAcceptanceStatus(project)?.status === "expired_request"
+                                        ? "destructive"
+                                        : "default"
+                                    }
+                                    className={
+                                      getProjectAcceptanceStatus(project)?.status === "pending_request" 
+                                        ? "bg-yellow-50 text-yellow-700 border-yellow-200" 
+                                        : getProjectAcceptanceStatus(project)?.status === "expired_request"
+                                        ? "bg-red-50 text-red-700 border-red-200"
+                                        : "bg-green-50 text-green-700 border-green-200"
+                                    }
+                                  >
+                                    {getProjectAcceptanceStatus(project)?.label}
+                                  </Badge>
+                                </div>
+                              )}
+                              {getContractStatus(project) && (
+                                <div title={getContractStatus(project)?.tooltip}>
+                                  <Badge 
+                                    variant={
+                                      getContractStatus(project)?.status === "pending_signature" 
+                                        ? "outline" 
+                                        : getContractStatus(project)?.status === "developer_signed"
+                                        ? "secondary"
+                                        : "default"
+                                    }
+                                    className={
+                                      getContractStatus(project)?.status === "pending_signature" 
+                                        ? "bg-yellow-50 text-yellow-700 border-yellow-200" 
+                                        : getContractStatus(project)?.status === "developer_signed"
+                                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                                        : "bg-green-50 text-green-700 border-green-200"
+                                    }
+                                  >
+                                    {getContractStatus(project)?.label}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-2">
@@ -425,7 +612,7 @@ const AdminProjects = () => {
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-1 text-gray-900 font-medium">
                               <FaMoneyBill className="h-4 w-4" />
-                              <span>{project.budget || "N/A"}</span>
+                              <span>{formatBudget(project)}</span>
                             </div>
                           </td>
                           <td className="py-3 px-4">
@@ -481,6 +668,53 @@ const AdminProjects = () => {
                   </tbody>
                 </table>
               </div>
+              
+              {/* Pagination Controls */}
+              <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-4">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="items-per-page" className="text-sm font-medium text-gray-700">
+                    Projects per page:
+                  </label>
+                  <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="15">15</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="text-sm text-gray-600">
+                  Showing {filteredProjects.length === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, filteredProjects.length)} of {filteredProjects.length} projects
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="text-sm font-medium text-gray-700 px-2">
+                    Page {currentPage} of {Math.max(1, totalPages)}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -511,7 +745,12 @@ const AdminProjects = () => {
                     <SelectContent>
                       {developers.map((dev) => (
                         <SelectItem key={dev.id} value={dev.id.toString()}>
-                          {dev.name} ({dev.email})
+                          <div className="flex items-center gap-2">
+                            <span>{dev.name} ({dev.email})</span>
+                            {selectedProject?.developer_id === dev.id && (
+                              <span className="text-blue-600 font-semibold">preferred</span>
+                            )}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -55,7 +55,7 @@ const SavedDevelopers = () => {
     try {
       setRemovingId(developerId);
       await apiClient.unsaveDeveloper(developerId);
-      setSavedDevelopers(prev => prev.filter(dev => dev.developer_id !== developerId));
+      setSavedDevelopers(prev => prev.filter(dev => dev.id !== developerId));
       toast({
         title: "Removed",
         description: "Developer removed from your saved list",
@@ -157,9 +157,9 @@ const SavedDevelopers = () => {
           {/* Saved Developers List */}
           {!loading && !error && savedDevelopers.length > 0 && (
             <div className="grid gap-6">
-              {savedDevelopers.map((developer) => (
+              {savedDevelopers.map((developer, index) => (
                 <Card
-                  key={developer.developer_id}
+                  key={developer.id || `developer-${index}`}
                   className="hover:shadow-md transition-shadow"
                 >
                   <CardContent className="p-6 md:flex md:gap-4">
@@ -181,11 +181,11 @@ const SavedDevelopers = () => {
                           <Button
                             size="sm"
                             variant="ghost"
-                            disabled={removingId === developer.developer_id}
-                            onClick={() => handleUnsave(developer.developer_id)}
+                            disabled={removingId === developer.id}
+                            onClick={() => handleUnsave(developer.id)}
                             className="text-red-500 hover:text-red-600"
                           >
-                            {removingId === developer.developer_id ? (
+                            {removingId === developer.id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <Heart className="h-4 w-4 fill-current" />
@@ -216,7 +216,7 @@ const SavedDevelopers = () => {
                           <Button
                             size="sm"
                             className="bg-[#226F75] hover:bg-[#226F75]/70"
-                            onClick={() => navigate(`/developer/${developer.developer_id}`)}
+                            onClick={() => navigate(`/developer/${developer.id}`)}
                           >
                             View Profile
                           </Button>

@@ -15,9 +15,105 @@ import { openClientSidebar, openSignoutModal } from "@/redux/action";
 
 // Derive backend origin to resolve media URLs stored as "/uploads/...".
 const API_BASE = (
-  import.meta.env.VITE_API_URL ?? "https://buildtrust-backend.onrender.com/api"
+  import.meta.env.VITE_API_URL ?? '/api'
 ).replace(/\/+$/, "");
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
+
+// Mock contracts data for demo/style purposes
+const MOCK_CONTRACTS = [
+  {
+    id: 1,
+    contract_id: 1,
+    title: "Modern Duplex Construction Contract",
+    contract_title: "Modern Duplex Construction",
+    developer_name: "Engr. Adewale Structures",
+    project_title: "Modern Duplex in Lekki",
+    agreed_amount: "₦8,500,000",
+    contract_status: "Active",
+    start_date: "2024-01-15",
+    contract_deadline: "2024-12-15",
+    deadline: "2024-12-15",
+    contract_signed_at: "2023-12-20",
+    created_at: "2023-12-20",
+    contract_file: {
+      url: "/uploads/contracts/modern_duplex_contract.pdf",
+      filename: "Modern_Duplex_Contract.pdf",
+    },
+  },
+  {
+    id: 2,
+    contract_id: 2,
+    title: "Commercial Plaza Development",
+    contract_title: "Commercial Plaza Development Contract",
+    developer_name: "BuildCore Developments",
+    project_title: "Commercial Plaza - Victoria Island",
+    agreed_amount: "₦45,000,000",
+    contract_status: "Active",
+    start_date: "2024-02-01",
+    contract_deadline: "2025-06-30",
+    deadline: "2025-06-30",
+    contract_signed_at: "2024-01-15",
+    created_at: "2024-01-15",
+    contract_file: {
+      url: "/uploads/contracts/commercial_plaza_contract.pdf",
+      filename: "Commercial_Plaza_Contract.pdf",
+    },
+  },
+  {
+    id: 3,
+    contract_id: 3,
+    title: "Residential Estate Infrastructure",
+    contract_title: "Infrastructure Development",
+    developer_name: "Crown Estate Builders",
+    project_title: "Crown Heights Estate - Phase 2",
+    agreed_amount: "₦22,000,000",
+    contract_status: "Completed",
+    start_date: "2023-06-01",
+    contract_deadline: "2024-03-31",
+    deadline: "2024-03-31",
+    contract_signed_at: "2023-05-20",
+    created_at: "2023-05-20",
+    contract_file: {
+      url: "/uploads/contracts/crown_estate_contract.pdf",
+      filename: "Crown_Estate_Contract.pdf",
+    },
+  },
+  {
+    id: 4,
+    contract_id: 4,
+    title: "Office Complex Renovation",
+    contract_title: "Office Complex Renovation Project",
+    developer_name: "Prestige Constructions Ltd",
+    project_title: "Downtown Office Complex Upgrade",
+    agreed_amount: "₦12,500,000",
+    contract_status: "Draft",
+    start_date: null,
+    contract_deadline: null,
+    deadline: null,
+    contract_signed_at: null,
+    created_at: "2024-04-10",
+    contract_file: null,
+  },
+  {
+    id: 5,
+    contract_id: 5,
+    title: "Hospital Wing Construction",
+    contract_title: "Medical Facility Construction",
+    developer_name: "MedBuild Contractors",
+    project_title: "Teaching Hospital - New Wing",
+    agreed_amount: "₦35,000,000",
+    contract_status: "Pending",
+    start_date: "2024-05-01",
+    contract_deadline: "2025-12-31",
+    deadline: "2025-12-31",
+    contract_signed_at: "2024-04-15",
+    created_at: "2024-04-15",
+    contract_file: {
+      url: "/uploads/contracts/hospital_contract.pdf",
+      filename: "Hospital_Wing_Contract.pdf",
+    },
+  },
+];
 
 const Contracts = () => {
   const navigate = useNavigate();
@@ -57,31 +153,29 @@ const Contracts = () => {
     const fetchContracts = async () => {
       try {
         setLoading(true);
-        // Backend does not expose /api/contracts; use /api/projects which returns enriched projects including contract info
-        const res = await apiClient.getClientProjects();
-        const projects = res.projects ?? res.data ?? res;
-        const mapped = (Array.isArray(projects) ? projects : [])
-          .map((p: any) => ({
-            id: p.contract_id || p.id,
-            title:
-              p.contract_title ||
-              p.title ||
-              `Contract for ${p.title || "Project"}`,
-            developer: p.developer_name || p.developer || "",
-            project: p.title || p.project_title || "",
-            value:
-              p.agreed_amount || p.value || p.budget_range || p.budget || "—",
-            status:
-              p.contract_status ||
-              p.status ||
-              (p.contract_id ? "Active" : "Draft"),
-            start_date: p.start_date || null,
-            end_date: p.deadline || p.contract_deadline || p.end_date || null,
-            signed: p.contract_signed_at || p.signed_at || p.created_at || "",
-            deadline: p.contract_deadline || p.deadline || "",
-            file: p.contract_file || p.file || null,
-          }))
-          .filter((c: any) => c.id); // keep only entries with a contract id
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const mapped = MOCK_CONTRACTS.map((p: any) => ({
+          id: p.contract_id || p.id,
+          title:
+            p.contract_title ||
+            p.title ||
+            `Contract for ${p.title || "Project"}`,
+          developer: p.developer_name || p.developer || "",
+          project: p.project_title || p.title || "",
+          value:
+            p.agreed_amount || p.value || p.budget || "—",
+          status:
+            p.contract_status ||
+            p.status ||
+            (p.contract_id ? "Active" : "Draft"),
+          start_date: p.start_date || null,
+          end_date: p.contract_deadline || p.deadline || p.end_date || null,
+          signed: p.contract_signed_at || p.signed_at || p.created_at || "",
+          deadline: p.contract_deadline || p.deadline || "",
+          file: p.contract_file || p.file || null,
+        }));
 
         setContracts(mapped);
       } catch (err: any) {

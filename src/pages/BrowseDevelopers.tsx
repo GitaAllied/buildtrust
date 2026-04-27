@@ -124,7 +124,7 @@ const COMMON_PROJECT_TYPES = [
 
 // Compute backend origin for uploads (remove trailing /api if present)
 const BACKEND_ORIGIN = (
-  import.meta.env.VITE_API_URL ?? "https://buildtrust-backend.onrender.com/api"
+  import.meta.env.VITE_API_URL ?? '/api'
 )
   .replace(/\/+$/, "")
   .replace(/\/api$/, "");
