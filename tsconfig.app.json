@@ -21,10 +21,15 @@
     "noImplicitAny": false,
     "noFallthroughCasesInSwitch": false,
 
+    /* Path aliases */
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
+    
+    /* Deprecations */
+    "ignoreDeprecations": "6.0",
+    
     "types": ["node"],
     "typeRoots": ["./node_modules/@types"]
   },
