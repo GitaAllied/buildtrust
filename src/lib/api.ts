@@ -589,12 +589,6 @@ class ApiClient {
     });
   }
 
-  async getContractTemplate() {
-    return this.request('/projects/contract-template', {
-      method: 'GET',
-    });
-  }
-
   // Get payment summary for authenticated user
   async getPaymentsSummary() {
     return this.request('/payments/summary', {
