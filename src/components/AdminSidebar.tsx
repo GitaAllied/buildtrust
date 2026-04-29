@@ -91,7 +91,6 @@ const AdminSidebar = ({active}) => {
     { id: "users", label: "User Management", icon: <FaUsers /> },
     { id: "projects", label: "Projects", icon: <FaHandshake />, count: notificationCounts.projects },
     { id: "contracts", label: "Contracts", icon: <FaBook /> },
-    { id: "developers", label: "Developers", icon: <FaUser /> },
     { id: "messages", label: "Messages", icon: <FaMessage />, count: notificationCounts.messages },
     { id: "reports", label: "Reports", icon: <FaBook /> },
     { id: "settings", label: "Settings", icon: <FaGear /> },
@@ -115,9 +114,6 @@ const AdminSidebar = ({active}) => {
         break;
       case "contracts":
         navigate("/admin/contracts");
-        break;
-      case "developers":
-        navigate("/admin/developers");
         break;
       case "messages":
         setActiveTab(itemId);

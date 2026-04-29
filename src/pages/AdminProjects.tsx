@@ -278,14 +278,14 @@ const AdminProjects = () => {
       };
     }
 
-    if (project.contract_id && project.developer_signed_at && project.client_signed_at) {
-      return {
-        status: "fully_signed",
-        label: "✅ Fully Signed",
-        color: "success",
-        tooltip: "Contract fully signed by both parties"
-      };
-    }
+    // if (project.contract_id && project.developer_signed_at && project.client_signed_at) {
+    //   return {
+    //     status: "fully_signed",
+    //     label: "✅ Fully Signed",
+    //     color: "success",
+    //     tooltip: "Contract fully signed by both parties"
+    //   };
+    // }
 
     return null;
   };
@@ -297,14 +297,14 @@ const AdminProjects = () => {
     }
 
     // If acceptance_status is null/undefined - developer was selected but not officially assigned yet
-    if (!project.acceptance_status) {
-      return {
-        status: "selected_by_client",
-        label: "👤 Selected by Client",
-        color: "info",
-        tooltip: "Client selected this developer. Admin needs to assign to start 72-hour window"
-      };
-    }
+    // if (!project.acceptance_status) {
+    //   return {
+    //     status: "selected_by_client",
+    //     label: "👤 Selected by Client",
+    //     color: "info",
+    //     tooltip: "Client selected this developer. Admin needs to assign to start 72-hour window"
+    //   };
+    // }
 
     // If acceptance_status is pending - show pending badge
     if (project.acceptance_status === 'pending') {
@@ -335,6 +335,35 @@ const AdminProjects = () => {
         tooltip: "Developer did not respond within 72 hours - reassign needed"
       };
     }
+
+    return null;
+  };
+
+  const getClientSignatureStatus = (project: Project) => {
+    // Only show if contract exists and developer has signed
+    if (!project.contract_id || !project.developer_signed_at) {
+      return null;
+    }
+
+    // If client hasn't signed yet - show awaiting signature
+    if (!project.client_signed_at) {
+      return {
+        status: "awaiting_client_signature",
+        label: "⏳ Awaiting Client Signature",
+        color: "warning",
+        tooltip: "Developer signed - waiting for client to sign contract"
+      };
+    }
+
+    // If both have signed - show fully signed
+    // if (project.client_signed_at) {
+    //   return {
+    //     status: "client_signed",
+    //     label: "✅ Client Signed",
+    //     color: "success",
+    //     tooltip: "Contract fully signed by both parties"
+    //   };
+    // }
 
     return null;
   };
@@ -564,9 +593,29 @@ const AdminProjects = () => {
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="text-sm text-gray-900">
-                              {project.client_name}
-                            </p>
+                            <div className="flex flex-col gap-2">
+                              <p className="text-sm text-gray-900">
+                                {project.client_name}
+                              </p>
+                              {getClientSignatureStatus(project) && (
+                                <div title={getClientSignatureStatus(project)?.tooltip}>
+                                  <Badge 
+                                    variant={
+                                      getClientSignatureStatus(project)?.status === "awaiting_client_signature" 
+                                        ? "outline" 
+                                        : "default"
+                                    }
+                                    className={
+                                      getClientSignatureStatus(project)?.status === "awaiting_client_signature" 
+                                        ? "bg-yellow-50 text-yellow-700 border-yellow-200" 
+                                        : "bg-green-50 text-green-700 border-green-200"
+                                    }
+                                  >
+                                    {getClientSignatureStatus(project)?.label}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-2 flex-wrap">

@@ -208,8 +208,7 @@ const AdminContracts = () => {
       contract.project_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contract.developer_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "all" || contract.status === filterStatus;
-    const isDeveloper = isDeveloperAssigned(contract);
-    return matchesSearch && matchesStatus && isDeveloper;
+    return matchesSearch && matchesStatus;
   });
 
   const getStatusBadge = (status: string) => {
