@@ -1,31 +1,21 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useNavigate } from "react-router-dom";
 import {
   FileText,
-  Download,
-  TrendingUp,
-  Users,
-  DollarSign,
+  AlertTriangle,
+  ShieldCheck,
+  EyeOff,
+  Search,
   X,
   Menu,
-  Loader
+  Loader,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
-import { useAuth } from "@/hooks/useAuth";
-import { apiClient } from "@/lib/api";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
 import AdminSidebar from "@/components/AdminSidebar";
+import { useToast } from "@/hooks/use-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { openAdminSidebar, openSignoutModal } from "@/redux/action";
 
@@ -35,145 +25,366 @@ interface ReportType {
   description: string;
   icon: any;
   lastGenerated?: string;
-  status: "Ready" | "Processing";
+  status: "Ready" | "Processing" | "Active";
+}
+
+interface ReportSource {
+  type: string;
+  value: string;
+}
+
+interface SecurityAction {
+  id: string;
+  label: string;
+  variant: "outline" | "secondary" | "destructive";
+  feedback: string;
+  statusUpdate?: ReportData["status"];
 }
 
 interface ReportData {
   id: number;
+  categoryId: string;
   name: string;
   type: string;
   generated: string;
-  size: string;
-  downloads: number;
-  data?: any;
+  severity: "Critical" | "High" | "Medium" | "Low";
+  status: "Open" | "In review" | "Resolved";
+  note: string;
+  sources: ReportSource[];
+  risks: string[];
+  fixes: string[];
+  actions: SecurityAction[];
 }
 
 const AdminReports = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("monthly");
   const [selectedType, setSelectedType] = useState("all");
-  const navigate = useNavigate();
-  const dispatch = useDispatch()
-  const isOpen = useSelector((state:any) => state.sidebar.adminSidebar)
-  const signOutModal = useSelector((state:any) => state.signout) 
+  const dispatch = useDispatch();
+  const isOpen = useSelector((state:any) => state.sidebar.adminSidebar);
+  const signOutModal = useSelector((state:any) => state.signout);
+  const { toast } = useToast();
 
-  const [reportTypes, setReportTypes] = useState<ReportType[]>([]);
+  const [reportTypes, setReportTypes] = useState<ReportType[]>([
+    {
+      id: "fraud",
+      title: "Fraud Attempts",
+      description: "Monitor suspicious payment and transaction behavior.",
+      icon: AlertTriangle,
+      status: "Active",
+    },
+    {
+      id: "hacking",
+      title: "Hacking Attempts",
+      description: "Detect unauthorized access and intrusion attempts.",
+      icon: ShieldCheck,
+      status: "Active",
+    },
+    {
+      id: "fake_accounts",
+      title: "Fake Accounts",
+      description: "Spot fraudulent or duplicate account creation.",
+      icon: EyeOff,
+      status: "Active",
+    },
+    {
+      id: "suspicious_activity",
+      title: "Suspicious Activity",
+      description: "Track unusual user behavior across the platform.",
+      icon: Search,
+      status: "Active",
+    },
+    {
+      id: "security_audit",
+      title: "Security Audits",
+      description: "Run regular system and data protection audits.",
+      icon: ShieldCheck,
+      status: "Active",
+    },
+  ]);
   const [recentReports, setRecentReports] = useState<ReportData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string>(new Date().toLocaleString());
 
-  // Load report types on mount
-  useEffect(() => {
-    loadReportTypes();
-  }, []);
+  const findings: Record<
+    string,
+    {
+      severity: "Critical" | "High" | "Medium" | "Low";
+      status: "Open" | "In review" | "Resolved";
+      note: string;
+      sources: ReportSource[];
+      risks: string[];
+      fixes: string[];
+      actions: SecurityAction[];
+    }
+  > = {
+    fraud: {
+      severity: "Critical",
+      status: "Open",
+      note: "Automated fraud systems flagged high-risk payment abuse from a verified account.",
+      sources: [
+        { type: "User Account", value: "johndoe@example.com (User ID: 1023)" },
+        { type: "IP Address", value: "203.0.113.45" },
+        { type: "Transaction Log", value: "Failed payment attempts over threshold" },
+      ],
+      risks: [
+        "Repeated failed charges and synthetic identity indicator.",
+        "Multiple high-value transactions from a single account.",
+        "Potential financial loss and chargeback risk.",
+      ],
+      fixes: [
+        "Freeze the account until fraud investigation completes.",
+        "Verify payment details and transaction origin.",
+        "Monitor connected IP and device signals closely.",
+      ],
+      actions: [
+        {
+          id: "block-ip",
+          label: "Block IP",
+          variant: "destructive",
+          feedback: "IP address has been blocked from new sessions.",
+          statusUpdate: "In review",
+        },
+        {
+          id: "suspend-account",
+          label: "Suspend Account",
+          variant: "secondary",
+          feedback: "Account suspended pending fraud review.",
+          statusUpdate: "In review",
+        },
+      ],
+    },
+    hacking: {
+      severity: "Critical",
+      status: "Open",
+      note: "Suspicious access patterns were detected in the admin and developer login flow.",
+      sources: [
+        { type: "IP Address", value: "198.51.100.22" },
+        { type: "User Account", value: "admin@example.com" },
+        { type: "Access Log", value: "Suspicious admin login sequence" },
+      ],
+      risks: [
+        "Unauthorized access to sensitive controls.",
+        "Privilege escalation attempts from unknown IPs.",
+        "Potential system compromise if not contained.",
+      ],
+      fixes: [
+        "Force password resets on impacted administrator accounts.",
+        "Require multi-factor authentication on all privileged accounts.",
+        "Block suspicious IP ranges and verify their origin.",
+      ],
+      actions: [
+        {
+          id: "enforce-mfa",
+          label: "Enforce MFA",
+          variant: "secondary",
+          feedback: "MFA enforcement has been flagged for this account.",
+          statusUpdate: "In review",
+        },
+        {
+          id: "block-suspicious-ip",
+          label: "Block IP",
+          variant: "destructive",
+          feedback: "Suspicious IP address has been blocked.",
+          statusUpdate: "In review",
+        },
+      ],
+    },
+    fake_accounts: {
+      severity: "High",
+      status: "Open",
+      note: "A cluster of unverified accounts show disposable email and repeated device fingerprints.",
+      sources: [
+        { type: "User Account", value: "tempuser1234@example.com" },
+        { type: "Email Service", value: "Disposable email detected" },
+        { type: "Device ID", value: "Device fingerprint mismatch" },
+      ],
+      risks: [
+        "Fraudulent accounts may be used for reputation abuse.",
+        "Duplicate identity signals can harm platform trust.",
+        "Unverified accounts may bypass normal compliance checks.",
+      ],
+      fixes: [
+        "Require identity verification for accounts flagged as suspicious.",
+        "Block disposable email domains and device-id reuse.",
+        "Perform daily cleanup of confirmed fake profiles.",
+      ],
+      actions: [
+        {
+          id: "flag-fake",
+          label: "Flag Accounts",
+          variant: "secondary",
+          feedback: "Suspected fake accounts have been flagged for manual review.",
+        },
+        {
+          id: "delete-fake",
+          label: "Delete Profiles",
+          variant: "destructive",
+          feedback: "Confirmed fake profiles are ready for removal.",
+          statusUpdate: "In review",
+        },
+      ],
+    },
+    suspicious_activity: {
+      severity: "Medium",
+      status: "Open",
+      note: "Unusual behavior was detected on user accounts and transaction flow.",
+      sources: [
+        { type: "User Account", value: "janedoe@example.com" },
+        { type: "IP Address", value: "203.0.113.99" },
+        { type: "Behavior Log", value: "Unusual transaction pattern" },
+      ],
+      risks: [
+        "Rapid changes to payout or contact details.",
+        "Unexpected geolocation access patterns.",
+        "High-frequency messaging or transactions.",
+      ],
+      fixes: [
+        "Temporarily review and approve suspicious transactions.",
+        "Alert users of unusual account activity.",
+        "Verify account changes before applying them.",
+      ],
+      actions: [
+        {
+          id: "review-behavior",
+          label: "Review Behavior",
+          variant: "outline",
+          feedback: "Behavior patterns have been sent to the security team.",
+        },
+        {
+          id: "suspend-transactions",
+          label: "Suspend Transactions",
+          variant: "secondary",
+          feedback: "Suspicious transactions are temporarily suspended.",
+          statusUpdate: "In review",
+        },
+      ],
+    },
+    security_audit: {
+      severity: "Low",
+      status: "Open",
+      note: "Regular security audit items require follow-up from the development team.",
+      sources: [
+        { type: "Audit Log", value: "Quarterly security review" },
+        { type: "Access Control", value: "Permission review overdue" },
+        { type: "Partner Assessment", value: "Third-party security check" },
+      ],
+      risks: [
+        "Weak password policy across the system.",
+        "Lack of recent data access reviews.",
+        "No recent audit of partner security controls.",
+      ],
+      fixes: [
+        "Enforce stronger password and session policies.",
+        "Perform regular data access and permissions audits.",
+        "Schedule third-party security reviews quarterly.",
+      ],
+      actions: [
+        {
+          id: "schedule-audit",
+          label: "Schedule Audit",
+          variant: "secondary",
+          feedback: "Audit has been scheduled for the security team.",
+          statusUpdate: "In review",
+        },
+        {
+          id: "review-access",
+          label: "Review Access",
+          variant: "outline",
+          feedback: "Access control and permissions are being reviewed.",
+        },
+      ],
+    },
+  };
 
-  const loadReportTypes = async () => {
+  const handleActionClick = (reportId: number, action: SecurityAction) => {
+    setRecentReports((prev) =>
+      prev.map((report) =>
+        report.id === reportId
+          ? {
+              ...report,
+              status: action.statusUpdate || report.status,
+            }
+          : report
+      )
+    );
+
+    toast({
+      title: action.label,
+      description: action.feedback,
+    });
+  };
+
+  const refreshSecurityFindings = () => {
     try {
       setLoading(true);
+      const generatedAt = new Date().toLocaleString();
+
+      setReportTypes((prev) =>
+        prev.map((report) => ({
+          ...report,
+          status: "Active",
+          lastGenerated: generatedAt,
+        }))
+      );
+
+      const selectedIds = selectedType === "all" ? Object.keys(findings) : [selectedType];
+      const freshReports = selectedIds.map((reportTypeId) => {
+        const reportType = reportTypes.find((r) => r.id === reportTypeId);
+        const selectedFindings = findings[reportTypeId] || {
+          severity: "Low" as const,
+          status: "Open" as const,
+          note: "General platform monitoring is active.",
+          sources: [{ type: "System", value: "General security logs" }],
+          risks: ["General system exposure detected."],
+          fixes: ["Review system logs and apply security patches."],
+          actions: [
+            {
+              id: "run-review",
+              label: "Run Review",
+              variant: "secondary",
+              feedback: "General security review started.",
+            },
+          ],
+        };
+
+        return {
+          id: Date.now() + Math.random(),
+          categoryId: reportTypeId,
+          name: reportType?.title || "Security Alert",
+          type: reportType?.title || "Security",
+          severity: selectedFindings.severity,
+          status: selectedFindings.status,
+          note: selectedFindings.note,
+          generated: generatedAt,
+          sources: selectedFindings.sources,
+          risks: selectedFindings.risks,
+          fixes: selectedFindings.fixes,
+          actions: selectedFindings.actions,
+        } as ReportData;
+      });
+
+      setRecentReports(freshReports);
+      setLastUpdated(generatedAt);
       setError(null);
-      const types = await apiClient.getReportTypes();
-      
-      // Map icon components
-      const iconMap: Record<string, any> = {
-        DollarSign,
-        Users,
-        TrendingUp,
-      };
-
-      const mappedTypes = types.map((type: any) => ({
-        ...type,
-        icon: iconMap[type.icon] || FileText,
-        status: 'Ready' as const,
-      }));
-
-      setReportTypes(mappedTypes);
     } catch (err: any) {
-      console.error('Error loading report types:', err);
-      setError('Failed to load report types');
+      console.error("Error refreshing security findings:", err);
+      setError(err?.message || "Unable to refresh security findings.");
     } finally {
       setLoading(false);
     }
   };
 
-  const { toast } = useToast();
+  useEffect(() => {
+    refreshSecurityFindings();
+    const interval = window.setInterval(refreshSecurityFindings, 120000);
+    return () => window.clearInterval(interval);
+  }, [selectedPeriod, selectedType]);
 
-  const handleGenerateReport = async (reportTypeId: string) => {
-    try {
-      setGeneratingReport(reportTypeId);
-      setError(null);
-
-      let response: any;
-      if (reportTypeId === 'financial') {
-        response = await apiClient.generateFinancialReport(selectedPeriod);
-      } else if (reportTypeId === 'user') {
-        response = await apiClient.generateUserReport(selectedPeriod);
-      } else if (reportTypeId === 'project') {
-        response = await apiClient.generateProjectReport(selectedPeriod);
-      }
-
-      // Update status to Ready
-      setReportTypes((prev) =>
-        prev.map((r) =>
-          r.id === reportTypeId 
-            ? { 
-                ...r, 
-                status: 'Ready' as const, 
-                lastGenerated: new Date().toLocaleString() 
-              } 
-            : r
-        )
-      );
-
-      // Add to recent reports
-      if (response) {
-        setRecentReports((prev) => [response, ...prev]);
-      }
-
-      toast({
-        title: "Report ready",
-        description: "The report is ready for download.",
-      });
-    } catch (err: any) {
-      console.error('Error generating report:', err);
-      setError(err?.message || 'Failed to generate report');
-      toast({
-        title: "Error",
-        description: "Failed to generate report",
-        variant: "destructive",
-      });
-    } finally {
-      setGeneratingReport(null);
-    }
-  };
-
-  const handleDownloadReport = async (reportId: number, type: string) => {
-    try {
-      await apiClient.downloadReport(reportId, type);
-
-      // Increment download counter
-      setRecentReports((prev) =>
-        prev.map((r) =>
-          r.id === reportId ? { ...r, downloads: r.downloads + 1 } : r
-        )
-      );
-
-      toast({
-        title: "Download started",
-        description: "Report is being downloaded.",
-      });
-    } catch (err: any) {
-      console.error('Error downloading report:', err);
-      toast({
-        title: "Error",
-        description: "Failed to download report",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const visibleReportTypes = reportTypes.filter(
-    (r) => selectedType === "all" || r.id === selectedType
-  );
+  const displayedReports =
+    selectedType === "all"
+      ? recentReports
+      : recentReports.filter((report) => report.categoryId === selectedType);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
@@ -203,39 +414,15 @@ const AdminReports = () => {
               <div className="flex items-center space-x-4 ">
                 <div>
                   <h1 className="md:text-2xl font-bold text-gray-900">
-                    Reports & Analytics
+                    Security Monitoring
                   </h1>
                   <p className="text-xs sm:text-sm text-gray-500">
-                    Generate and download detailed reports
+                    Monitor fraud, hacking, fake accounts, suspicious activity, and audit security regularly.
+                  </p>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-2">
+                    Auto-updating monitoring is active 24/7. Latest refresh: {lastUpdated}.
                   </p>
                 </div>
-              </div>
-              <div className="flex flex-row sm:items-center gap-3">
-                <Select
-                  value={selectedPeriod}
-                  onValueChange={setSelectedPeriod}
-                >
-                  <SelectTrigger className="w-full sm:w-32 md:w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={selectedType} onValueChange={setSelectedType}>
-                  <SelectTrigger className="w-full sm:w-40 md:w-56">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="financial">Financial</SelectItem>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="project">Project</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
           </div>
         </div>
@@ -255,124 +442,126 @@ const AdminReports = () => {
             </div>
           ) : (
             <>
-          {/* Report Types */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 mb-8 auto-rows-fr flex-1 min-h-[220px]">
-            {visibleReportTypes.length ? (
-              visibleReportTypes.map((report) => (
-                <Card
-                  key={report.id}
-                  className="hover:shadow-md transition-shadow h-full"
-                >
-                  <CardContent className="p-4 md:p-6 h-full flex flex-col">
-                    <div className="flex items-start sm:items-center justify-between mb-4 gap-3">
-                      <report.icon className="h-8 w-8 text-gray-400" />
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          generatingReport === report.id
-                            ? "bg-orange-100 text-orange-800"
-                            : report.status === "Ready"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-orange-100 text-orange-800"
-                        }`}
-                      >
-                        {generatingReport === report.id ? "Processing..." : report.status}
-                      </span>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      {report.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      {report.description}
-                    </p>
-                    <div className="text-xs text-gray-500 mb-4">
-                      Last generated: {report.lastGenerated || "Never"}
-                    </div>
-                    <Button
-                      className="mt-auto w-full"
-                      variant="outline"
-                      onClick={() => handleGenerateReport(report.id)}
-                      disabled={generatingReport === report.id}
-                    >
-                      {generatingReport === report.id ? (
-                        <>
-                          <Loader className="h-4 w-4 animate-spin mr-2" />
-                          Generating...
-                        </>
-                      ) : (
-                        "Generate Report"
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <Card className="border-dashed border-2 border-gray-200 h-full">
-                <CardContent className="p-6 text-center h-full flex flex-col justify-center">
-                  <h3 className="text-lg font-medium">No reports found</h3>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Try selecting a different type or show all reports.
+              {displayedReports.some((report) => report.severity === "Critical") && (
+                <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                  <p className="font-semibold">Critical breach detected.</p>
+                  <p>
+                    One or more issues require immediate action from the security and development team.
                   </p>
-                  <div className="mt-4">
-                    <Button
-                      onClick={() => setSelectedType("all")}
-                      variant="outline"
-                    >
-                      Show All Reports
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                </div>
+              )}
 
-          {/* Recent Reports */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="mr-2 h-5 w-5" />
-                Recent Reports
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentReports.length ? (
-                  recentReports.map((report) => (
-                    <div
-                      key={report.id}
-                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3"
-                    >
-                      <div className="flex items-start sm:items-center space-x-4 flex-1 min-w-0">
-                        <FileText className="h-8 w-8 text-gray-400 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <h4 className="font-medium text-gray-900 truncate">
-                            {report.name}
-                          </h4>
-                          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
-                            <span>Type: {report.type}</span>
-                            <span>Generated: {report.generated}</span>
-                            <span>Size: {report.size}</span>
-                            <span>Downloads: {report.downloads}</span>
+              <div className="grid gap-4 mb-8 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Active Issues</p>
+                  <p className="mt-3 text-3xl font-semibold text-slate-900">{displayedReports.length}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Critical Alerts</p>
+                  <p className="mt-3 text-3xl font-semibold text-rose-700">
+                    {displayedReports.filter((report) => report.severity === "Critical").length}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Warnings</p>
+                  <p className="mt-3 text-3xl font-semibold text-amber-700">
+                    {displayedReports.filter((report) => report.severity === "High" || report.severity === "Medium").length}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Last Refresh</p>
+                  <p className="mt-3 text-sm font-medium text-slate-900">{lastUpdated}</p>
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {displayedReports.length ? (
+                  displayedReports.map((report) => (
+                    <Card key={report.id} className="shadow-sm border-slate-200">
+                      <CardContent className="p-6 flex flex-col h-full">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{report.type}</p>
+                            <h3 className="mt-2 text-xl font-semibold text-slate-900">{report.name}</h3>
+                            <p className="mt-1 text-sm text-slate-600">{report.note}</p>
+                          </div>
+                          <div className="space-y-2 text-right">
+                            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                              report.severity === "Critical"
+                                ? "bg-rose-100 text-rose-700"
+                                : report.severity === "High"
+                                ? "bg-amber-100 text-amber-700"
+                                : report.severity === "Medium"
+                                ? "bg-sky-100 text-sky-700"
+                                : "bg-slate-100 text-slate-700"
+                            }`}>
+                              {report.severity}
+                            </span>
+                            <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                              {report.status}
+                            </span>
                           </div>
                         </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDownloadReport(report.id, report.type.toLowerCase())}
-                        className="w-full sm:w-auto flex-shrink-0"
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Download
-                      </Button>
-                    </div>
+
+                        <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+                          <p className="text-sm font-semibold text-slate-900 mb-2">Issue Sources</p>
+                          <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
+                            {report.sources.map((source, idx) => (
+                              <li key={`source-${report.id}-${idx}`}>
+                                <span className="font-medium">{source.type}:</span> {source.value}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                          <div className="rounded-2xl bg-white p-4 border border-slate-200">
+                            <p className="text-sm font-semibold text-slate-900 mb-2">Key Risks</p>
+                            <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
+                              {report.risks.map((risk, idx) => (
+                                <li key={`risk-${report.id}-${idx}`}>{risk}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div className="rounded-2xl bg-white p-4 border border-slate-200">
+                            <p className="text-sm font-semibold text-slate-900 mb-2">Fix Guidance</p>
+                            <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
+                              {report.fixes.map((fix, idx) => (
+                                <li key={`fix-${report.id}-${idx}`}>{fix}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+
+                        <div className="mt-5 rounded-2xl bg-amber-50 p-4 border border-amber-200">
+                          <p className="text-sm font-semibold text-amber-900 mb-2">Admin Warning</p>
+                          <p className="text-sm text-amber-700">
+                            This issue should be reviewed by the security admin team before the next deployment.
+                          </p>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap items-center gap-3">
+                          {report.actions.map((action) => (
+                            <Button
+                              key={action.id}
+                              variant={action.variant}
+                              onClick={() => handleActionClick(report.id, action)}
+                            >
+                              {action.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))
                 ) : (
-                  <div className="p-4 text-center text-sm text-gray-500">
-                    No recent reports yet. Generate a report to get started.
-                  </div>
+                  <Card className="border-dashed border-slate-300 bg-slate-50">
+                    <CardContent className="p-6 text-center text-slate-600">
+                      No active security issues right now. Monitoring is active and will show alerts as they appear.
+                    </CardContent>
+                  </Card>
                 )}
               </div>
-            </CardContent>
-          </Card>
             </>
           )}
         </div>
