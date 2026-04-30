@@ -25,8 +25,6 @@ import {
   Save,
   Trash2,
   Flag,
-  CheckSquare,
-  Square,
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { FaCloudArrowDown, FaRetweet, FaShare } from "react-icons/fa6";
@@ -483,23 +481,6 @@ const AdminProjectDetails = () => {
                   </div>
                 ` : ''}
 
-                <!-- Milestones -->
-                ${milestones.length > 0 ? `
-                  <div class="pdf-section">
-                    <div class="pdf-section-title">Project Milestones</div>
-                    ${milestones.map(m => `
-                      <div class="pdf-milestone-item">
-                        <div class="pdf-milestone-header">
-                          <div class="pdf-milestone-title">${m.title}</div>
-                          <div class="pdf-badge ${m.status}">${m.status.replace('_', ' ')}</div>
-                        </div>
-                        ${m.description ? `<div class="pdf-milestone-desc">${m.description}</div>` : ''}
-                        ${m.due_date ? `<div class="pdf-milestone-date">Due: ${new Date(m.due_date).toLocaleDateString()}</div>` : ''}
-                      </div>
-                    `).join('')}
-                  </div>
-                ` : ''}
-
                 <!-- Contracts -->
                 ${contractDocuments.length > 0 ? `
                   <div class="pdf-section">
@@ -708,57 +689,6 @@ const AdminProjectDetails = () => {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [documents, setDocuments] = useState<any[]>([]);
-
-  // Mock milestones data
-  const mockMilestones = [
-    {
-      id: 1,
-      project_id: 17,
-      title: "Design Phase Complete",
-      description: "All design mockups and specifications completed and approved by client",
-      due_date: "2026-05-15",
-      status: "completed",
-      created_at: "2026-04-01T10:00:00Z",
-    },
-    {
-      id: 2,
-      project_id: 17,
-      title: "Development Started",
-      description: "Backend and frontend development begins",
-      due_date: "2026-06-30",
-      status: "in_progress",
-      created_at: "2026-04-10T10:00:00Z",
-    },
-    {
-      id: 3,
-      project_id: 17,
-      title: "Testing & QA",
-      description: "Quality assurance and bug fixing phase",
-      due_date: "2026-07-30",
-      status: "pending",
-      created_at: "2026-04-10T10:00:00Z",
-    },
-    {
-      id: 4,
-      project_id: 17,
-      title: "Client Review",
-      description: "Client review and feedback collection",
-      due_date: "2026-08-15",
-      status: "pending",
-      created_at: "2026-04-10T10:00:00Z",
-    },
-    {
-      id: 5,
-      project_id: 17,
-      title: "Launch",
-      description: "Final deployment and project launch",
-      due_date: "2026-09-01",
-      status: "pending",
-      created_at: "2026-04-10T10:00:00Z",
-    },
-  ];
-
-  const [milestones, setMilestones] = useState<any[]>(mockMilestones);
   const [projectDocuments, setProjectDocuments] = useState<any[]>([]);
   const [contractDocuments, setContractDocuments] = useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
@@ -941,26 +871,7 @@ const AdminProjectDetails = () => {
     }
   };
 
-  const handleDeleteMilestone = (milestoneId: number) => {
-    setMilestones(milestones.filter((m) => m.id !== milestoneId));
-    toast({
-      title: "Success",
-      description: "Milestone deleted successfully",
-    });
-  };
 
-  const handleToggleMilestoneStatus = (milestoneId: number) => {
-    setMilestones(
-      milestones.map((m) =>
-        m.id === milestoneId
-          ? {
-              ...m,
-              status: m.status === "pending" ? "completed" : "pending",
-            }
-          : m
-      )
-    );
-  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
@@ -1331,79 +1242,21 @@ const AdminProjectDetails = () => {
             {/* Milestones Section */}
             <Card className="mt-8 overflow-hidden">
               <div className="px-8 py-6 border-b border-slate-100">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">
-                    Project Milestones
-                  </h3>
-                  <p className="text-sm text-slate-500 mt-1">Track project progress with milestones</p>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900">
+                      Project Milestones
+                    </h3>
+                    <p className="text-sm text-slate-500 mt-1">Manage project milestones and track progress</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-[#226F75] hover:bg-[#226F75]/90"
+                    onClick={() => navigate(`/admin/projects/${id}/milestones`)}
+                  >
+                    Manage Milestones
+                  </Button>
                 </div>
-              </div>
-
-              <div className="p-8">
-                {milestones.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Flag className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                    <p className="text-slate-500">No milestones yet.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {milestones.map((milestone) => (
-                      <div
-                        key={milestone.id}
-                        className="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-3 flex-1">
-                            <button
-                              onClick={() => handleToggleMilestoneStatus(milestone.id)}
-                              className="mt-1 text-slate-400 hover:text-slate-600 transition-colors"
-                            >
-                              {milestone.status === "completed" ? (
-                                <CheckSquare className="h-5 w-5 text-green-600" />
-                              ) : (
-                                <Square className="h-5 w-5" />
-                              )}
-                            </button>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h4 className={`font-semibold text-sm ${
-                                  milestone.status === "completed"
-                                    ? "text-slate-400 line-through"
-                                    : "text-slate-900"
-                                }`}>
-                                  {milestone.title}
-                                </h4>
-                                <Badge variant={
-                                  milestone.status === "completed" ? "default" :
-                                  milestone.status === "in_progress" ? "secondary" :
-                                  milestone.status === "at_risk" ? "destructive" :
-                                  "outline"
-                                }>
-                                  {milestone.status.replace("_", " ")}
-                                </Badge>
-                              </div>
-                              {milestone.description && (
-                                <p className="text-xs text-slate-500 mt-1">{milestone.description}</p>
-                              )}
-                              {milestone.due_date && (
-                                <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  {new Date(milestone.due_date).toLocaleDateString()}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleDeleteMilestone(milestone.id)}
-                            className="text-slate-400 hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </Card>
             

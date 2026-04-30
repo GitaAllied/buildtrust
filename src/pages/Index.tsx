@@ -536,7 +536,7 @@ useEffect(() => {
               </div>
             </div>
             <div className=" text-center md:text-left">
-              <div className="text-xl sm:text-2xl font-bold tracking-tight">₦2B+</div>
+              <div className="text-xl sm:text-2xl font-bold tracking-tight">$1.33M+</div>
               <div className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Project Value
               </div>

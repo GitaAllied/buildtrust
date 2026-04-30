@@ -13,6 +13,7 @@ import {
   CreditCard,
   Menu,
   X,
+  Check,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import {
@@ -43,6 +44,7 @@ interface Project {
   title: string;
   totalAmount: number;
   paidAmount: number;
+  contract_id?: number;
   milestones: Milestone[];
 }
 
@@ -74,6 +76,7 @@ const Payments = () => {
       title: "Modern Duplex in Lekki",
       totalAmount: 8500000,
       paidAmount: 4300000,
+      contract_id: 1,
       milestones: [
         { name: "Foundation", amount: 2800000, status: "paid", date: "2024-10-15" },
         { name: "Block Work", amount: 1500000, status: "paid", date: "2024-11-02" },
@@ -86,6 +89,7 @@ const Payments = () => {
       title: "Commercial Plaza",
       totalAmount: 25000000,
       paidAmount: 5000000,
+      contract_id: 2,
       milestones: [
         { name: "Site Preparation", amount: 5000000, status: "paid", date: "2024-11-10" },
         { name: "Foundation", amount: 8000000, status: "pending", date: "2024-12-15" },
@@ -105,8 +109,19 @@ const Payments = () => {
   const [loading, setLoading] = useState(true);
   const [totalInvested, setTotalInvested] = useState(0);
   const [pendingPayments, setPendingPayments] = useState(0);
+  const [escrowBalance, setEscrowBalance] = useState(0);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
   
+  // Escrow payment modal state
+  const [showEscrowModal, setShowEscrowModal] = useState(false);
+  const [selectedContractId, setSelectedContractId] = useState<number | null>(null);
+  const [selectedProjectTitle, setSelectedProjectTitle] = useState('');
+  const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<number | null>(null);
+  const [escrowPaymentAmount, setEscrowPaymentAmount] = useState(0);
+  const [escrowPaymentSubmitting, setEscrowPaymentSubmitting] = useState(false);
+  const [escrowPaymentError, setEscrowPaymentError] = useState('');
+
   // Payment method modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState({
@@ -129,175 +144,177 @@ const Payments = () => {
     }
   };
 
-  // Load projects data on mount
-  useEffect(() => {
-    const loadPaymentData = async () => {
+  const loadPaymentData = async () => {
+    try {
+      setLoading(true);
+      setIsUsingMockData(false);
+      
+      console.log('📊 Fetching payment data from API...');
+      
+      // Try to fetch from payments endpoint first
       try {
-        setLoading(true);
-        setIsUsingMockData(false);
+        const paymentResponse = await apiClient.getPaymentsSummary();
         
-        console.log('📊 Fetching payment data from API...');
-        
-        // Try to fetch from payments endpoint first
-        try {
-          const paymentResponse = await apiClient.getPaymentsSummary();
+        if (paymentResponse && paymentResponse.projects && Array.isArray(paymentResponse.projects)) {
+          console.log(`✅ Loaded ${paymentResponse.projects.length} projects from payments API`);
           
-          if (paymentResponse && paymentResponse.projects && Array.isArray(paymentResponse.projects)) {
-            console.log(`✅ Loaded ${paymentResponse.projects.length} projects from payments API`);
-            
-            setProjects(paymentResponse.projects);
-            
-            // Use transactions from API or generate from projects
-            if (paymentResponse.transactions && Array.isArray(paymentResponse.transactions)) {
-              setTransactions(paymentResponse.transactions);
-            } else {
-              // Generate transactions from project data
-              const generatedTransactions: Transaction[] = paymentResponse.projects.flatMap(proj =>
-                proj.milestones
-                  .filter((m: any) => m.status === 'paid')
-                  .map((m: any, idx: number) => ({
-                    id: proj.id * 1000 + idx,
-                    project: proj.title,
-                    milestone: m.name,
-                    amount: m.amount,
-                    date: m.date,
-                    status: 'completed',
-                    method: idx % 2 === 0 ? 'Bank Transfer' : 'Wire Transfer',
-                  }))
-              );
-              setTransactions(generatedTransactions);
-            }
-            
-            // Use summary from API or calculate
-            if (paymentResponse.summary) {
-              setTotalInvested(paymentResponse.summary.totalInvested);
-              setPendingPayments(paymentResponse.summary.pendingPayments);
-            } else {
-              const { total, pending } = calculateTotals(paymentResponse.projects);
-              setTotalInvested(total);
-              setPendingPayments(pending);
-            }
-            
-            return;
+          setProjects(paymentResponse.projects);
+          
+          // Use transactions from API or generate from projects
+          if (paymentResponse.transactions && Array.isArray(paymentResponse.transactions)) {
+            setTransactions(paymentResponse.transactions);
+          } else {
+            // Generate transactions from project data
+            const generatedTransactions: Transaction[] = paymentResponse.projects.flatMap(proj =>
+              proj.milestones
+                .filter((m: any) => m.status === 'paid')
+                .map((m: any, idx: number) => ({
+                  id: proj.id * 1000 + idx,
+                  project: proj.title,
+                  milestone: m.name,
+                  amount: m.amount,
+                  date: m.date,
+                  status: 'completed',
+                  method: idx % 2 === 0 ? 'Bank Transfer' : 'Wire Transfer',
+                }))
+            );
+            setTransactions(generatedTransactions);
           }
-        } catch (paymentError) {
-          console.log('⚠️ Payments endpoint not available, trying projects endpoint...');
-        }
-        
-        // Fallback to projects endpoint
-        const projectsResponse = await apiClient.getClientProjects();
-        
-        // Check if API returned valid data
-        if (!projectsResponse || !Array.isArray(projectsResponse) || projectsResponse.length === 0) {
-          console.log('⚠️ No projects from API, using mock data');
-          setIsUsingMockData(true);
-          setProjects(mockProjects);
-          setTransactions(mockTransactions);
-          const { total, pending } = calculateTotals(mockProjects);
-          setTotalInvested(total);
-          setPendingPayments(pending);
-          setLoading(false);
+          
+          // Use summary from API or calculate
+          if (paymentResponse.summary) {
+            setTotalInvested(paymentResponse.summary.totalInvested);
+            setPendingPayments(paymentResponse.summary.pendingPayments);
+            setEscrowBalance(paymentResponse.summary.escrowBalance || 0);
+          } else {
+            const { total, pending } = calculateTotals(paymentResponse.projects);
+            setTotalInvested(total);
+            setPendingPayments(pending);
+            setEscrowBalance(0);
+          }
+          
           return;
         }
-        
-        // Transform API response to match our interface
-        const projectsData: Project[] = projectsResponse.map((proj: any) => {
-          const totalAmount = proj.budget || proj.total_amount || 0;
-          const paidAmount = proj.amount_paid || proj.paid_amount || 0;
-          
-          // Parse milestones if they exist
-          let milestones: Milestone[] = [];
-          if (proj.milestones) {
-            try {
-              const parsedMilestones = typeof proj.milestones === 'string' 
-                ? JSON.parse(proj.milestones)
-                : proj.milestones;
-              
-              if (Array.isArray(parsedMilestones)) {
-                milestones = parsedMilestones.map((m: any) => ({
-                  name: m.name || 'Milestone',
-                  amount: m.amount || 0,
-                  status: m.status === 'completed' ? 'paid' : m.status === 'in_progress' ? 'pending' : 'upcoming',
-                  date: m.date || new Date().toISOString().split('T')[0],
-                }));
-              }
-            } catch (e) {
-              console.error('❌ Error parsing milestones:', e);
-            }
-          }
-          
-          return {
-            id: proj.id,
-            title: proj.title || 'Untitled Project',
-            totalAmount,
-            paidAmount,
-            milestones: milestones.length > 0 ? milestones : [
-              { name: 'Initial Payment', amount: totalAmount * 0.3, status: 'paid' as const, date: proj.created_at?.split('T')[0] || new Date().toISOString().split('T')[0] },
-              { name: 'Mid-way Payment', amount: totalAmount * 0.4, status: 'pending' as const, date: new Date().toISOString().split('T')[0] },
-              { name: 'Final Payment', amount: totalAmount * 0.3, status: 'upcoming' as const, date: new Date().toISOString().split('T')[0] },
-            ],
-          };
-        });
-        
-        console.log(`✅ Loaded ${projectsData.length} projects from projects endpoint`);
-        setProjects(projectsData);
-        
-        // Calculate totals
-        const { total, pending } = calculateTotals(projectsData);
-        setTotalInvested(total);
-        setPendingPayments(pending);
-        
-        // Create transactions from project data
-        const generatedTransactions: Transaction[] = projectsData.flatMap(proj =>
-          proj.milestones
-            .filter(m => m.status === 'paid')
-            .map((m, idx) => ({
-              id: proj.id * 1000 + idx,
-              project: proj.title,
-              milestone: m.name,
-              amount: m.amount,
-              date: m.date,
-              status: 'completed',
-              method: idx % 2 === 0 ? 'Bank Transfer' : 'Wire Transfer',
-            }))
-        );
-        setTransactions(generatedTransactions);
-        
-      } catch (error) {
-        console.error('❌ Error loading payment data:', error);
-        console.log('📦 Falling back to mock data due to API error');
-        
-        // Use mock data as fallback
+      } catch (paymentError) {
+        console.log('⚠️ Payments endpoint not available, trying projects endpoint...');
+      }
+      
+      // Fallback to projects endpoint
+      const projectsResponse = await apiClient.getClientProjects();
+      
+      // Check if API returned valid data
+      if (!projectsResponse || !Array.isArray(projectsResponse) || projectsResponse.length === 0) {
+        console.log('⚠️ No projects from API, using mock data');
         setIsUsingMockData(true);
         setProjects(mockProjects);
         setTransactions(mockTransactions);
         const { total, pending } = calculateTotals(mockProjects);
         setTotalInvested(total);
         setPendingPayments(pending);
-        
-        toast({
-          title: 'Using Demo Data',
-          description: 'Could not fetch live data. Showing sample information.',
-          variant: 'default',
-        });
-      } finally {
+        setEscrowBalance(0);
         setLoading(false);
+        return;
       }
-    };
-    
-    if (user) {
-      loadPaymentData();
-
-      // Fetch saved payment methods for the user
-      (async () => {
-        try {
-          const res = await apiClient.getPaymentMethods();
-          if (res && res.methods) setPaymentMethodsList(res.methods);
-        } catch (e) {
-          console.warn('Could not load payment methods', e);
+      
+      // Transform API response to match our interface
+      const projectsData: Project[] = projectsResponse.map((proj: any) => {
+        const totalAmount = proj.budget || proj.total_amount || 0;
+        const paidAmount = proj.amount_paid || proj.paid_amount || 0;
+        
+        // Parse milestones if they exist
+        let milestones: Milestone[] = [];
+        if (proj.milestones) {
+          try {
+            const parsedMilestones = typeof proj.milestones === 'string' 
+              ? JSON.parse(proj.milestones)
+              : proj.milestones;
+            
+            if (Array.isArray(parsedMilestones)) {
+              milestones = parsedMilestones.map((m: any) => ({
+                name: m.name || 'Milestone',
+                amount: m.amount || 0,
+                status: m.status === 'completed' ? 'paid' : m.status === 'in_progress' ? 'pending' : 'upcoming',
+                date: m.date || new Date().toISOString().split('T')[0],
+              }));
+            }
+          } catch (e) {
+            console.error('❌ Error parsing milestones:', e);
+          }
         }
-      })();
+        
+        return {
+          id: proj.id,
+          title: proj.title || 'Untitled Project',
+          totalAmount,
+          paidAmount,
+          contract_id: proj.contract_id || proj.contractId || null,
+          milestones: milestones.length > 0 ? milestones : [
+            { name: 'Initial Payment', amount: totalAmount * 0.3, status: 'paid' as const, date: proj.created_at?.split('T')[0] || new Date().toISOString().split('T')[0] },
+            { name: 'Mid-way Payment', amount: totalAmount * 0.4, status: 'pending' as const, date: new Date().toISOString().split('T')[0] },
+            { name: 'Final Payment', amount: totalAmount * 0.3, status: 'upcoming' as const, date: new Date().toISOString().split('T')[0] },
+          ],
+        };
+      });
+      
+      console.log(`✅ Loaded ${projectsData.length} projects from projects endpoint`);
+      setProjects(projectsData);
+      
+      // Calculate totals
+      const { total, pending } = calculateTotals(projectsData);
+      setTotalInvested(total);
+      setPendingPayments(pending);
+      
+      // Create transactions from project data
+      const generatedTransactions: Transaction[] = projectsData.flatMap(proj =>
+        proj.milestones
+          .filter(m => m.status === 'paid')
+          .map((m, idx) => ({
+            id: proj.id * 1000 + idx,
+            project: proj.title,
+            milestone: m.name,
+            amount: m.amount,
+            date: m.date,
+            status: 'completed',
+            method: idx % 2 === 0 ? 'Bank Transfer' : 'Wire Transfer',
+          }))
+      );
+      setTransactions(generatedTransactions);
+    } catch (error) {
+      console.error('❌ Error loading payment data:', error);
+      console.log('📦 Falling back to mock data due to API error');
+      
+      // Use mock data as fallback
+      setIsUsingMockData(true);
+      setProjects(mockProjects);
+      setTransactions(mockTransactions);
+      const { total, pending } = calculateTotals(mockProjects);
+      setTotalInvested(total);
+      setPendingPayments(pending);
+      setEscrowBalance(0);
+      
+      toast({
+        title: 'Using Demo Data',
+        description: 'Could not fetch live data. Showing sample information.',
+        variant: 'default',
+      });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    loadPaymentData();
+
+    (async () => {
+      try {
+        const res = await apiClient.getPaymentMethods();
+        if (res && res.methods) setPaymentMethodsList(res.methods);
+      } catch (e) {
+        console.warn('Could not load payment methods', e);
+      }
+    })();
   }, [user, toast]);
 
   // Helper function to calculate totals
@@ -354,9 +371,9 @@ const Payments = () => {
   };
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "NGN",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -412,6 +429,121 @@ const Payments = () => {
       toast({ title: 'Error', description: error?.message || 'Failed to add payment method', variant: 'destructive' });
     } finally {
       setSubmittingPayment(false);
+    }
+  };
+
+  const openEscrowPaymentModal = () => {
+    const firstProject = projects.length > 0 ? projects[0] : null;
+    setSelectedContractId(firstProject?.contract_id ?? firstProject?.id ?? null);
+    setSelectedProjectTitle(firstProject?.title ?? '');
+    setSelectedMilestone(null);
+    setEscrowPaymentAmount(0);
+    setSelectedPaymentMethodId(paymentMethodsList.length > 0 ? paymentMethodsList[0].id : null);
+    setEscrowPaymentError('');
+    setShowEscrowModal(true);
+  };
+
+  const closeEscrowPaymentModal = () => {
+    setShowEscrowModal(false);
+    setSelectedContractId(null);
+    setSelectedProjectTitle('');
+    setSelectedMilestone(null);
+    setSelectedPaymentMethodId(null);
+    setEscrowPaymentAmount(0);
+    setEscrowPaymentError('');
+  };
+
+  const handleSubmitEscrowPayment = async () => {
+    if (!selectedContractId) {
+      setEscrowPaymentError('Please select a project to top up escrow for.');
+      return;
+    }
+    if (escrowPaymentAmount <= 0) {
+      setEscrowPaymentError('Payment amount must be greater than zero.');
+      return;
+    }
+    if (!selectedPaymentMethodId) {
+      setEscrowPaymentError('Please select a payment method.');
+      return;
+    }
+    const method = paymentMethodsList.find((method) => method.id === selectedPaymentMethodId);
+    if (!method) {
+      setEscrowPaymentError('Please choose a valid payment method.');
+      return;
+    }
+
+    setEscrowPaymentSubmitting(true);
+    setEscrowPaymentError('');
+
+    try {
+      await apiClient.recordPayment({
+        contract_id: selectedContractId,
+        amount: escrowPaymentAmount,
+        payment_type: 'milestone',
+        payment_method: `${method.cardholder_name} ••••${method.last4}`,
+        due_date: new Date().toISOString().split('T')[0],
+      });
+
+      toast({
+        title: 'Escrow payment submitted',
+        description: `${formatAmount(escrowPaymentAmount)} has been placed into escrow.`,
+      });
+      closeEscrowPaymentModal();
+      await loadPaymentData();
+    } catch (error: any) {
+      setEscrowPaymentError(error?.message || 'Failed to submit escrow payment.');
+      console.error('Escrow payment error:', error);
+    } finally {
+      setEscrowPaymentSubmitting(false);
+    }
+  };
+
+  const handleApproveMilestone = async (projectId: number, milestoneIndex: number) => {
+    try {
+      // Find the project and milestone
+      const project = projects.find(p => p.id === projectId);
+      if (!project) return;
+
+      const milestone = project.milestones[milestoneIndex];
+      if (!milestone || milestone.status !== 'pending') return;
+
+      // For demo purposes, we'll simulate approval by updating the local state
+      // In a real app, this would call an API endpoint
+      const updatedProjects = projects.map(p => {
+        if (p.id === projectId) {
+          const updatedMilestones = [...p.milestones];
+          updatedMilestones[milestoneIndex] = {
+            ...milestone,
+            status: 'paid' as const,
+            date: new Date().toISOString().split('T')[0]
+          };
+          return {
+            ...p,
+            paidAmount: p.paidAmount + milestone.amount,
+            milestones: updatedMilestones
+          };
+        }
+        return p;
+      });
+
+      setProjects(updatedProjects);
+
+      // Update totals
+      const { total, pending } = calculateTotals(updatedProjects);
+      setTotalInvested(total);
+      setPendingPayments(pending);
+
+      toast({
+        title: 'Milestone Approved',
+        description: `${milestone.name} has been approved and released from escrow.`,
+      });
+    } catch (error) {
+      console.error('Error approving milestone:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to approve milestone.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -509,6 +641,20 @@ const Payments = () => {
                 </p>
               </div>
             </div>
+            <div className="flex items-center gap-3">
+              <Button
+                className="bg-[#253E44] hover:bg-[#253E44]/90"
+                onClick={openEscrowPaymentModal}
+                disabled={paymentMethodsList.length === 0}
+                title={
+                  paymentMethodsList.length === 0
+                    ? "No payment methods available. Please add a payment method first."
+                    : ""
+                }
+              >
+                Top Up Escrow
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -550,7 +696,7 @@ const Payments = () => {
           {activeSection === "overview" && (
             <div className="space-y-6">
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm text-gray-600">
@@ -599,6 +745,30 @@ const Payments = () => {
                     </p>
                   </CardContent>
                 </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm text-gray-600">
+                      Escrow Balance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-indigo-700">
+                      {loading ? "Loading..." : formatAmount(escrowBalance)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Held in escrow until milestone approval
+                    </p>
+                      <div className="mt-4">
+                        <Button
+                          className="w-full bg-[#253E44] hover:bg-[#253E44]/90"
+                          onClick={() => openEscrowPaymentModal()}
+                          disabled={projects.filter((project) => project.contract_id).length === 0}
+                        >
+                          Top Up Escrow
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
               </div>
 
               {/* Project Payment Details */}
@@ -607,12 +777,6 @@ const Payments = () => {
                   Project Payment Status
                 </h2>
                 {loading ? (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <p className="text-gray-500">Loading projects...</p>
-                    </CardContent>
-                  </Card>
-                ) : projects.length === 0 ? (
                   <Card>
                     <CardContent className="p-8 text-center">
                       <p className="text-gray-500">No projects yet</p>
@@ -659,7 +823,7 @@ const Payments = () => {
                           {project.milestones.map((milestone, index) => (
                             <div
                               key={index}
-                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                              className="relative flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors overflow-hidden"
                             >
                               <div className="flex items-center space-x-3">
                                 {milestone.status === "paid" && (
@@ -699,6 +863,18 @@ const Payments = () => {
                                   {milestone.status}
                                 </Badge>
                               </div>
+                              {milestone.status === "pending" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="absolute top-1/2 right-40 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 shadow-lg hover:shadow-xl scale-90 group-hover:scale-100"
+                                  onClick={() => handleApproveMilestone(project.id, index)}
+                                  title="Approve and release this milestone payment"
+                                >
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Approve
+                                </Button>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -927,6 +1103,115 @@ const Payments = () => {
           )}
         </div>
       </div>
+
+      {/* Escrow Payment Modal */}
+      {showEscrowModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">
+                Top Up Escrow
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="escrowProject">Project</Label>
+                <select
+                  id="escrowProject"
+                  value={selectedContractId ?? ''}
+                  onChange={(e) => {
+                    const selectedId = Number(e.target.value);
+                    const project = projects.find((project) => project.contract_id === selectedId || project.id === selectedId);
+                    setSelectedContractId(project?.contract_id ?? project?.id ?? selectedId);
+                    setSelectedProjectTitle(project?.title || '');
+                  }}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  disabled={escrowPaymentSubmitting}
+                >
+                  <option value="">Select a project</option>
+                  {projects
+                    .map((project) => (
+                      <option key={project.id} value={project.contract_id ?? project.id}>
+                        {project.title}
+                      </option>
+                    ))}
+                </select>
+                {projects.length === 0 && (
+                  <p className="text-xs text-red-500 mt-2">
+                    No projects available for escrow top-up.
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="escrowAmount">Amount (USD)</Label>
+                <Input
+                  id="escrowAmount"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="0.00"
+                  value={escrowPaymentAmount}
+                  onChange={(e) => setEscrowPaymentAmount(Number(e.target.value))}
+                  disabled={escrowPaymentSubmitting}
+                />
+              </div>
+              <div>
+                <Label htmlFor="escrowPaymentMethod">Payment Method</Label>
+                <select
+                  id="escrowPaymentMethod"
+                  value={selectedPaymentMethodId ?? ''}
+                  onChange={(e) => setSelectedPaymentMethodId(Number(e.target.value))}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  disabled={escrowPaymentSubmitting}
+                >
+                  <option value="">Select a payment method</option>
+                  {paymentMethodsList.map((method) => (
+                    <option key={method.id} value={method.id}>
+                      {method.cardholder_name} ••••{method.last4}
+                    </option>
+                  ))}
+                </select>
+                {paymentMethodsList.length === 0 && (
+                  <p className="text-xs text-red-500 mt-2">
+                    No payment methods available. Please add a payment method first.
+                  </p>
+                )}
+              </div>
+              {escrowPaymentError && (
+                <p className="text-sm text-red-500">{escrowPaymentError}</p>
+              )}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={closeEscrowPaymentModal}
+                  disabled={escrowPaymentSubmitting}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitEscrowPayment}
+                  disabled={escrowPaymentSubmitting || paymentMethodsList.length === 0}
+                  className="flex-1 bg-[#253E44] hover:bg-[#253E44]/90"
+                >
+                  {escrowPaymentSubmitting ? 'Processing...' : 'Pay into Escrow'}
+                </Button>
+              </div>
+              {paymentMethodsList.length === 0 && (
+                <Button
+                  className="w-full bg-[#253E44] hover:bg-[#253E44]/90"
+                  onClick={() => {
+                    setShowEscrowModal(false);
+                    setShowPaymentModal(true);
+                  }}
+                >
+                  Add Payment Method
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Payment Method Modal */}
       {showPaymentModal && (

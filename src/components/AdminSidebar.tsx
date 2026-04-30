@@ -12,6 +12,7 @@ import {
   FaMessage,
   FaUser,
   FaUsers,
+  FaFlag,
 } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
@@ -90,6 +91,7 @@ const AdminSidebar = ({active}) => {
     { id: "dashboard", label: "Dashboard", icon: <FaUser />, active: true },
     { id: "users", label: "User Management", icon: <FaUsers /> },
     { id: "projects", label: "Projects", icon: <FaHandshake />, count: notificationCounts.projects },
+    { id: "milestones", label: "Milestones", icon: <FaFlag /> },
     { id: "contracts", label: "Contracts", icon: <FaBook /> },
     { id: "messages", label: "Messages", icon: <FaMessage />, count: notificationCounts.messages },
     { id: "reports", label: "Reports", icon: <FaBook /> },
@@ -111,6 +113,10 @@ const AdminSidebar = ({active}) => {
         navigate("/admin/projects");
         // Clear projects count when admin views projects
         setNotificationCounts(prev => ({ ...prev, projects: 0 }));
+        break;
+      case "milestones":
+        setActiveTab(itemId);
+        navigate("/admin/milestones");
         break;
       case "contracts":
         navigate("/admin/contracts");

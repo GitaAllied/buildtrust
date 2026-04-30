@@ -127,7 +127,7 @@ const DeveloperPayments = () => {
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
       style: "currency",
-      currency: "NGN",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -213,7 +213,7 @@ const DeveloperPayments = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-bold text-gray-900">₦9.3M</p>
+                    <p className="text-2xl font-bold text-gray-900">$6.2K</p>
                     <p className="text-sm text-green-600">Across 2 projects</p>
                   </CardContent>
                 </Card>
@@ -224,7 +224,7 @@ const DeveloperPayments = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-bold text-orange-600">₦11.2M</p>
+                    <p className="text-2xl font-bold text-orange-600">$7.47K</p>
                     <p className="text-sm text-gray-500">2 milestones due</p>
                   </CardContent>
                 </Card>
@@ -236,7 +236,7 @@ const DeveloperPayments = () => {
                   </CardHeader>
                   <CardContent>
                     <p className="text-2xl font-bold text-green-600">3</p>
-                    <p className="text-sm text-gray-500">₦15.7M total value</p>
+                    <p className="text-sm text-gray-500">$10.47K total value</p>
                   </CardContent>
                 </Card>
               </div>

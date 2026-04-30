@@ -89,6 +89,33 @@ const DeveloperDashboard = () => {
   const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
   const [projectRequests, setProjectRequests] = useState<any[]>([]);
   const [ongoingProjectsData, setOngoingProjectsData] = useState<any[]>([]);
+  const mockMilestoneProposals = [
+    {
+      id: 1,
+      projectId: 17,
+      title: "Roofing phase",
+      amount: 2500,
+      dueDate: "2026-06-12",
+      note: "Proposal for roofing completion and material handover.",
+      status: "proposed",
+    },
+    {
+      id: 2,
+      projectId: 23,
+      title: "Electrical rough-in",
+      amount: 1800,
+      dueDate: "2026-06-25",
+      note: "Includes wiring, conduits, and preliminary inspections.",
+      status: "proposed",
+    },
+  ];
+  const [milestoneProposals, setMilestoneProposals] = useState<any[]>(mockMilestoneProposals);
+  const [showProposalModal, setShowProposalModal] = useState(false);
+  const [proposalProjectId, setProposalProjectId] = useState<number | null>(null);
+  const [proposalTitle, setProposalTitle] = useState("");
+  const [proposalAmount, setProposalAmount] = useState("");
+  const [proposalDueDate, setProposalDueDate] = useState("");
+  const [proposalNote, setProposalNote] = useState("");
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const navigate = useNavigate();
@@ -220,6 +247,57 @@ const DeveloperDashboard = () => {
   const clearAll = () => {
     setFiles([]);
     setPreviews([]);
+  };
+
+  const openProposalModal = (projectId: number) => {
+    setProposalProjectId(projectId);
+    setProposalTitle("");
+    setProposalAmount("");
+    setProposalDueDate("");
+    setProposalNote("");
+    setShowProposalModal(true);
+  };
+
+  const closeProposalModal = () => {
+    setShowProposalModal(false);
+    setProposalProjectId(null);
+  };
+
+  const handleSubmitProposal = () => {
+    if (!proposalProjectId || !proposalTitle.trim() || !proposalAmount.trim() || !proposalDueDate.trim()) {
+      alert("Please complete the milestone proposal form before submitting.");
+      return;
+    }
+
+    const amountValue = Number(proposalAmount.replace(/[^0-9\.]/g, ""));
+    if (!amountValue || amountValue <= 0) {
+      alert("Please enter a valid milestone amount.");
+      return;
+    }
+
+    setMilestoneProposals((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        projectId: proposalProjectId,
+        title: proposalTitle.trim(),
+        amount: amountValue,
+        dueDate: proposalDueDate,
+        note: proposalNote.trim(),
+        status: "proposed",
+      },
+    ]);
+
+    closeProposalModal();
+  };
+
+  const formatCurrency = (value: number | string) => {
+    const numberValue = typeof value === "string" ? Number(value) : value;
+    if (!numberValue || Number.isNaN(numberValue)) return "$0.00";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(numberValue);
   };
 
   // Protect route: only allow authenticated users with role 'developer'
@@ -887,7 +965,17 @@ const DeveloperDashboard = () => {
                                   <MessageSquare className="h-3 w-3 mr-1" />
                                   Message
                                 </Button>
-                            </div>
+                              </div>
+                              <div className="mt-3">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full md:w-auto border-[#226F75] text-[#226F75] hover:bg-[#226F75]/10"
+                                  onClick={() => openProposalModal(project.id)}
+                                >
+                                  Propose Milestone
+                                </Button>
+                              </div>
                           </div>
                         </div>
                       </CardContent>
@@ -1052,21 +1140,21 @@ const DeveloperDashboard = () => {
                           <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />
                           Foundation
                         </span>
-                        <span className="text-green-600">₦2.8M</span>
+                        <span className="text-green-600">$1.87K</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="flex items-center gap-1">
                           <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />
                           Block Work
                         </span>
-                        <span className="text-green-600">₦1.5M</span>
+                        <span className="text-green-600">$1.00K</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3 text-orange-500 flex-shrink-0" />
                           Roofing
                         </span>
-                        <span className="text-gray-500">₦3.2M</span>
+                        <span className="text-gray-500">$2.13K</span>
                       </div>
                     </div>
 
@@ -1081,6 +1169,109 @@ const DeveloperDashboard = () => {
                   </div>
                 </CardContent>
               </Card>
+              <Card className="border-[#226F75]/20 bg-white/90 shadow-sm">
+                <CardHeader className="pb-3 px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-6">
+                  <CardTitle className="flex items-center text-xs sm:text-sm md:text-base gap-2 text-[#253E44]">
+                    <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    Milestone Proposals
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs sm:text-sm px-3 sm:px-4 md:px-6">
+                  {milestoneProposals.length === 0 ? (
+                    <p className="text-gray-500">No milestone proposals yet. Propose one from an active project.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {milestoneProposals.map((proposal) => {
+                        const project = ongoingProjectsData.find((p) => p.id === proposal.projectId);
+                        return (
+                          <div key={proposal.id} className="border border-slate-200 rounded-xl p-3 bg-slate-50">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <p className="font-semibold text-slate-900">{proposal.title}</p>
+                                <p className="text-[11px] text-slate-500">
+                                  {project ? project.title : "Unknown project"}
+                                </p>
+                              </div>
+                              <Badge className="bg-orange-100 text-orange-700 text-[11px] uppercase">{proposal.status}</Badge>
+                            </div>
+                            <div className="mt-2 text-[11px] text-slate-600 space-y-1">
+                              <p>Amount: {formatCurrency(proposal.amount)}</p>
+                              <p>Due: {proposal.dueDate}</p>
+                              {proposal.note && <p>{proposal.note}</p>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              {showProposalModal && (
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                  <Card className="w-full max-w-lg">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">Propose New Milestone</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor="proposalTitle">Milestone Title</Label>
+                        <Input
+                          id="proposalTitle"
+                          value={proposalTitle}
+                          onChange={(e) => setProposalTitle(e.target.value)}
+                          placeholder="e.g. Roofing completion"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="proposalAmount">Amount (USD)</Label>
+                        <Input
+                          id="proposalAmount"
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={proposalAmount}
+                          onChange={(e) => setProposalAmount(e.target.value)}
+                          placeholder="e.g. 2500"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="proposalDueDate">Due Date</Label>
+                        <Input
+                          id="proposalDueDate"
+                          type="date"
+                          value={proposalDueDate}
+                          onChange={(e) => setProposalDueDate(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="proposalNote">Notes</Label>
+                        <Textarea
+                          id="proposalNote"
+                          value={proposalNote}
+                          onChange={(e) => setProposalNote(e.target.value)}
+                          placeholder="Add context for the client and admin review"
+                          className="min-h-[100px]"
+                        />
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={closeProposalModal}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          className="flex-1 bg-[#226F75] hover:bg-[#226F75]/90"
+                          onClick={handleSubmitProposal}
+                        >
+                          Submit Proposal
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
 
               {/* Ratings & Reviews */}
               <Card>

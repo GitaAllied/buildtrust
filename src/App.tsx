@@ -47,6 +47,7 @@ import AdminProjects from "./pages/AdminProjects";
 import AdminContracts from "./pages/AdminContracts";
 import AdminDevelopers from "./pages/AdminDevelopers";
 import AdminProjectDetails from "./pages/AdminProjectDetails";
+import AdminMilestones from "./pages/AdminMilestones";
 import AdminContractDetails from "./pages/AdminContractDetails";
 import AdminDeveloperDetails from "./pages/AdminDeveloperDetails";
 // TEST
@@ -215,10 +216,25 @@ const App = () => (
               </EmailVerificationGuard>
             }
           />
+          <Route
+            path="/admin/milestones"
+            element={
+              <EmailVerificationGuard>
+                <ProtectedRoute requiredRole="admin">
+                  <AdminMilestones />
+                </ProtectedRoute>
+              </EmailVerificationGuard>
+            }
+          />
           {/* PUBLIC (TEMP): Route is public for now — REMEMBER: protect route for modification and approval */}
           <Route
             path="/admin/projects/:id"
             element={<AdminProjectDetails />}
+          />
+          {/* PUBLIC (TEMP): Route is public for now — REMEMBER: protect route for modification and approval */}
+          <Route
+            path="/admin/projects/:id/milestones"
+            element={<AdminMilestones />}
           />
           <Route
             path="/admin/contracts"

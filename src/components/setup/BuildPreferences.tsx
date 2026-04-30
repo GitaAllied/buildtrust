@@ -283,11 +283,11 @@ const BuildPreferences = ({ data, onChange, userType = 'developer' }: BuildPrefe
           className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#253E44] focus:border-transparent"
         >
           <option value="">Select preferred budget range</option>
-          <option value="under-50m">Under ₦50M</option>
-          <option value="50m-100m">₦50M - ₦100M</option>
-          <option value="100m-500m">₦100M - ₦500M</option>
-          <option value="500m-1b">₦500M - ₦1B</option>
-          <option value="over-1b">Over ₦1B</option>
+          <option value="under-50m">Under $33K</option>
+          <option value="50m-100m">$33K - $67K</option>
+          <option value="100m-500m">$67K - $333K</option>
+          <option value="500m-1b">$333K - $667K</option>
+          <option value="over-1b">Over $667K</option>
           <option value="flexible">Flexible</option>
         </select>
       </div>

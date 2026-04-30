@@ -41,7 +41,7 @@ const SuperAdminDashboard = () => {
     },
     {
       label: "Total Revenue",
-      value: "₦45.2M",
+      value: "$30.13K",
       change: "+15%",
       icon: DollarSign,
     },

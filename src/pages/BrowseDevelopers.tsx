@@ -834,10 +834,10 @@ const BrowseDevelopers = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Any Budget</SelectItem>
-                <SelectItem value="5-15">₦5M - ₦15M</SelectItem>
-                <SelectItem value="15-30">₦15M - ₦30M</SelectItem>
-                <SelectItem value="30-50">₦30M - ₦50M</SelectItem>
-                <SelectItem value="50+">₦50M+</SelectItem>
+                <SelectItem value="5-15">$3.3K - $10K</SelectItem>
+                <SelectItem value="15-30">$10K - $20K</SelectItem>
+                <SelectItem value="30-50">$20K - $33K</SelectItem>
+                <SelectItem value="50+">$33K+</SelectItem>
               </SelectContent>
             </Select>
 

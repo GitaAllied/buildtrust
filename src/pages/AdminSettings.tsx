@@ -160,7 +160,7 @@ const AdminSettings = () => {
     timezone: "Africa/Lagos",
     language: "en",
     dateFormat: "DD/MM/YYYY",
-    currency: "NGN",
+    currency: "USD",
     registrationEnabled: true,
     emailVerificationRequired: true,
     maxProjectsPerUser: 10,
@@ -462,7 +462,7 @@ const AdminSettings = () => {
     platformFee: 5,
     minimumProjectAmount: 1000,
     maximumProjectAmount: 1000000,
-    currency: "NGN",
+    currency: "USD",
     autoReleaseEscrow: false,
     escrowReleaseDays: 7,
     disputeResolutionEnabled: true,
@@ -903,9 +903,6 @@ const AdminSettings = () => {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="NGN">
-                                      Nigerian Naira (₦)
-                                    </SelectItem>
                                     <SelectItem value="USD">
                                       US Dollar ($)
                                     </SelectItem>
@@ -2288,9 +2285,6 @@ const AdminSettings = () => {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="NGN">
-                                      Nigerian Naira (₦)
-                                    </SelectItem>
                                     <SelectItem value="USD">
                                       US Dollar ($)
                                     </SelectItem>

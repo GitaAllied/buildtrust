@@ -146,7 +146,7 @@ const DeveloperProfile = () => {
         city: "Lagos",
         status: "completed",
         progress: 100,
-        budget: "₦15.5M",
+        budget: "$10.33K",
         description: "A stunning 4-bedroom modern duplex with contemporary design, featuring spacious living areas and high-end finishes.",
         image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&h=400&fit=crop",
         media: [
@@ -161,7 +161,7 @@ const DeveloperProfile = () => {
         city: "Lagos",
         status: "in_progress",
         progress: 65,
-        budget: "₦45.2M",
+        budget: "$30.13K",
         description: "Large-scale commercial plaza with retail spaces, restaurants, and office suites. Modern architectural design with sustainable features.",
         image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=500&h=400&fit=crop",
         media: [
@@ -176,7 +176,7 @@ const DeveloperProfile = () => {
         city: "Lagos",
         status: "completed",
         progress: 100,
-        budget: "₦120M",
+        budget: "$80K",
         description: "Exclusive gated residential estate featuring 12 luxury villas with premium amenities including swimming pools, gardens, and 24/7 security.",
         image: "https://images.unsplash.com/photo-1570129477992-45a003ff3271?w=500&h=400&fit=crop",
         media: [
@@ -191,7 +191,7 @@ const DeveloperProfile = () => {
         city: "Lagos",
         status: "in_progress",
         progress: 42,
-        budget: "₦75.8M",
+        budget: "$50.53K",
         description: "State-of-the-art office complex with modern facilities, parking, and business amenities. Green building standards applied.",
         image: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=500&h=400&fit=crop",
         media: [
@@ -757,7 +757,7 @@ const DeveloperProfile = () => {
                         <p className="text-sm text-gray-600 mb-3">{project.description || 'No description'}</p>
                         <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                           <span className="font-medium text-green-600">
-                            {project.budget ? `₦${project.budget}` : 'N/A'}
+                            {project.budget ? `$${project.budget}` : 'N/A'}
                           </span>
                           <span className="text-xs text-gray-500 font-medium">
                             {project.contract_id != null

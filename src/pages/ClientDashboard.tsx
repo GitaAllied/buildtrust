@@ -73,7 +73,7 @@ const ClientDashboard = () => {
   const [messages, setMessages] = useState([]);
   const [currentImageIndices, setCurrentImageIndices] = useState<Record<number, number>>({}); // Track current image per project
   const [stats, setStats] = useState({
-    totalInvestment: "₦0",
+    totalInvestment: "$0",
     completedProjects: 0,
     activeProjectsCount: 0,
     avgRating: 0,
@@ -191,7 +191,7 @@ const ClientDashboard = () => {
         ]);
 
         setStats({
-          totalInvestment: "₦25.4M",
+          totalInvestment: "$16.93K",
           completedProjects: 3,
           activeProjectsCount: activeProjects.length,
           avgRating: 4.8,
@@ -232,7 +232,7 @@ const ClientDashboard = () => {
         ]);
 
         setStats({
-          totalInvestment: "₦45.2M",
+          totalInvestment: "$30.13K",
           completedProjects: 5,
           activeProjectsCount: mockProjects.length,
           avgRating: 4.7,
@@ -708,7 +708,7 @@ const ClientDashboard = () => {
                         Approve payment for roofing
                       </p>
                       <p className="text-xl sm:text-2xl font-bold text-[#226F75] mt-1">
-                        ₦3,200,000
+                        $2,133
                       </p>
                       <p className="text-xs sm:text-sm text-gray-500 truncate mt-1">
                         Modern Duplex in Lekki

@@ -612,6 +612,14 @@ class ApiClient {
     });
   }
 
+  async releaseEscrow(paymentId: number) {
+    return this.request('/payments/release', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_id: paymentId }),
+    });
+  }
+
   // Payment methods CRUD
   async getPaymentMethods() {
     return this.request('/payments/methods', { method: 'GET' });
