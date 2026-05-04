@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { Upload, Camera, Video, FileText, Menu, X } from "lucide-react";
 import Logo from "../assets/Logo.png";
-import { useAuth } from "@/hooks/useAuth";
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
 import DeveloperSidebar from "@/components/DeveloperSidebar";
@@ -18,21 +19,103 @@ const UploadUpdate = () => {
   const [selectedProject, setSelectedProject] = useState("");
   const [milestone, setMilestone] = useState("");
   const [description, setDescription] = useState("");
+  const [projects, setProjects] = useState<any[]>([]);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [projectUploads, setProjectUploads] = useState<any[]>([]);
+  const [isLoadingUploads, setIsLoadingUploads] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isOpen = useSelector((state: any) => state.sidebar.developerSidebar);
   const signOutModal = useSelector((state: any) => state.signout);
+  const { toast } = useToast();
+
+  const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
+  const API_ORIGIN = API_BASE === '/api' ? window.location.origin : API_BASE.replace(/\/api$/, '');
+
+  const resolveMediaUrl = (url: string) => {
+    if (!url) return url;
+    if (url.startsWith('http')) return url;
+    return url.startsWith('/') ? `${API_ORIGIN}${url}` : `${API_ORIGIN}/${url}`;
+  };
+
+  const isSignatureMedia = (upload: any) => {
+    const filename = String(upload.filename || '').toLowerCase();
+    const type = String(upload.type || '').toLowerCase();
+    return filename.includes('signature') || type.includes('signature');
+  };
+
+  const getUploadTypeLabel = (upload: any) => {
+    const mime = String(upload.mime_type || upload.type || '').toLowerCase();
+    const filename = String(upload.filename || upload.url || '').toLowerCase();
+
+    if (mime.includes('image') || /\.(jpg|jpeg|png|gif)$/i.test(filename)) return 'Image';
+    if (mime.includes('video') || /\.(mp4|mov|avi)$/i.test(filename)) return 'Video';
+    if (mime.includes('pdf') || /\.pdf$/i.test(filename)) return 'PDF';
+    if (mime.includes('word') || /\.(doc|docx)$/i.test(filename)) return 'Document';
+    return 'File';
+  };
+
+  useEffect(() => {
+    const loadDeveloperProjects = async () => {
+      try {
+        const response = await apiClient.getDeveloperActiveProjects();
+        const projectsData = response?.projects || response || [];
+        setProjects(Array.isArray(projectsData) ? projectsData : []);
+      } catch (error) {
+        console.error('Unable to load active projects', error);
+        toast({
+          title: 'Could not load active projects',
+          description: 'Please refresh the page or try again later.',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    const loadDrafts = () => {
+      const stored = localStorage.getItem('upload_update_drafts');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setDrafts(Array.isArray(parsed) ? parsed : []);
+        } catch (error) {
+          console.warn('Could not parse saved drafts', error);
+        }
+      }
+    };
+
+    loadDeveloperProjects();
+    loadDrafts();
+  }, []);
+
+  useEffect(() => {
+    const loadProjectUploads = async () => {
+      if (!selectedProject) {
+        setProjectUploads([]);
+        return;
+      }
+
+      setIsLoadingUploads(true);
+
+      try {
+        const response = await apiClient.getProjectMedia(Number(selectedProject));
+        const uploads = response?.media || response?.project_media || response || [];
+        setProjectUploads(Array.isArray(uploads) ? uploads : []);
+      } catch (error) {
+        console.error('Unable to load project uploads', error);
+        setProjectUploads([]);
+      } finally {
+        setIsLoadingUploads(false);
+      }
+    };
+
+    loadProjectUploads();
+  }, [selectedProject]);
 
   // File states
   const [photos, setPhotos] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
   const [documents, setDocuments] = useState<File[]>([]);
-
-  const projects = [
-    { id: 1, name: "Family Duplex - Chioma Adeleke" },
-    { id: 2, name: "Office Complex - James Okonkwo" },
-    { id: 3, name: "Modern Villa - Ada Nwosu" },
-  ];
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -64,16 +147,116 @@ const UploadUpdate = () => {
     }
   };
 
-  const handleSubmit = () => {
-    console.log({
-      project: selectedProject,
+  const handleSaveDraft = () => {
+    const projectId = Number(selectedProject);
+    if (!projectId) {
+      toast({
+        title: 'Select a project',
+        description: 'Choose a project before saving a draft.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const projectName = projects.find((project) => String(project.id) === String(projectId))?.title || `Project #${projectId}`;
+    const newDraft = {
+      id: Date.now(),
+      projectId,
+      projectName,
       milestone,
       description,
-      photos,
-      videos,
-      documents,
+      photoCount: photos.length,
+      videoCount: videos.length,
+      documentCount: documents.length,
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedDrafts = [newDraft, ...drafts];
+    setDrafts(updatedDrafts);
+    localStorage.setItem('upload_update_drafts', JSON.stringify(updatedDrafts));
+
+    toast({
+      title: 'Draft saved',
+      description: 'Your update draft was saved successfully.',
     });
-    alert("Update submitted successfully!");
+  };
+
+  const handleLoadDraft = (draft: any) => {
+    setSelectedProject(String(draft.projectId));
+    setMilestone(draft.milestone || '');
+    setDescription(draft.description || '');
+    toast({
+      title: 'Draft loaded',
+      description: 'Draft content has been loaded into the form.',
+    });
+  };
+
+  const handleSubmit = async () => {
+    const projectId = Number(selectedProject);
+    if (!projectId) {
+      toast({
+        title: 'Select a project',
+        description: 'Please choose an assigned project before submitting an update.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!milestone.trim()) {
+      toast({
+        title: 'Add milestone details',
+        description: 'Please enter the milestone or phase name for this update.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!description.trim()) {
+      toast({
+        title: 'Add a description',
+        description: 'Please describe the work completed and next steps.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const files = [...photos, ...videos, ...documents];
+    if (files.length === 0) {
+      toast({
+        title: 'Upload at least one file',
+        description: 'Please attach photos, videos, or documents with your update.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      for (const file of files) {
+        await apiClient.uploadProjectMedia(projectId, file);
+      }
+
+      toast({
+        title: 'Update submitted',
+        description: 'Your project media was uploaded successfully.',
+      });
+      setPhotos([]);
+      setVideos([]);
+      setDocuments([]);
+      setMilestone('');
+      setDescription('');
+      setSelectedProject('');
+    } catch (error) {
+      console.error('Project update upload failed', error);
+      toast({
+        title: 'Upload failed',
+        description: 'There was a problem uploading your files. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -139,11 +322,16 @@ const UploadUpdate = () => {
                   >
                     <option value="">Choose a project...</option>
                     {projects.map((project) => (
-                      <option key={project.id} value={project.name}>
-                        {project.name}
+                      <option key={project.id} value={String(project.id)}>
+                        {project.title || project.name || `Project #${project.id}`}
                       </option>
                     ))}
                   </select>
+                  {projects.length === 0 && (
+                    <p className="mt-2 text-xs text-red-600">
+                      You currently have no active projects available for upload.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="milestone" className="text-xs sm:text-sm">
@@ -370,6 +558,7 @@ const UploadUpdate = () => {
                   variant="outline"
                   size="sm"
                   className="text-xs sm:text-sm w-full sm:w-auto"
+                  onClick={() => navigate('/project-requests')}
                 >
                   Cancel
                 </Button>
@@ -378,20 +567,148 @@ const UploadUpdate = () => {
                     variant="outline"
                     size="sm"
                     className="text-xs sm:text-sm w-full sm:w-auto"
+                    onClick={handleSaveDraft}
                   >
                     Save as Draft
                   </Button>
                   <Button
                     onClick={handleSubmit}
+                    disabled={isSubmitting}
                     className="bg-[#253E44]/90 hover:bg-[#253E44] text-xs sm:text-sm w-full sm:w-auto"
                   >
                     <Upload className="mr-2 h-4 w-4" />
-                    Submit Update
+                    {isSubmitting ? 'Uploading...' : 'Submit Update'}
                   </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          <div className="space-y-4 mt-6">
+            <Card>
+              <CardHeader className="px-3 sm:px-4 md:px-6 pt-4 pb-3">
+                <CardTitle className="text-sm sm:text-base">
+                  Saved Drafts
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 px-3 sm:px-4 md:px-6 pb-4">
+                {drafts.length > 0 ? (
+                  drafts.map((draft) => (
+                    <div
+                      key={draft.id}
+                      className="border rounded-lg bg-white p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                    >
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {draft.projectName}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {draft.milestone || 'No milestone specified'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {draft.photoCount} photos, {draft.videoCount} videos, {draft.documentCount} documents
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Saved {new Date(draft.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleLoadDraft(draft)}
+                        >
+                          Load
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            const updatedDrafts = drafts.filter((item) => item.id !== draft.id);
+                            setDrafts(updatedDrafts);
+                            localStorage.setItem('upload_update_drafts', JSON.stringify(updatedDrafts));
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">No saved drafts yet.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="px-3 sm:px-4 md:px-6 pt-4 pb-3">
+                <CardTitle className="text-sm sm:text-base">
+                  Past Progress Uploads
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 px-3 sm:px-4 md:px-6 pb-4">
+                {!selectedProject ? (
+                  <p className="text-sm text-gray-500">
+                    Select a project to view past uploads.
+                  </p>
+                ) : isLoadingUploads ? (
+                  <p className="text-sm text-gray-500">Loading uploads...</p>
+                ) : projectUploads.filter((upload: any) => !isSignatureMedia(upload)).length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {projectUploads.filter((upload: any) => !isSignatureMedia(upload)).map((upload: any) => {
+                      const label = getUploadTypeLabel(upload);
+                      const description = upload.description?.trim();
+                      const url = resolveMediaUrl(upload.url || upload.filename || '');
+
+                      return (
+                        <div
+                          key={upload.id}
+                          className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:shadow-lg"
+                        >
+                          <div className="h-28 overflow-hidden bg-slate-50 text-center text-xs text-gray-500 flex items-center justify-center">
+                            {label === 'Image' ? (
+                              <img
+                                src={url}
+                                alt={upload.filename || 'Project media'}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : label === 'Video' ? (
+                              <video className="h-full w-full object-cover" muted>
+                                <source src={url} type={upload.mime_type || 'video/mp4'} />
+                              </video>
+                            ) : label === 'PDF' ? (
+                              <iframe
+                                src={url}
+                                title={upload.filename || 'PDF preview'}
+                                className="h-full w-full"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[10px] uppercase tracking-[0.18em] text-gray-500">
+                                {label}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/70 px-3 text-center text-white opacity-0 transition-opacity group-hover:opacity-100">
+                            <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-white">
+                              {label}
+                            </span>
+                            {description ? (
+                              <p className="text-xs leading-5">{description}</p>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    This project has no previously uploaded progress files.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
       {signOutModal && (

@@ -48,6 +48,18 @@ import {
 import { Link } from "react-router-dom";
 import { apiClient } from "@/lib/api";
 import DeclinedDocumentAlert from "@/components/DeclinedDocumentAlert";
+
+const API_BASE = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/api.*$/i, '').replace(/\/$/, '');
+
+const resolveProfileImageUrl = (imagePath?: string | null) => {
+  if (!imagePath || typeof imagePath !== 'string') return null;
+  if (/^https?:\/\//i.test(imagePath) || /^data:/i.test(imagePath)) {
+    return imagePath;
+  }
+
+  const normalized = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  return `${API_BASE}${normalized}`;
+};
 import NotificationsModal from "@/components/NotificationsModal";
 import SignoutModal from "@/components/ui/signoutModal";
 import DeveloperSidebar from "@/components/DeveloperSidebar";
@@ -631,7 +643,10 @@ const DeveloperDashboard = () => {
           <div className="flex sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto min-w-0">
               <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
-                <AvatarImage src={user?.profile_image || "https://placehold.net/avatar.svg"} alt={user?.name} />
+                <AvatarImage
+                  src={resolveProfileImageUrl(user?.profile_image) || "https://placehold.net/avatar.svg"}
+                  alt={user?.name || 'Developer Avatar'}
+                />
                 <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
                   {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'D'}
                 </AvatarFallback>
@@ -1051,133 +1066,6 @@ const DeveloperDashboard = () => {
                 </div>
               </div>
 
-              {/* Upload Progress Card */}
-              <Card className="border-[#226F75]/20 bg-[#226F75]/5">
-                <CardHeader className="pb-3 px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-6">
-                  <CardTitle className="flex items-center text-xs sm:text-sm md:text-base text-[#253E44] gap-2">
-                    <Camera className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                    Quick Progress Update
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="project" className="text-xs sm:text-sm">
-                        Select Project
-                      </Label>
-                      <Input
-                        id="project"
-                        placeholder="Choose project..."
-                        className="text-xs h-9"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="milestone" className="text-xs sm:text-sm">
-                        Milestone
-                      </Label>
-                      <Input
-                        id="milestone"
-                        placeholder="e.g., Foundation complete"
-                        className="text-xs h-9"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="description" className="text-xs sm:text-sm">
-                      Progress Description
-                    </Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Describe the completed work..."
-                      value={uploadProgress}
-                      onChange={(e) => setUploadProgress(e.target.value)}
-                      className="text-xs min-h-20"
-                    />
-                  </div>
-                  <div className="flex flex-col md:flex-row items-start sm:items-center gap-2 w-full justify-between">
-                    <button
-                      onClick={() =>
-                        document.getElementById("file-upload")?.click()
-                      }
-                      className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors w-full md:w-[49%]"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Photos/Videos
-                    </button>
-
-                    <input
-                      id="file-upload"
-                      type="file"
-                      multiple
-                      accept="image/*,video/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <Button
-                      className="bg-[#226F75] hover:bg-[#226F75]/70 text-xs w-full sm:w-auto md:w-[49%]"
-                      size="sm"
-                      onClick={() => navigate("/upload-update")}
-                    >
-                      Submit Update
-                    </Button>
-                  </div>
-                  {files.length > 0 && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-gray-600">
-                        {files.length} file{files.length !== 1 ? "s" : ""}{" "}
-                        selected
-                      </span>
-                      <button
-                        onClick={clearAll}
-                        className="text-sm text-red-600 hover:text-red-700 underline"
-                      >
-                        Clear all
-                      </button>
-                    </div>
-                  )}
-                  {files.length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-semibold text-gray-700">
-                        Selected Files:
-                      </h3>
-                      <div className="space-y-2">
-                        {files.map((file, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
-                          >
-                            {file.type.startsWith("image") ? (
-                              <Image className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                            ) : (
-                              <Video className="h-5 w-5 text-purple-600 flex-shrink-0" />
-                            )}
-
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {file.name}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {(file.size / 1024 / 1024).toFixed(2)} MB
-                              </p>
-                            </div>
-
-                            <button
-                              onClick={() => removeFile(index)}
-                              className="p-1 hover:bg-gray-200 rounded transition-colors"
-                            >
-                              <X className="h-4 w-4 text-gray-500" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-3 sm:space-y-4 md:space-y-6 lg:col-span-2">
               {/* Escrow & Payments */}
               <Card>
                 <CardHeader className="pb-3 px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-6">
@@ -1231,6 +1119,10 @@ const DeveloperDashboard = () => {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-3 sm:space-y-4 md:space-y-6 lg:col-span-2">
               <Card className="border-[#226F75]/20 bg-white/90 shadow-sm">
                 <CardHeader className="pb-3 px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-6">
                   <CardTitle className="flex items-center text-xs sm:text-sm md:text-base gap-2 text-[#253E44]">

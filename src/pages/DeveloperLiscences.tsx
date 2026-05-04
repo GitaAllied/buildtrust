@@ -25,7 +25,6 @@ import { apiClient } from "@/lib/api";
 import { Link } from "react-router-dom";
 import SignoutModal from "@/components/ui/signoutModal";
 import DeveloperSidebar from "@/components/DeveloperSidebar";
-import DeclinedDocumentAlert from "@/components/DeclinedDocumentAlert";
 import { useDispatch, useSelector } from "react-redux";
 import { openDeveloperSidebar, openSignoutModal } from "@/redux/action";
 
@@ -39,13 +38,21 @@ const DeveloperLiscences = () => {
     const signOutModal = useSelector((state:any) => state.signout) 
 
 
-  // Account information state
+  // Account information state with additional fields
   const [accountInfo, setAccountInfo] = useState({
     accountId: "",
     memberSince: "",
     accountType: "",
+    emailVerified: false,
+    trustScore: 0,
+    completedProjects: 0,
+    rating: 0,
+    totalReviews: 0,
+    isActive: true,
+    lastLogin: "",
   });
   const [accountLoading, setAccountLoading] = useState(true);
+  const [accountError, setAccountError] = useState<string | null>(null);
 
   // Editable profile state
   const [profile, setProfile] = useState({
@@ -59,14 +66,155 @@ const DeveloperLiscences = () => {
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    projectUpdates: true,
+    paymentNotifications: true,
+    messages: true,
+    marketingUpdates: false,
+  });
+
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  // 2FA state
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [enabling2FA, setEnabling2FA] = useState(false);
+
+  // Function to save notification preferences
+  const saveNotificationPreferences = async (prefs: typeof notificationPreferences) => {
+    try {
+      localStorage.setItem('developer_notification_preferences', JSON.stringify(prefs));
+      await apiClient.updateNotificationSettings(prefs);
+      toast({
+        title: 'Preferences saved',
+        description: 'Your notification preferences have been updated.',
+      });
+    } catch (error) {
+      console.error('Failed to save notification preferences', error);
+      toast({
+        title: 'Save failed',
+        description: 'Unable to save preferences to the server. Your choices have been stored locally.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Function to handle password change
+  const handlePasswordChange = async () => {
+    // Validation
+    if (!passwordData.currentPassword.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter your current password.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: 'Validation Error',
+        description: 'New password must be at least 6 characters long.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!/[A-Z]/.test(passwordData.newPassword)) {
+      toast({
+        title: 'Validation Error',
+        description: 'New password must contain at least one capital letter.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]/.test(passwordData.newPassword)) {
+      toast({
+        title: 'Validation Error',
+        description: 'New password must contain at least one special character.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: 'Validation Error',
+        description: 'New password and confirmation do not match.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      toast({
+        title: 'Validation Error',
+        description: 'New password must be different from current password.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await apiClient.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword,
+      });
+
+      // Clear form
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+
+      toast({
+        title: 'Password Updated',
+        description: 'Your password has been successfully changed.',
+      });
+    } catch (error: any) {
+      console.error('Password change failed:', error);
+      toast({
+        title: 'Password Change Failed',
+        description: error.message || 'Unable to change password. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  // Function to handle 2FA toggle
+  const handleToggle2FA = async () => {
+    setEnabling2FA(true);
+    try {
+      // For now, show a message that 2FA is coming soon
+      toast({
+        title: 'Coming Soon',
+        description: 'Two-factor authentication will be available soon. Stay tuned!',
+      });
+    } catch (error) {
+      console.error('2FA toggle failed:', error);
+      toast({
+        title: 'Error',
+        description: 'Unable to update 2FA settings.',
+        variant: 'destructive',
+      });
+    } finally {
+      setEnabling2FA(false);
+    }
+  };
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [profileImageSrc, setProfileImageSrc] = useState<string | null>(null);
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [declinedDocument, setDeclinedDocument] = useState<any | null>(null);
-  const [selectedDocumentForReupload, setSelectedDocumentForReupload] = useState<any | null>(null);
-  const [reuploadingDocId, setReuploadingDocId] = useState<number | null>(null);
-
   // helper to create full URLs for profile images
   const constructImageUrl = (imgPath: string | null | undefined): string | null => {
     if (!imgPath || typeof imgPath !== 'string') return null;
@@ -80,6 +228,23 @@ const DeveloperLiscences = () => {
 
   // Load account data on mount
   useEffect(() => {
+    const loadNotificationPreferences = () => {
+      const stored = localStorage.getItem('developer_notification_preferences');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setNotificationPreferences((prev) => ({
+            ...prev,
+            ...parsed,
+          }));
+        } catch (error) {
+          console.warn('Failed to parse saved notification preferences:', error);
+        }
+      }
+    };
+
+    loadNotificationPreferences();
+
     const loadAccountData = async () => {
       if (!user) {
         setAccountLoading(false);
@@ -87,64 +252,128 @@ const DeveloperLiscences = () => {
       }
 
       try {
+        setAccountError(null);
         const response = await apiClient.getCurrentUser();
         const fullUserData = response.user || response;
 
-        // Generate Account ID from user ID and role
-        const accountId = fullUserData.id
-          ? `BT-${fullUserData.role?.charAt(0).toUpperCase() || "U"}-${String(fullUserData.id).padStart(6, "0")}`
-          : "";
+        // Validate required fields
+        if (!fullUserData || typeof fullUserData !== 'object') {
+          throw new Error('Invalid user data received from API');
+        }
 
-        // Format member since date
-        const memberSince = fullUserData.created_at
-          ? new Date(fullUserData.created_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-            })
-          : "";
+        // Generate Account ID from user ID and role with validation
+        const userId = fullUserData.id;
+        const userRole = fullUserData.role;
+        let accountId = "";
+        if (userId && typeof userId === 'number' && userId > 0) {
+          const rolePrefix = userRole && typeof userRole === 'string'
+            ? userRole.charAt(0).toUpperCase()
+            : "U";
+          accountId = `BT-${rolePrefix}-${String(userId).padStart(6, "0")}`;
+        }
+
+        // Format member since date with validation
+        let memberSince = "";
+        if (fullUserData.created_at) {
+          try {
+            const createdDate = new Date(fullUserData.created_at);
+            if (!isNaN(createdDate.getTime())) {
+              memberSince = createdDate.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+              });
+            }
+          } catch (dateError) {
+            console.warn('Invalid created_at date:', fullUserData.created_at);
+          }
+        }
+
+        // Format account type from role with validation
+        let accountType = "";
+        if (userRole && typeof userRole === 'string' && userRole.length > 0) {
+          accountType = `${userRole.charAt(0).toUpperCase()}${userRole.slice(1).toLowerCase()}`;
+        }
+
+        // Validate and extract additional account information
+        const emailVerified = Boolean(fullUserData.email_verified);
+        const trustScore = typeof fullUserData.trust_score === 'number' && fullUserData.trust_score >= 0
+          ? fullUserData.trust_score
+          : 0;
+        const completedProjects = typeof fullUserData.completed_projects === 'number' && fullUserData.completed_projects >= 0
+          ? fullUserData.completed_projects
+          : 0;
+        const rating = typeof fullUserData.rating === 'number' && fullUserData.rating >= 0 && fullUserData.rating <= 5
+          ? fullUserData.rating
+          : 0;
+        const totalReviews = typeof fullUserData.total_reviews === 'number' && fullUserData.total_reviews >= 0
+          ? fullUserData.total_reviews
+          : 0;
+        const isActive = fullUserData.is_active !== undefined ? Boolean(fullUserData.is_active) : true;
+
+        // Format last login if available (assuming it's in the API response)
+        let lastLogin = "";
+        if (fullUserData.last_login) {
+          try {
+            const lastLoginDate = new Date(fullUserData.last_login);
+            if (!isNaN(lastLoginDate.getTime())) {
+              lastLogin = lastLoginDate.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              });
+            }
+          } catch (dateError) {
+            console.warn('Invalid last_login date:', fullUserData.last_login);
+          }
+        }
 
         // set profile image
         const imgPath = fullUserData.profile_image || fullUserData.profileImage || fullUserData.image;
         setProfileImageSrc(constructImageUrl(imgPath));
 
-        // Format account type from role
-        const accountType = fullUserData.role
-          ? `${fullUserData.role.charAt(0).toUpperCase()}${fullUserData.role.slice(1)}`
-          : "";
-
         setAccountInfo({
           accountId,
           memberSince,
           accountType,
+          emailVerified,
+          trustScore,
+          completedProjects,
+          rating,
+          totalReviews,
+          isActive,
+          lastLogin,
         });
 
-        // Populate editable profile
+        // Populate editable profile with validation
         setProfile({
-          first_name: (fullUserData.name || "").split(" ")[0] || "",
-          last_name:
-            (fullUserData.name || "").split(" ").slice(1).join(" ") || "",
-          email: fullUserData.email || "",
-          phone: fullUserData.phone || "",
-          bio: fullUserData.bio || "",
-          location: fullUserData.location || "",
-          website: fullUserData.website || "",
+          first_name: (fullUserData.name && typeof fullUserData.name === 'string')
+            ? fullUserData.name.split(" ")[0] || ""
+            : "",
+          last_name: (fullUserData.name && typeof fullUserData.name === 'string')
+            ? fullUserData.name.split(" ").slice(1).join(" ") || ""
+            : "",
+          email: (fullUserData.email && typeof fullUserData.email === 'string')
+            ? fullUserData.email
+            : "",
+          phone: (fullUserData.phone && typeof fullUserData.phone === 'string')
+            ? fullUserData.phone
+            : "",
+          bio: (fullUserData.bio && typeof fullUserData.bio === 'string')
+            ? fullUserData.bio
+            : "",
+          location: (fullUserData.location && typeof fullUserData.location === 'string')
+            ? fullUserData.location
+            : "",
+          website: (fullUserData.website && typeof fullUserData.website === 'string')
+            ? fullUserData.website
+            : "",
         });
-        // Populate documents array (license, id, etc.)
-        const docs = fullUserData.documents || fullUserData.user_documents || [];
-        setDocuments(docs);
-        
-        // Check if any documents have been declined (verified = 2)
-        const declinedDocs = docs.filter((d: any) => d.verified === 2);
-        if (declinedDocs.length > 0) {
-          setDeclinedDocument(declinedDocs[0]);
-        } else {
-          setDeclinedDocument(null);
-        }
       } catch (error) {
         console.error("Failed to load account data:", error);
+        setAccountError(error instanceof Error ? error.message : 'Failed to load account data');
         toast({
           title: "Error",
-          description: "Failed to load account data",
+          description: "Failed to load account data. Please refresh the page.",
           variant: "destructive",
         });
       } finally {
@@ -352,205 +581,6 @@ const DeveloperLiscences = () => {
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="website">Website</Label>
-                      <Input
-                        id="website"
-                        value={profile.website}
-                        onChange={(e) =>
-                          setProfile({ ...profile, website: e.target.value })
-                        }
-                      />
-                    </div>
-
-                    {/* <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mt-2"> */}
-                      {/* Existing license preview */}
-                      {/* <div className="w-full md:w-48">
-                        {(() => {
-                          const license = (documents || []).find((d: any) => {
-                            const t = (d.type || "").toLowerCase();
-                            const f = (d.filename || "").toLowerCase();
-                            return t === "license" || f.includes("license");
-                          });
-
-                          if (!license) {
-                            return (
-                              <div className="p-3 border rounded-lg bg-white">
-                                <p className="text-sm text-gray-600">
-                                  No license on file
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                  Upload below to add your professional license
-                                  (existing license remains until replaced).
-                                </p>
-                              </div>
-                            );
-                          }
-
-                          const url =
-                            license.url ||
-                            license.path ||
-                            license.file_url ||
-                            license.download_url ||
-                            license.filename ||
-                            "";
-
-                          return (
-                            <div className="flex items-center gap-3 p-3 border rounded-lg bg-white">
-                              <div className="w-16 h-12 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
-                                {url &&
-                                (url.endsWith(".pdf") ||
-                                  url.endsWith(".PDF")) ? (
-                                  <svg
-                                    className="w-8 h-8 text-gray-500"
-                                    fill="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
-                                  </svg>
-                                ) : (
-                                  <img
-                                    src={url}
-                                    alt={license.filename || "license"}
-                                    className="w-full h-full object-cover"
-                                  />
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium truncate">
-                                    {license.filename ||
-                                      license.name ||
-                                      "License"}
-                                  </p>
-                                  {license.verified === 1 ||
-                                  license.verified === true ? (
-                                    <span className="text-xs text-green-600">
-                                      Verified
-                                    </span>
-                                  ) : (
-                                    <span className="text-xs text-yellow-600">
-                                      Pending
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="mt-2 flex items-center gap-2">
-                                  {url ? (
-                                    <a
-                                      href={url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-xs text-[#226F75] hover:underline"
-                                    >
-                                      View
-                                    </a>
-                                  ) : null}
-                                  <a
-                                    href={url || "#"}
-                                    download
-                                    className="text-xs text-gray-600 hover:text-gray-800"
-                                  >
-                                    Download
-                                  </a>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div> */}
-
-                      {/* Upload control */}
-                      {/* <div className="flex items-center gap-3">
-                        <label
-                          htmlFor="licenseFile"
-                          className="text-sm text-gray-600"
-                        >
-                          Upload new license (optional):
-                        </label>
-                        <input
-                          id="licenseFile"
-                          type="file"
-                          accept="application/pdf,image/*"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file || !user) return;
-                            try {
-                              setUploading(true);
-                              await apiClient.uploadDocument(
-                                user.id,
-                                "license",
-                                file,
-                              );
-                              toast({
-                                title: "Uploaded",
-                                description: "License uploaded successfully",
-                              });
-                              // Refresh user to pick up new documents
-                              try {
-                                await refreshUser();
-                              } catch {}
-                            } catch (err) {
-                              console.error(err);
-                              toast({
-                                title: "Upload failed",
-                                description:
-                                  (err as any)?.message ||
-                                  "Could not upload file",
-                                variant: "destructive",
-                              });
-                            } finally {
-                              setUploading(false);
-                              // clear the file input
-                              (e.target as HTMLInputElement).value = "";
-                            }
-                          }}
-                        />
-                        <Button
-                          disabled={uploading}
-                          variant="outline"
-                          size="sm"
-                        >
-                          {uploading ? "Uploading..." : "Upload"}
-                        </Button>
-                      </div> */}
-                    {/* </div> */}
-
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#253E44]/60 transition-colors cursor-pointer">
-                      <label htmlFor="" className="cursor-pointer block w-full">
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <svg
-                            className="w-6 h-6 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                            />
-                          </svg>
-                        </div>
-                        <div className="text-sm font-medium text-gray-900 mb-1">
-                          Upload Documents
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Click to upload or drag and drop
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          PDF, JPG, PNG up to 10MB each
-                        </div>
-                      </label>
-                      <input
-                        type="file"
-                        multiple
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="hidden"
-                        aria-label={`Upload`}
-                      />
-                    </div>
-
                     <div className="mt-4">
                       <Button
                         className="bg-[#253E44] hover:bg-[#253E44]/70"
@@ -572,7 +602,20 @@ const DeveloperLiscences = () => {
                             });
                             try {
                               await refreshUser();
-                            } catch {}
+                              // Refresh account data after profile update
+                              const response = await apiClient.getCurrentUser();
+                              const updatedUser = response.user || response;
+                              
+                              // Update account info with any changes
+                              if (updatedUser.name) {
+                                setAccountInfo(prev => ({
+                                  ...prev,
+                                  // Account info doesn't change with profile updates, but we could update rating/trust score if available
+                                }));
+                              }
+                            } catch (refreshError) {
+                              console.warn('Failed to refresh user data after profile update:', refreshError);
+                            }
                           } catch (err) {
                             console.error("Save failed", err);
                             toast({
@@ -592,63 +635,6 @@ const DeveloperLiscences = () => {
                       </Button>
                     </div>
 
-                    {/* Documents Status Section */}
-                    <div className="border-t pt-6 mt-6">
-                      <h3 className="text-lg font-semibold mb-4">Document Verification</h3>
-                      {documents && documents.length > 0 ? (
-                        <div className="space-y-3">
-                          {documents.map((doc: any) => (
-                            <div
-                              key={doc.id}
-                              className={`border rounded-lg p-4 flex items-start justify-between ${
-                                doc.verified === 2 ? "bg-red-50 border-red-200" : doc.verified === 1 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"
-                              }`}
-                            >
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="font-medium capitalize text-gray-900">
-                                    {doc.type?.replace(/_/g, " ")} Document
-                                  </p>
-                                  {doc.verified === 1 && (
-                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                                      ✓ Verified
-                                    </span>
-                                  )}
-                                  {doc.verified === 2 && (
-                                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
-                                      ✗ Declined
-                                    </span>
-                                  )}
-                                  {doc.verified === null || doc.verified === 0 && (
-                                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
-                                      ⏳ Pending Review
-                                    </span>
-                                  )}
-                                </div>
-                                {doc.verified === 2 && doc.decline_reason && (
-                                  <p className="text-sm text-red-700 mt-2">
-                                    <strong>Reason:</strong> {doc.decline_reason}
-                                  </p>
-                                )}
-                              </div>
-                              {doc.verified === 2 && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setSelectedDocumentForReupload(doc)}
-                                  className="ml-3 whitespace-nowrap"
-                                >
-                                  <Upload className="h-4 w-4 mr-1" />
-                                  Reupload
-                                </Button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500">No documents uploaded yet.</p>
-                      )}
-                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -668,7 +654,17 @@ const DeveloperLiscences = () => {
                           Get notified about project milestones
                         </p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch
+                        checked={notificationPreferences.projectUpdates}
+                        onCheckedChange={async (checked) => {
+                          const newPrefs = {
+                            ...notificationPreferences,
+                            projectUpdates: Boolean(checked),
+                          };
+                          setNotificationPreferences(newPrefs);
+                          await saveNotificationPreferences(newPrefs);
+                        }}
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -678,7 +674,17 @@ const DeveloperLiscences = () => {
                           Alerts for payment requests and confirmations
                         </p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch
+                        checked={notificationPreferences.paymentNotifications}
+                        onCheckedChange={async (checked) => {
+                          const newPrefs = {
+                            ...notificationPreferences,
+                            paymentNotifications: Boolean(checked),
+                          };
+                          setNotificationPreferences(newPrefs);
+                          await saveNotificationPreferences(newPrefs);
+                        }}
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -688,7 +694,17 @@ const DeveloperLiscences = () => {
                           New messages from developers
                         </p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch
+                        checked={notificationPreferences.messages}
+                        onCheckedChange={async (checked) => {
+                          const newPrefs = {
+                            ...notificationPreferences,
+                            messages: Boolean(checked),
+                          };
+                          setNotificationPreferences(newPrefs);
+                          await saveNotificationPreferences(newPrefs);
+                        }}
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -698,7 +714,17 @@ const DeveloperLiscences = () => {
                           News and updates from BuildTrust
                         </p>
                       </div>
-                      <Switch />
+                      <Switch
+                        checked={notificationPreferences.marketingUpdates}
+                        onCheckedChange={async (checked) => {
+                          const newPrefs = {
+                            ...notificationPreferences,
+                            marketingUpdates: Boolean(checked),
+                          };
+                          setNotificationPreferences(newPrefs);
+                          await saveNotificationPreferences(newPrefs);
+                        }}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -714,23 +740,54 @@ const DeveloperLiscences = () => {
                   <CardContent className="space-y-6">
                     <div>
                       <Label htmlFor="currentPassword">Current Password</Label>
-                      <Input id="currentPassword" type="password" />
+                      <Input
+                        id="currentPassword"
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) =>
+                          setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                        }
+                        placeholder="Enter your current password"
+                      />
                     </div>
 
                     <div>
                       <Label htmlFor="newPassword">New Password</Label>
-                      <Input id="newPassword" type="password" />
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) =>
+                          setPasswordData({ ...passwordData, newPassword: e.target.value })
+                        }
+                        placeholder="Enter your new password"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Must be at least 6 characters with 1 capital letter and 1 special character
+                      </p>
                     </div>
 
                     <div>
                       <Label htmlFor="confirmPassword">
                         Confirm New Password
                       </Label>
-                      <Input id="confirmPassword" type="password" />
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) =>
+                          setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                        }
+                        placeholder="Confirm your new password"
+                      />
                     </div>
 
-                    <Button className="bg-[#253E44] hover:bg-[#253E44]/70">
-                      Update Password
+                    <Button
+                      className="bg-[#253E44] hover:bg-[#253E44]/70"
+                      onClick={handlePasswordChange}
+                      disabled={changingPassword}
+                    >
+                      {changingPassword ? 'Updating Password...' : 'Update Password'}
                     </Button>
 
                     <div className="border-t pt-6">
@@ -740,11 +797,22 @@ const DeveloperLiscences = () => {
                             Two-Factor Authentication
                           </h4>
                           <p className="text-sm text-gray-500">
-                            Add an extra layer of security
+                            Add an extra layer of security to your account
                           </p>
                         </div>
-                        <Button variant="outline">Enable 2FA</Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleToggle2FA}
+                          disabled={enabling2FA}
+                        >
+                          {enabling2FA ? 'Processing...' : twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA'}
+                        </Button>
                       </div>
+                      {!twoFactorEnabled && (
+                        <p className="text-xs text-amber-600 mt-2">
+                          ⚠️ Two-factor authentication is coming soon. This feature will be available in a future update.
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -806,7 +874,14 @@ const DeveloperLiscences = () => {
                         <p className="text-sm text-gray-600 mb-3">
                           Get help with your account or projects
                         </p>
-                        <Button variant="outline" className="w-full">
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => {
+                            // Navigate to support page and scroll to contact section
+                            navigate('/support#contact');
+                          }}
+                        >
                           Contact Us
                         </Button>
                       </div>
@@ -816,7 +891,14 @@ const DeveloperLiscences = () => {
                         <p className="text-sm text-gray-600 mb-3">
                           Browse our knowledge base and FAQs
                         </p>
-                        <Button variant="outline" className="w-full">
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => {
+                            // Navigate to support page and scroll to FAQ section
+                            navigate('/support#faq');
+                          }}
+                        >
                           Visit Help Center
                         </Button>
                       </div>
@@ -824,26 +906,191 @@ const DeveloperLiscences = () => {
 
                     <div className="border-t pt-6">
                       <h4 className="font-medium mb-2">Account Information</h4>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <p>
-                          Account ID:{" "}
-                          {accountLoading
-                            ? "Loading..."
-                            : accountInfo.accountId || "N/A"}
-                        </p>
-                        <p>
-                          Member since:{" "}
-                          {accountLoading
-                            ? "Loading..."
-                            : accountInfo.memberSince || "N/A"}
-                        </p>
-                        <p>
-                          Account type:{" "}
-                          {accountLoading
-                            ? "Loading..."
-                            : accountInfo.accountType || "N/A"}
-                        </p>
-                      </div>
+                      {accountError ? (
+                        <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
+                          <p className="font-medium">Error loading account information</p>
+                          <p>{accountError}</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                            onClick={async () => {
+                              setAccountLoading(true);
+                              setAccountError(null);
+                              try {
+                                const response = await apiClient.getCurrentUser();
+                                const fullUserData = response.user || response;
+                                
+                                // Re-run the same validation logic as in loadAccountData
+                                const userId = fullUserData.id;
+                                const userRole = fullUserData.role;
+                                let accountId = "";
+                                if (userId && typeof userId === 'number' && userId > 0) {
+                                  const rolePrefix = userRole && typeof userRole === 'string'
+                                    ? userRole.charAt(0).toUpperCase()
+                                    : "U";
+                                  accountId = `BT-${rolePrefix}-${String(userId).padStart(6, "0")}`;
+                                }
+
+                                let memberSince = "";
+                                if (fullUserData.created_at) {
+                                  try {
+                                    const createdDate = new Date(fullUserData.created_at);
+                                    if (!isNaN(createdDate.getTime())) {
+                                      memberSince = createdDate.toLocaleDateString("en-US", {
+                                        year: "numeric",
+                                        month: "long",
+                                      });
+                                    }
+                                  } catch (dateError) {
+                                    console.warn('Invalid created_at date:', fullUserData.created_at);
+                                  }
+                                }
+
+                                let accountType = "";
+                                if (userRole && typeof userRole === 'string' && userRole.length > 0) {
+                                  accountType = `${userRole.charAt(0).toUpperCase()}${userRole.slice(1).toLowerCase()}`;
+                                }
+
+                                const emailVerified = Boolean(fullUserData.email_verified);
+                                const trustScore = typeof fullUserData.trust_score === 'number' && fullUserData.trust_score >= 0
+                                  ? fullUserData.trust_score
+                                  : 0;
+                                const completedProjects = typeof fullUserData.completed_projects === 'number' && fullUserData.completed_projects >= 0
+                                  ? fullUserData.completed_projects
+                                  : 0;
+                                const rating = typeof fullUserData.rating === 'number' && fullUserData.rating >= 0 && fullUserData.rating <= 5
+                                  ? fullUserData.rating
+                                  : 0;
+                                const totalReviews = typeof fullUserData.total_reviews === 'number' && fullUserData.total_reviews >= 0
+                                  ? fullUserData.total_reviews
+                                  : 0;
+                                const isActive = fullUserData.is_active !== undefined ? Boolean(fullUserData.is_active) : true;
+
+                                setAccountInfo({
+                                  accountId,
+                                  memberSince,
+                                  accountType,
+                                  emailVerified,
+                                  trustScore,
+                                  completedProjects,
+                                  rating,
+                                  totalReviews,
+                                  isActive,
+                                  lastLogin: accountInfo.lastLogin, // Keep existing lastLogin
+                                });
+                                
+                                toast({
+                                  title: "Refreshed",
+                                  description: "Account information has been updated.",
+                                });
+                              } catch (error) {
+                                console.error('Failed to refresh account data:', error);
+                                setAccountError(error instanceof Error ? error.message : 'Failed to refresh account data');
+                                toast({
+                                  title: "Refresh Failed",
+                                  description: "Unable to refresh account information.",
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                setAccountLoading(false);
+                              }
+                            }}
+                          >
+                            Retry
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-600 space-y-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="font-medium text-gray-900">Account ID</p>
+                              <p className="font-mono">
+                                {accountLoading ? "Loading..." : accountInfo.accountId || "Not available"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">Member Since</p>
+                              <p>
+                                {accountLoading ? "Loading..." : accountInfo.memberSince || "Not available"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">Account Type</p>
+                              <p>
+                                {accountLoading ? "Loading..." : accountInfo.accountType || "Not available"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">Account Status</p>
+                              <p>
+                                {accountLoading ? "Loading..." : (
+                                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                    accountInfo.isActive
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {accountInfo.isActive ? 'Active' : 'Inactive'}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">Email Verified</p>
+                              <p>
+                                {accountLoading ? "Loading..." : (
+                                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                    accountInfo.emailVerified
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {accountInfo.emailVerified ? 'Verified' : 'Unverified'}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">Trust Score</p>
+                              <p>
+                                {accountLoading ? "Loading..." : (
+                                  <span className={`font-semibold ${
+                                    accountInfo.trustScore >= 80 ? 'text-green-600' :
+                                    accountInfo.trustScore >= 60 ? 'text-yellow-600' : 'text-red-600'
+                                  }`}>
+                                    {accountInfo.trustScore}/100
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">Completed Projects</p>
+                              <p>
+                                {accountLoading ? "Loading..." : accountInfo.completedProjects}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">Rating</p>
+                              <p>
+                                {accountLoading ? "Loading..." : (
+                                  <span className="flex items-center gap-1">
+                                    <span className="font-semibold">{accountInfo.rating.toFixed(1)}</span>
+                                    <span className="text-yellow-500">★</span>
+                                    <span className="text-gray-500">({accountInfo.totalReviews} reviews)</span>
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            {accountInfo.lastLogin && (
+                              <div>
+                                <p className="font-medium text-gray-900">Last Login</p>
+                                <p>
+                                  {accountLoading ? "Loading..." : accountInfo.lastLogin}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -852,16 +1099,6 @@ const DeveloperLiscences = () => {
           </div>
         </div>
       </div>
-
-      {/* Global Declined Document Alert */}
-      <DeclinedDocumentAlert
-        declinedDocument={declinedDocument}
-        currentUserId={user?.id}
-        onDocumentReuploaded={() => {
-          refreshUser().catch(() => {});
-        }}
-        onDismiss={() => setDeclinedDocument(null)}
-      />
 
       {signOutModal && (
         <SignoutModal

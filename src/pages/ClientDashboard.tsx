@@ -82,6 +82,8 @@ const ClientDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
 
+  const unreadNotificationCount = notifications.filter((n: any) => n.unread).length;
+
   // Mock data for testing when API is not connected
   const mockProjects = [
     {
@@ -470,9 +472,11 @@ const ClientDashboard = () => {
                     className="relative flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 hover:bg-[#226F75]/10"
                   >
                     <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-[#226F75]" />
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
-                      {notifications.filter((n) => n.unread).length}
-                    </Badge>
+                    {unreadNotificationCount > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs p-0 flex items-center justify-center">
+                        {unreadNotificationCount}
+                      </Badge>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent
