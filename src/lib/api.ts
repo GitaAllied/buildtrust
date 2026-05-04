@@ -129,6 +129,13 @@ class ApiClient {
     }
   }
 
+  async post(endpoint: string, data?: any) {
+    return this.request(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async signup(data: {
     email: string;
     password: string;
@@ -1059,6 +1066,12 @@ class ApiClient {
   async getNotifications(userId: number | string) {
     return this.request(`/users/${userId}/notifications`, {
       method: 'GET',
+    });
+  }
+
+  async requestInspectionNotification(projectId: number | string) {
+    return this.post('/notifications/inspection-request', {
+      projectId,
     });
   }
 

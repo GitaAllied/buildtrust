@@ -182,9 +182,12 @@ const DeveloperDashboard = () => {
           ? new Date(new Date(project.start_date).getTime() + 180 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US')
           : 'TBD',
         lastUpdate: formatTimeAgo(project.updated_at || project.created_at),
-        status: 'On Track',
+        status: getStatusLabel(project.status, project.acceptance_status),
         budget_min: project.budget_min,
-        budget_max: project.budget_max
+        budget_max: project.budget_max,
+        rawStatus: project.status,
+        acceptance_status: project.acceptance_status,
+        inspectionRequested: project.inspection_requested === 1 || project.inspection_requested === true,
       }));
       setOngoingProjectsData(ongoingFormatted);
     } catch (error) {
@@ -298,6 +301,62 @@ const DeveloperDashboard = () => {
       style: "currency",
       currency: "USD",
     }).format(numberValue);
+  };
+
+  const hasInspectionRequest = (projectId: number) => {
+    return notifications.some((notif: any) =>
+      notif.type === 'inspection_request' && String(notif.data?.projectId) === String(projectId)
+    );
+  };
+
+  const getStatusLabel = (status: string | undefined, acceptance_status?: string) => {
+    const normalized = (status || acceptance_status || "").toString().replace(/_/g, " ").trim().toLowerCase();
+
+    switch (normalized) {
+      case "active":
+        return "Active";
+      case "on track":
+      case "ontrack":
+        return "On Track";
+      case "in progress":
+      case "inprogress":
+        return "In Progress";
+      case "on hold":
+      case "onhold":
+      case "hold":
+        return "On Hold";
+      case "completed":
+      case "complete":
+        return "Completed";
+      case "pending":
+        return "Pending";
+      case "inspection requested":
+        return "Inspection Requested";
+      default:
+        return normalized
+          .split(/\s+/)
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ") || "In Progress";
+    }
+  };
+
+  const getStatusBadgeClass = (label: string) => {
+    switch (label) {
+      case "Active":
+        return "bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-md";
+      case "On Track":
+        return "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md";
+      case "In Progress":
+        return "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md";
+      case "On Hold":
+        return "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md";
+      case "Completed":
+        return "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md";
+      case "Inspection Requested":
+        return "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md";
+      default:
+        return "bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-md";
+    }
   };
 
   // Protect route: only allow authenticated users with role 'developer'
@@ -464,7 +523,7 @@ const DeveloperDashboard = () => {
           const mappedNotifications = response.notifications.map((notif: any, index: number) => ({
             ...notif,
             id: notif.id || `notif-${index}`,
-            unread: notif.unread !== false, // default to unread
+            unread: notif.is_read === 0 || notif.unread === 1 || notif.unread === true,
           }));
           
           setNotifications(mappedNotifications);
@@ -919,17 +978,20 @@ const DeveloperDashboard = () => {
                                     </span>
                                   </p>
                                 </div>
-                                <Badge
-                                  className={`
-                                  ${
-                                    project.status === "On Track"
-                                      ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
-                                      : "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-md"
-                                  }
-                                w-fit h-fit p-1.5 px-4`}
-                                >
-                                  {project.status}
-                                </Badge>
+                                <div className="flex items-center gap-2 flex-wrap justify-end">
+                                  {(() => {
+                                    const displayStatus = project.inspectionRequested || hasInspectionRequest(project.id)
+                                      ? 'Inspection Requested'
+                                      : project.status;
+                                    return (
+                                      <Badge
+                                        className={`${getStatusBadgeClass(displayStatus)} w-fit h-fit p-1.5 px-4`}
+                                      >
+                                        {displayStatus}
+                                      </Badge>
+                                    );
+                                  })()}
+                                </div>
                               </div>
 
                               <div className="mb-4">

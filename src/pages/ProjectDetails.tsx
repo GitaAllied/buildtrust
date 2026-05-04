@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Menu, X, Download, AlertCircle } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import jsPDF from "jspdf";
+import { useToast } from "@/hooks/use-toast";
 import {
   FaBook,
   FaBriefcase,
@@ -63,6 +64,7 @@ const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+  const { toast } = useToast();
   const [project, setProject] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -311,11 +313,76 @@ const ProjectDetails = () => {
           return;
         }
 
+        // Normalize media returned from the API for consistent rendering
+        const normalizedMedia = projectData.media
+          ? Array.isArray(projectData.media)
+            ? projectData.media
+            : [projectData.media]
+          : [];
+
+        projectData.media = normalizedMedia;
         setProject(projectData);
 
-        // Populate projectFiles with contract, signatures, and media
+        // Helper function to generate descriptive file names
+        const getDescriptiveFileName = (media: any, index: number) => {
+          // If filename exists and is descriptive, use it
+          if (media.filename && media.filename.length > 3 && !/^\d+$/.test(media.filename)) {
+            return media.filename;
+          }
+
+          const extension = getFileExtension(media.media_url || '', media.filename);
+
+          // Categorize by file type
+          const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
+          const documentExtensions = ['pdf', 'doc', 'docx', 'txt', 'rtf'];
+          const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'];
+          const audioExtensions = ['mp3', 'wav', 'ogg', 'aac'];
+
+          if (imageExtensions.includes(extension)) {
+            return `Project Photo ${index + 1}`;
+          } else if (documentExtensions.includes(extension)) {
+            return `Project Document ${index + 1}`;
+          } else if (videoExtensions.includes(extension)) {
+            return `Project Video ${index + 1}`;
+          } else if (audioExtensions.includes(extension)) {
+            return `Project Audio ${index + 1}`;
+          } else {
+            return `Project File ${index + 1}`;
+          }
+        };
+
+        // Helper function to get appropriate icon based on file type
+        const getFileIcon = (media: any) => {
+          const extension = getFileExtension(media.media_url || '', media.filename);
+
+          const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
+          const documentExtensions = ['pdf', 'doc', 'docx', 'txt', 'rtf'];
+          const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'];
+          const audioExtensions = ['mp3', 'wav', 'ogg', 'aac'];
+
+          if (imageExtensions.includes(extension)) {
+            return FaImages;
+          } else if (documentExtensions.includes(extension)) {
+            return FaFileContract;
+          } else if (videoExtensions.includes(extension)) {
+            return FaTableCells; // Using table icon as video placeholder
+          } else if (audioExtensions.includes(extension)) {
+            return FaHeadset; // Using headset icon as audio placeholder
+          } else {
+            return FaImages; // Default icon
+          }
+        };
+
+        // Helper function to get file extension
+        const getFileExtension = (url: string, filename?: string) => {
+          const name = filename || url.split('/').pop() || '';
+          const ext = name.split('.').pop()?.toLowerCase();
+          return ext || '';
+        };
+
+        // Populate projectFiles with contract and media (excluding signatures)
         const files: any[] = [];
-        
+
         // Add contract PDF
         if (projectData.contract) {
           files.push({
@@ -327,43 +394,43 @@ const ProjectDetails = () => {
             color: 'bg-red-50 text-red-600'
           });
         }
-        
-        // Add developer signature
-        if (projectData.contract?.developer_signature) {
-          files.push({
-            type: 'signature',
-            name: 'Developer Signature',
-            description: 'Developer signed',
-            date: projectData.contract.developer_signed_at,
-            icon: FaUser,
-            color: 'bg-green-50 text-green-600'
-          });
-        }
-        
-        // Add client signature
-        if (projectData.contract?.client_signature) {
-          files.push({
-            type: 'signature',
-            name: 'Client Signature',
-            description: 'Client signed',
-            date: projectData.contract.client_signed_at,
-            icon: FaUser,
-            color: 'bg-blue-50 text-blue-600'
-          });
-        }
-        
-        // Add project media
+
+        // Add project media (excluding signature files)
         if (projectData.media && Array.isArray(projectData.media)) {
+          let mediaIndex = 0;
           projectData.media.forEach((media: any) => {
+            // Skip signature files - they should not be displayed in project files
+            // Enhanced filtering to catch various signature file patterns
+            const isSignatureFile = (
+              media.type === 'signature' ||
+              (media.filename && media.filename.toLowerCase().includes('signature')) ||
+              (media.media_url && media.media_url.toLowerCase().includes('signature')) ||
+              // Catch timestamp-based filenames (common for signatures)
+              (media.filename && /^\d{10,}-\d+\.jpeg?$/.test(media.filename)) ||
+              // Catch files with very long numeric prefixes followed by random numbers
+              (media.filename && /^\d{13,}-\d{6,}\./.test(media.filename)) ||
+              // Catch files in signature directories
+              (media.media_url && /\/signatures?\//.test(media.media_url))
+            );
+
+            if (isSignatureFile) {
+              return;
+            }
+
+            const descriptiveName = getDescriptiveFileName(media, mediaIndex);
+            const fileIcon = getFileIcon(media);
+
             files.push({
               type: 'media',
-              name: media.filename || 'Project File',
+              name: descriptiveName,
               description: media.description || 'Project media',
               date: media.created_at,
               url: media.media_url,
-              icon: FaImages,
+              icon: fileIcon,
               color: 'bg-purple-50 text-purple-600'
             });
+
+            mediaIndex++;
           });
         }
         
@@ -494,6 +561,16 @@ const ProjectDetails = () => {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
+  const daysLeft = (() => {
+    if (!project?.acceptance_status || project.acceptance_status !== 'pending' || !project?.assigned_at) {
+      return null;
+    }
+
+    const deadline = new Date(project.assigned_at).getTime() + 72 * 60 * 60 * 1000;
+    const diffDays = Math.max(0, Math.ceil((deadline - Date.now()) / (1000 * 60 * 60 * 24)));
+    return diffDays > 0 ? diffDays : 0;
+  })();
+
   const handleFileDownload = async (file: any) => {
     try {
       if (file.type === 'contract') {
@@ -513,7 +590,80 @@ const ProjectDetails = () => {
     }
   };
 
-  const daysLeft = project.hours_remaining ? Math.ceil(project.hours_remaining / 24) : null;
+  const handleRequestInspection = async () => {
+    if (!project?.developer?.id) {
+      toast({
+        title: 'No developer assigned',
+        description: 'This project does not have a developer assigned yet.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await apiClient.post('/notifications/inspection-request', {
+        projectId: project.id,
+      });
+
+      // Update local project state to reflect the inspection request
+      setProject(prev => prev ? { ...prev, inspection_requested: true } : null);
+
+      toast({
+        title: 'Inspection request sent',
+        description: 'The developer has been notified with a system notification.',
+      });
+    } catch (error) {
+      console.error('Error requesting inspection:', error);
+      toast({
+        title: 'Inspection request failed',
+        description: 'Please try again or refresh the page.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: project.title,
+      text: `Check out this construction project: ${project.title}`,
+      url: window.location.href
+    };
+
+    try {
+      // Try to use the Web Share API if available
+      if (navigator.share) {
+        await navigator.share(shareData);
+        toast({
+          title: 'Shared successfully',
+          description: 'Project link shared successfully.',
+        });
+      } else {
+        // Fallback: Copy URL to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: 'Link copied',
+          description: 'Project link copied to clipboard.',
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Final fallback: Copy URL to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: 'Link copied',
+          description: 'Project link copied to clipboard.',
+        });
+      } catch (clipboardError) {
+        console.error('Error copying to clipboard:', clipboardError);
+        toast({
+          title: 'Share failed',
+          description: 'Unable to share project. Please copy the URL manually.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
 
   const generateContractPDF = async () => {
     try {
@@ -900,12 +1050,7 @@ const ProjectDetails = () => {
                 </p>
               </div>
             </div>
-            <Button
-              className="bg-[#253E44] hover:bg-[#253E44]/90 text-xs sm:text-sm w-full sm:w-auto"
-              onClick={() => navigate(user?.role === "developer" ? "/upload-update" : "/browse")}
-            >
-              {user?.role === "developer" ? "Upload Update" : "Start New Project"}
-            </Button>
+            
           </div>
         </div>
 
@@ -926,14 +1071,14 @@ const ProjectDetails = () => {
               </h1>
               <div className=" flex items-center gap-4">
                 <Button
-                onClick={() => navigate("/project-requests")}
+                onClick={() => navigate(user?.role === "developer" ? "/project-requests" : "/projects")}
                 variant="ghost"
                 className=" border"
               >
                 All Projects
               </Button>
               <Button
-                // variant="ghost"
+                onClick={handleShare}
                 className=""
                 style={{ display: user?.role === "developer" ? "none" : "inline-flex" }}
               >
@@ -944,7 +1089,7 @@ const ProjectDetails = () => {
 
             <div className=" py-5 relative">
               <img
-                src={getImageUrl(project.media?.url)}
+                src={getImageUrl(project.media?.[0]?.url)}
                 alt={project.title}
                 className="w-full h-64 sm:h-80 md:h-96 object-cover rounded-3xl"
                 onError={(e) => {
@@ -1283,13 +1428,24 @@ const ProjectDetails = () => {
                           </div>
                         </div>
                         <div className="space-y-3">
-                          <button className="w-full bg-[#253E44] hover:bg-slate-800 text-sm text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                          <button 
+                            onClick={() => navigate(user?.role === "developer" ? "/developer-messages" : "/messages")}
+                            className="w-full bg-[#253E44] hover:bg-slate-800 text-sm text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                          >
                             <FaMessage/>
                             Message Support
                           </button>
-                          <button className="w-full bg-white border border-slate-200 hover:border-[#226F75] text-[#253E44] text-sm font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                          <button 
+                            onClick={handleRequestInspection} 
+                            disabled={project.inspection_requested}
+                            className={`w-full text-sm font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                              project.inspection_requested 
+                                ? 'bg-gray-200 border-gray-200 text-gray-500 cursor-not-allowed' 
+                                : 'bg-white border border-slate-200 hover:border-[#226F75] text-[#253E44]'
+                            }`}
+                          >
                             <FaBook/>
-                            Request Inspection
+                            {project.inspection_requested ? 'Inspection Requested' : 'Request Inspection'}
                           </button>
                         </div>
                       </div>
