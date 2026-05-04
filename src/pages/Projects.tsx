@@ -28,6 +28,48 @@ const API_BASE = (
 ).replace(/\/+$/, "");
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
+const formatNumberString = (value: string) => {
+  const numeric = Number(String(value).replace(/[^0-9.-]+/g, ""));
+  if (!Number.isFinite(numeric)) return String(value).trim();
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 0,
+  }).format(numeric);
+};
+
+const formatBudgetLabel = (budget: any) => {
+  if (budget === null || budget === undefined || budget === "") {
+    return "—";
+  }
+
+  const raw = String(budget).trim();
+  if (raw.includes("-")) {
+    return raw
+      .split("-")
+      .map((part) => formatNumberString(part))
+      .join(" - ");
+  }
+
+  if (/[A-Za-z]/.test(raw)) {
+    return raw;
+  }
+
+  return formatNumberString(raw);
+};
+
+const normalizeStatus = (status: any) => {
+  const raw = String(status ?? "").trim().toLowerCase();
+  if (raw === "in_progress" || raw === "in progress" || raw === "progress") {
+    return "in_progress";
+  }
+  if (raw === "completed" || raw === "complete") {
+    return "completed";
+  }
+  if (raw === "open") {
+    return "open";
+  }
+  return raw;
+};
+
 const Projects = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -90,10 +132,11 @@ const Projects = () => {
   }
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completed":
+    const normalized = normalizeStatus(status);
+    switch (normalized) {
+      case "completed":
         return "bg-green-600";
-      case "In Progress":
+      case "in_progress":
         return "bg-blue-600";
       case "open":
         return "bg-orange-600";
@@ -102,28 +145,40 @@ const Projects = () => {
     }
   };
 
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch =
-      project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (project.developer_name || project.developer || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-    const matchesFilter =
-      filterStatus === "all" ||
-      (project.status || "").toLowerCase().includes(filterStatus.toLowerCase());
-    return matchesSearch && matchesFilter;
-  });
+  const filteredProjects = projects
+    .filter((project) => {
+      const matchesSearch =
+        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.developer_name || project.developer || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+      const matchesFilter =
+        filterStatus === "all" ||
+        (project.status || "").toLowerCase().includes(filterStatus.toLowerCase());
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bDate - aDate;
+    });
 
   // Calculate dynamic stats from real projects data
   const totalProjects = projects.length;
-  const inProgressCount = projects.filter(
-    (p) => p.status === "In Progress",
-  ).length;
-  const completedCount = projects.filter(
-    (p) => p.status === "Completed",
-  ).length;
-  const planningCount = projects.filter((p) => p.status === "open").length;
+  const projectStats = projects.reduce(
+    (acc, p) => {
+      const normalized = normalizeStatus(p.status);
+      if (normalized === "in_progress") acc.inProgress += 1;
+      if (normalized === "completed") acc.completed += 1;
+      if (normalized === "open") acc.open += 1;
+      return acc;
+    },
+    { inProgress: 0, completed: 0, open: 0 },
+  );
+  const inProgressCount = projectStats.inProgress;
+  const completedCount = projectStats.completed;
+  const planningCount = projectStats.open;
 
   const PLACEHOLDER_IMAGE = "https://placehold.net/main.svg";
 
@@ -331,16 +386,7 @@ const Projects = () => {
                     <div>
                       <p className="text-xs text-gray-500">Budget</p>
                       <p className="font-semibold text-sm sm:text-base text-green-600">
-                        {(() => {
-                          const b = project.budget;
-                          if (b === null || b === undefined || b === "")
-                            return "—";
-                          const s =
-                            typeof b === "number"
-                              ? String(b)
-                              : String(b).trim();
-                          return /[Mm]/.test(s) ? s : `${s}M`;
-                        })()}
+                        {formatBudgetLabel(project.budget)}
                       </p>
                     </div>
                     <Button

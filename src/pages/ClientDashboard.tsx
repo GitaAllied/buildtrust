@@ -139,9 +139,15 @@ const ClientDashboard = () => {
         const projectsResponse = await apiClient.getClientProjects();
         const projectsData = projectsResponse.projects || [];
 
-        // Transform projects to match dashboard format
+        // Transform projects to match dashboard format and show only open or in_progress
         const activeProjects = projectsData
-          .filter((p: any) => p.status === "active" || p.status === "open")
+          .filter((p: any) => p.status === "open" || p.status === "in_progress")
+          .sort((a: any, b: any) => {
+            const aDate = a.created_at ? Date.parse(a.created_at) : 0;
+            const bDate = b.created_at ? Date.parse(b.created_at) : 0;
+            return bDate - aDate;
+          })
+          .slice(0, 4)
           .map((p: any) => ({
             id: p.id,
             title: p.title,

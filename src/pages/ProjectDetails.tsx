@@ -1077,7 +1077,7 @@ const ProjectDetails = () => {
               <div>
                 <div className="space-y-6">
                   {/* Alert when contract needs re-signing */}
-                  {project?.contract?.needs_resign && project?.acceptance_status !== 'pending' && ['developer', 'client'].includes(user?.role) && !contractSigned && (
+                  {(project?.contract?.needs_resign === true || project?.contract?.needs_resign === 1) && project?.acceptance_status !== 'pending' && ['developer', 'client'].includes(user?.role) && !contractSigned && (
                     <Card className="p-4 border-2 border-yellow-400 bg-yellow-50">
                       <div className="flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
@@ -1336,11 +1336,11 @@ const ProjectDetails = () => {
                         <p className="text-xs text-slate-500 py-4">No project files yet.</p>
                       )}
                     </div>
-                    {projectFiles.length > 0 && (
+                    {projectFiles.length > 0 ? (
                       <button className="w-full mt-4 text-xs font-bold text-[#253E44] hover:underline">
                         Download All Files
                       </button>
-                    )}
+                    ) : null}
                   </Card>
                   <Card className=" p-6 space-y-3" style={{ display: user?.role === "developer" ? "block" : "none" }}>
                     <h4 className="font-bold text-[#253E44]">
