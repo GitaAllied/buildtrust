@@ -844,61 +844,86 @@ const ProjectDetails = () => {
       pdf.text(sigSectionText, pageWidth / 2 - sigSectionWidth / 2, yPosition);
       yPosition += 12;
 
-      // Client Signature Section
+      // Calculate side-by-side layout
+      const colWidth = (contentWidth - 5) / 2; // 5mm gap between columns
+      const leftColX = margin;
+      const rightColX = margin + colWidth + 5;
+      let maxHeight = 0;
+      let clientHeight = 0;
+      let devHeight = 0;
+
+      // CLIENT SIGNATURE SECTION (Left)
+      let clientY = yPosition;
       pdf.setFontSize(11);
       pdf.setTextColor(37, 62, 68); // #253E44
-      pdf.text('CLIENT SIGNATURE', margin, yPosition);
-      yPosition += 7;
+      pdf.text('CLIENT SIGNATURE', leftColX, clientY);
+      clientY += 7;
+      clientHeight += 7;
 
       pdf.setFontSize(9);
       pdf.setTextColor(102, 102, 102); // #666
-      pdf.text(`Status: ${project.contract?.client_signed_at ? 'SIGNED' : 'PENDING'}`, margin, yPosition);
-      yPosition += 6;
-      pdf.text(`Date: ${project.contract?.client_signed_at ? new Date(project.contract.client_signed_at).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Awaiting signature'}`, margin, yPosition);
-      yPosition += 10;
+      pdf.text(`Status: ${project.contract?.client_signed_at ? 'SIGNED' : 'PENDING'}`, leftColX, clientY);
+      clientY += 6;
+      clientHeight += 6;
+      
+      if (project.contract?.client_signed_at && project.client?.name) {
+        pdf.text(`Name: ${project.client.name}`, leftColX, clientY);
+        clientY += 6;
+        clientHeight += 6;
+      }
+      pdf.text(`Date: ${project.contract?.client_signed_at ? new Date(project.contract.client_signed_at).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Awaiting signature'}`, leftColX, clientY, { maxWidth: colWidth });
+      clientY += 8;
+      clientHeight += 8;
 
       // Add client signature image
       if (clientSigBase64) {
         try {
           console.log('🖼️ Adding client signature image to PDF');
-          pdf.addImage(clientSigBase64, 'PNG', margin, yPosition, 80, 40);
-          yPosition += 45;
+          pdf.addImage(clientSigBase64, 'PNG', leftColX, clientY, colWidth - 5, 35);
+          clientY += 38;
+          clientHeight += 38;
         } catch (err) {
           console.warn('⚠️ Failed to add client signature image:', err);
-          yPosition += 5;
         }
-      } else {
-        yPosition += 10;
       }
+      maxHeight = clientHeight;
 
-      yPosition += 15;
-
-      // Developer Signature Section
+      // DEVELOPER SIGNATURE SECTION (Right)
+      let devY = yPosition;
       pdf.setFontSize(11);
       pdf.setTextColor(37, 62, 68);
-      pdf.text('DEVELOPER SIGNATURE', margin, yPosition);
-      yPosition += 7;
+      pdf.text('DEVELOPER SIGNATURE', rightColX, devY);
+      devY += 7;
+      devHeight += 7;
 
       pdf.setFontSize(9);
       pdf.setTextColor(102, 102, 102);
-      pdf.text(`Status: ${project.contract?.developer_signed_at ? 'SIGNED' : 'PENDING'}`, margin, yPosition);
-      yPosition += 6;
-      pdf.text(`Date: ${project.contract?.developer_signed_at ? new Date(project.contract.developer_signed_at).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Awaiting signature'}`, margin, yPosition);
-      yPosition += 10;
+      pdf.text(`Status: ${project.contract?.developer_signed_at ? 'SIGNED' : 'PENDING'}`, rightColX, devY);
+      devY += 6;
+      devHeight += 6;
+      
+      if (project.contract?.developer_signed_at && project.developer?.name) {
+        pdf.text(`Name: ${project.developer.name}`, rightColX, devY);
+        devY += 6;
+        devHeight += 6;
+      }
+      pdf.text(`Date: ${project.contract?.developer_signed_at ? new Date(project.contract.developer_signed_at).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Awaiting signature'}`, rightColX, devY, { maxWidth: colWidth });
+      devY += 8;
+      devHeight += 8;
 
       // Add developer signature image
       if (devSigBase64) {
         try {
           console.log('🖼️ Adding developer signature image to PDF');
-          pdf.addImage(devSigBase64, 'PNG', margin, yPosition, 80, 40);
-          yPosition += 45;
+          pdf.addImage(devSigBase64, 'PNG', rightColX, devY, colWidth - 5, 35);
+          devY += 38;
+          devHeight += 38;
         } catch (err) {
           console.warn('⚠️ Failed to add developer signature image:', err);
-          yPosition += 5;
         }
-      } else {
-        yPosition += 10;
       }
+      maxHeight = Math.max(clientHeight, devHeight);
+      yPosition += maxHeight + 10;
 
       // Add new page if needed for status section
       if (yPosition > pageHeight - 100) {
@@ -911,32 +936,82 @@ const ProjectDetails = () => {
       // Contract Status Box
       const isSigned = project.contract?.developer_signed_at && project.contract?.client_signed_at;
       
-      // Set fill color based on signing status
-      if (isSigned) {
-        pdf.setFillColor(212, 237, 218); // Light green
-      } else {
-        pdf.setFillColor(255, 243, 205); // Light yellow
-      }
-      pdf.rect(margin, yPosition, contentWidth, 40, 'F');
-
+      // PROJECT BRIEF SECTION
+      // Set fill color
+      pdf.setFillColor(34, 111, 117); // #226F75
+      pdf.rect(margin, yPosition, contentWidth, 6, 'F'); // Header bar
+      
+      // Title
       pdf.setFontSize(11);
       pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(255, 255, 255); // White text
+      pdf.text('PROJECT BRIEF', margin + 5, yPosition + 4);
+      yPosition += 10;
       
-      // Set text color based on signing status
-      if (isSigned) {
-        pdf.setTextColor(21, 87, 36); // Dark green
-      } else {
-        pdf.setTextColor(133, 100, 4); // Dark yellow
-      }
-      pdf.text('CONTRACT STATUS', margin + 5, yPosition + 10);
-
+      // Project details box
+      pdf.setFillColor(245, 245, 245); // Light gray background
+      pdf.rect(margin, yPosition, contentWidth, 70, 'F');
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.5);
+      pdf.rect(margin, yPosition, contentWidth, 70);
+      
       pdf.setFont(undefined, 'normal');
       pdf.setFontSize(9);
-      pdf.text(`Developer Signed: ${project.contract?.developer_signed_at ? 'YES' : 'NO'}`, margin + 5, yPosition + 20);
-      pdf.text(`Client Signed: ${project.contract?.client_signed_at ? 'YES' : 'NO'}`, margin + 5, yPosition + 27);
-      pdf.text(`Status: ${isSigned ? 'FULLY EXECUTED' : 'PENDING SIGNATURES'}`, margin + 5, yPosition + 34);
-
-      yPosition += 50;
+      pdf.setTextColor(51, 51, 51);
+      
+      let detailY = yPosition + 5;
+      
+      // Project Name
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Project Name:', margin + 5, detailY);
+      pdf.setFont(undefined, 'normal');
+      pdf.text(project.title || 'N/A', margin + 55, detailY);
+      detailY += 7;
+      
+      // Location
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Location:', margin + 5, detailY);
+      pdf.setFont(undefined, 'normal');
+      pdf.text(project.location || 'N/A', margin + 55, detailY);
+      detailY += 7;
+      
+      // Budget Range
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Budget Range:', margin + 5, detailY);
+      pdf.setFont(undefined, 'normal');
+      const budgetText = project.budget_min && project.budget_max 
+        ? `$${Number(project.budget_min).toLocaleString()} - $${Number(project.budget_max).toLocaleString()}`
+        : 'TBD';
+      pdf.text(budgetText, margin + 55, detailY);
+      detailY += 7;
+      
+      // Duration
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Duration:', margin + 5, detailY);
+      pdf.setFont(undefined, 'normal');
+      const durationMap: Record<string, string> = {
+        '3-6': '3-6 months',
+        '6-12': '6-12 months',
+        '12-18': '12-18 months',
+        '18+': '18+ months'
+      };
+      const durationText = durationMap[project.duration] || project.duration || 'TBD';
+      pdf.text(durationText, margin + 55, detailY);
+      detailY += 7;
+      
+      // Description (truncated)
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Description:', margin + 5, detailY);
+      detailY += 5;
+      pdf.setFont(undefined, 'normal');
+      const descLines = pdf.splitTextToSize(project.message || 'No description provided', contentWidth - 10);
+      const truncatedDesc = descLines.slice(0, 3).join(' ');
+      pdf.text(truncatedDesc, margin + 5, detailY, { maxWidth: contentWidth - 10 });
+      detailY += 10;
+      
+      // Signing Status removed as per request
+      
+      yPosition += 80;
 
       // Add footer
       pdf.setFontSize(8);

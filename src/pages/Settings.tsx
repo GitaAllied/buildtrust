@@ -83,6 +83,16 @@ const Settings = () => {
   const [profileErrors, setProfileErrors] = useState<{ [key: string]: string }>({});
   const [passwordErrors, setPasswordErrors] = useState<{ [key: string]: string }>({});
 
+  // Notification preferences state
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    projectUpdates: true,
+    paymentNotifications: true,
+    messages: true,
+    marketingUpdates: false,
+  });
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationSaving, setNotificationSaving] = useState(false);
+
   // Payment methods state
   const [paymentMethodsList, setPaymentMethodsList] = useState<any[]>([]);
   const [loadingMethods, setLoadingMethods] = useState(false);
@@ -202,6 +212,87 @@ const Settings = () => {
 
     loadUserData();
   }, [user]);
+
+  useEffect(() => {
+    const loadNotificationPreferences = async () => {
+      const defaults = {
+        projectUpdates: true,
+        paymentNotifications: true,
+        messages: true,
+        marketingUpdates: false,
+      };
+
+      setNotificationLoading(true);
+      try {
+        const stored = localStorage.getItem('client_notification_preferences');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'object') {
+            setNotificationPreferences({
+              projectUpdates: Boolean(parsed.projectUpdates),
+              paymentNotifications: Boolean(parsed.paymentNotifications),
+              messages: Boolean(parsed.messages),
+              marketingUpdates: Boolean(parsed.marketingUpdates),
+            });
+          }
+        }
+
+        const settingsResponse = await apiClient.getSettings();
+        const serverPrefs =
+          settingsResponse?.notifications || settingsResponse?.notification_settings || {};
+
+        if (serverPrefs && typeof serverPrefs === 'object') {
+          setNotificationPreferences({
+            projectUpdates: Boolean(serverPrefs.projectUpdates ?? defaults.projectUpdates),
+            paymentNotifications: Boolean(serverPrefs.paymentNotifications ?? defaults.paymentNotifications),
+            messages: Boolean(serverPrefs.messages ?? defaults.messages),
+            marketingUpdates: Boolean(serverPrefs.marketingUpdates ?? defaults.marketingUpdates),
+          });
+        }
+      } catch (error) {
+        console.warn('Could not load notification preferences', error);
+      } finally {
+        setNotificationLoading(false);
+      }
+    };
+
+    loadNotificationPreferences();
+  }, []);
+
+  const saveNotificationPreferences = async (prefs: typeof notificationPreferences) => {
+    setNotificationSaving(true);
+
+    try {
+      localStorage.setItem('client_notification_preferences', JSON.stringify(prefs));
+      await apiClient.updateNotificationSettings(prefs);
+      toast({
+        title: 'Preferences saved',
+        description: 'Your notification preferences have been updated.',
+      });
+    } catch (error) {
+      console.error('Failed to save notification preferences', error);
+      toast({
+        title: 'Save failed',
+        description: 'Could not save notification preferences.',
+        variant: 'destructive',
+      });
+    } finally {
+      setNotificationSaving(false);
+    }
+  };
+
+  const handleNotificationToggleChange = async (
+    key: keyof typeof notificationPreferences,
+    checked: boolean
+  ) => {
+    const nextPreferences = {
+      ...notificationPreferences,
+      [key]: Boolean(checked),
+    };
+
+    setNotificationPreferences(nextPreferences);
+    await saveNotificationPreferences(nextPreferences);
+  };
 
   const handleProfileInputChange = (field: string, value: string) => {
     setProfileData((prev) => ({
@@ -730,7 +821,13 @@ const Settings = () => {
                           Get notified about project milestones
                         </p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch
+                        checked={notificationPreferences.projectUpdates}
+                        disabled={notificationLoading || notificationSaving}
+                        onCheckedChange={(checked) =>
+                          handleNotificationToggleChange('projectUpdates', checked)
+                        }
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -740,7 +837,13 @@ const Settings = () => {
                           Alerts for payment requests and confirmations
                         </p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch
+                        checked={notificationPreferences.paymentNotifications}
+                        disabled={notificationLoading || notificationSaving}
+                        onCheckedChange={(checked) =>
+                          handleNotificationToggleChange('paymentNotifications', checked)
+                        }
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -750,18 +853,38 @@ const Settings = () => {
                           New messages from developers
                         </p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch
+                        checked={notificationPreferences.messages}
+                        disabled={notificationLoading || notificationSaving}
+                        onCheckedChange={(checked) =>
+                          handleNotificationToggleChange('messages', checked)
+                        }
+                      />
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Marketing Updates</h4>
-                        <p className="text-sm text-gray-500">
-                          News and updates from BuildTrust
-                        </p>
+                    {notificationLoading ? (
+                      <div className="py-6 text-gray-500 text-sm text-center">
+                        Loading notification preferences...
                       </div>
-                      <Switch />
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">Marketing Updates</h4>
+                            <p className="text-sm text-gray-500">
+                              News and updates from BuildTrust
+                            </p>
+                          </div>
+                          <Switch
+                            checked={notificationPreferences.marketingUpdates}
+                            disabled={notificationLoading || notificationSaving}
+                            onCheckedChange={(checked) =>
+                              handleNotificationToggleChange('marketingUpdates', checked)
+                            }
+                          />
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </div>

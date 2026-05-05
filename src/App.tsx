@@ -32,7 +32,6 @@ import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
 import Settings from "./pages/Settings";
 import Contracts from "./pages/Contracts";
-import ContractDetails from "./pages/ContractDetails";
 import SavedDevelopers from "./pages/SavedDevelopers";
 import ProjectRequests from "./pages/ProjectRequests";
 import UploadUpdate from "./pages/UploadUpdate";
@@ -321,11 +320,7 @@ const App = () => (
               </EmailVerificationGuard>
             }
           />
-          {/* TODO: Protect this route after modification - should require client role and email verification */}
-          <Route
-            path="/contracts/:id"
-            element={<ContractDetails />}
-          />
+          {/* Removed client contract details route per request */}
           <Route
             path="/saved-developers"
             element={

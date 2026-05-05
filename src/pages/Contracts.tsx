@@ -2,16 +2,49 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
 import { FileText, Download, Eye, Menu, X } from "lucide-react";
 import Logo from "../assets/Logo.png";
-import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { apiClient } from "@/lib/api";
 import SignoutModal from "@/components/ui/signoutModal";
 import ClientSidebar from "@/components/ClientSidebar";
 import { useDispatch, useSelector } from "react-redux";
 import { openClientSidebar, openSignoutModal } from "@/redux/action";
+import { jsPDF } from 'jspdf';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+// Helper function to construct full image URL
+const getImageUrl = (mediaUrl?: string): string => {
+  if (!mediaUrl) {
+    console.log('⚠️ No media URL provided, using placeholder');
+    return "https://placehold.net/main.svg";
+  }
+
+  if (mediaUrl.startsWith('http')) {
+    console.log('✅ Full URL detected:', mediaUrl);
+    return mediaUrl;
+  }
+
+  const apiBase = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/+$/, '');
+  const backendOrigin = apiBase.startsWith('http')
+    ? apiBase.replace(/\/api$/, '')
+    : window.location.origin;
+
+  let resolvedUrl = mediaUrl;
+  if (!resolvedUrl.startsWith('/')) {
+    resolvedUrl = `/${resolvedUrl}`;
+  }
+
+  const fullUrl = `${backendOrigin}${resolvedUrl}`;
+  console.log('📸 Resolved media URL:', { original: mediaUrl, resolved: fullUrl });
+  return fullUrl;
+};
 
 // Derive backend origin to resolve media URLs stored as "/uploads/...".
 const API_BASE = (
@@ -19,104 +52,7 @@ const API_BASE = (
 ).replace(/\/+$/, "");
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
-// Mock contracts data for demo/style purposes
-const MOCK_CONTRACTS = [
-  {
-    id: 1,
-    contract_id: 1,
-    title: "Modern Duplex Construction Contract",
-    contract_title: "Modern Duplex Construction",
-    developer_name: "Engr. Adewale Structures",
-    project_title: "Modern Duplex in Lekki",
-    agreed_amount: "$5,667",
-    contract_status: "Active",
-    start_date: "2024-01-15",
-    contract_deadline: "2024-12-15",
-    deadline: "2024-12-15",
-    contract_signed_at: "2023-12-20",
-    created_at: "2023-12-20",
-    contract_file: {
-      url: "/uploads/contracts/modern_duplex_contract.pdf",
-      filename: "Modern_Duplex_Contract.pdf",
-    },
-  },
-  {
-    id: 2,
-    contract_id: 2,
-    title: "Commercial Plaza Development",
-    contract_title: "Commercial Plaza Development Contract",
-    developer_name: "BuildCore Developments",
-    project_title: "Commercial Plaza - Victoria Island",
-    agreed_amount: "$30,000",
-    contract_status: "Active",
-    start_date: "2024-02-01",
-    contract_deadline: "2025-06-30",
-    deadline: "2025-06-30",
-    contract_signed_at: "2024-01-15",
-    created_at: "2024-01-15",
-    contract_file: {
-      url: "/uploads/contracts/commercial_plaza_contract.pdf",
-      filename: "Commercial_Plaza_Contract.pdf",
-    },
-  },
-  {
-    id: 3,
-    contract_id: 3,
-    title: "Residential Estate Infrastructure",
-    contract_title: "Infrastructure Development",
-    developer_name: "Crown Estate Builders",
-    project_title: "Crown Heights Estate - Phase 2",
-    agreed_amount: "$14,667",
-    contract_status: "Completed",
-    start_date: "2023-06-01",
-    contract_deadline: "2024-03-31",
-    deadline: "2024-03-31",
-    contract_signed_at: "2023-05-20",
-    created_at: "2023-05-20",
-    contract_file: {
-      url: "/uploads/contracts/crown_estate_contract.pdf",
-      filename: "Crown_Estate_Contract.pdf",
-    },
-  },
-  {
-    id: 4,
-    contract_id: 4,
-    title: "Office Complex Renovation",
-    contract_title: "Office Complex Renovation Project",
-    developer_name: "Prestige Constructions Ltd",
-    project_title: "Downtown Office Complex Upgrade",
-    agreed_amount: "$8,333",
-    contract_status: "Draft",
-    start_date: null,
-    contract_deadline: null,
-    deadline: null,
-    contract_signed_at: null,
-    created_at: "2024-04-10",
-    contract_file: null,
-  },
-  {
-    id: 5,
-    contract_id: 5,
-    title: "Hospital Wing Construction",
-    contract_title: "Medical Facility Construction",
-    developer_name: "MedBuild Contractors",
-    project_title: "Teaching Hospital - New Wing",
-    agreed_amount: "$23,333",
-    contract_status: "Pending",
-    start_date: "2024-05-01",
-    contract_deadline: "2025-12-31",
-    deadline: "2025-12-31",
-    contract_signed_at: "2024-04-15",
-    created_at: "2024-04-15",
-    contract_file: {
-      url: "/uploads/contracts/hospital_contract.pdf",
-      filename: "Hospital_Wing_Contract.pdf",
-    },
-  },
-];
-
 const Contracts = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   const isOpen = useSelector((state: any) => state.sidebar.clientSidebar);
   const signOutModal = useSelector((state: any) => state.signout);
@@ -125,6 +61,9 @@ const Contracts = () => {
   const [contracts, setContracts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [contractTemplate, setContractTemplate] = useState<string>('');
+  const [selectedContract, setSelectedContract] = useState<any>(null);
+  const [isContractModalOpen, setIsContractModalOpen] = useState(false);
 
   // Format date or show 'Pending' if null
   const formatDateOrPending = (date: any) => {
@@ -149,35 +88,445 @@ const Contracts = () => {
     return `${API_ORIGIN}${url}`;
   };
 
+  // Generate contract PDF with jsPDF
+  const generateContractPDF = async (contract: any) => {
+    try {
+      console.log('📥 Generating contract PDF with jsPDF');
+      
+      if (!contractTemplate || contractTemplate === 'No contract template available' || contractTemplate === 'Failed to load contract template') {
+        console.warn('⚠️ Contract template not available:', { contractTemplate });
+        alert('Contract template is not yet loaded. Please wait a moment and try again.');
+        return;
+      }
+
+      console.log('✅ Using database contract template');
+
+      // Fetch signature images as data URLs
+      let devSigBase64 = null;
+      let clientSigBase64 = null;
+
+      console.log('🖼️ Fetching signature images...');
+
+      if (contract.developer_signature_url) {
+        try {
+          const fullUrl = getImageUrl(contract.developer_signature_url);
+          console.log('📸 Fetching developer signature from:', fullUrl);
+          const devSigResponse = await fetch(fullUrl);
+          
+          if (devSigResponse.ok) {
+            const devSigBlob = await devSigResponse.blob();
+            devSigBase64 = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(devSigBlob);
+            });
+            console.log('✅ Developer signature fetched');
+          }
+        } catch (err) {
+          console.warn('⚠️ Failed to fetch developer signature:', err);
+        }
+      }
+
+      if (contract.client_signature_url) {
+        try {
+          const fullUrl = getImageUrl(contract.client_signature_url);
+          console.log('📸 Fetching client signature from:', fullUrl);
+          const clientSigResponse = await fetch(fullUrl);
+          
+          if (clientSigResponse.ok) {
+            const clientSigBlob = await clientSigResponse.blob();
+            clientSigBase64 = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(clientSigBlob);
+            });
+            console.log('✅ Client signature fetched');
+          }
+        } catch (err) {
+          console.warn('⚠️ Failed to fetch client signature:', err);
+        }
+      }
+
+      console.log('📄 Creating PDF with jsPDF...');
+
+      // Create PDF directly with jsPDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentWidth = pageWidth - 2 * margin;
+      let yPosition = margin;
+
+      // Helper function to add text with line wrapping
+      const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 10) => {
+        pdf.setFontSize(fontSize);
+        const lines = pdf.splitTextToSize(text, maxWidth);
+        pdf.text(lines, x, y);
+        return y + (lines.length * fontSize * 0.35);
+      };
+
+      // Add title
+      pdf.setFontSize(16);
+      pdf.setTextColor(34, 111, 117); // #226F75
+      pdf.text('SERVICE AGREEMENT & LEGAL CONTRACT', margin, yPosition);
+      yPosition += 12;
+
+      // Add contract template
+      pdf.setFontSize(9);
+      pdf.setTextColor(51, 51, 51); // #333
+      
+      // Properly decode HTML entities while preserving formatting
+      const decodeHtmlEntities = (text: string) => {
+        let decoded = text;
+        
+        // FIRST: Replace problematic Unicode characters to prevent jsPDF rendering issues
+        decoded = decoded.replace(/þ/g, 'th'); // thorn U+00FE
+        decoded = decoded.replace(/Þ/g, 'Th'); // THORN U+00DE
+        decoded = decoded.replace(/ð/g, 'd'); // eth U+00F0
+        decoded = decoded.replace(/Ð/g, 'D'); // ETH U+00D0
+        
+        // SECOND: Replace HTML entity references
+        const entityMap: Record<string, string> = {
+          '&nbsp;': ' ',
+          '&lt;': '<',
+          '&gt;': '>',
+          '&quot;': '"',
+          '&#39;': "'",
+          '&apos;': "'",
+          '&copy;': '©',
+          '&reg;': '®',
+          '&thorn;': 'th',
+          '&Thorn;': 'Th',
+          '&eth;': 'd',
+          '&Eth;': 'D',
+          '&#240;': 'd',
+          '&#254;': 'th',
+          '&#222;': 'Th',
+          '&#208;': 'D',
+          '&amp;': 'and',
+        };
+        
+        for (const [entity, replacement] of Object.entries(entityMap)) {
+          const regex = new RegExp(entity.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+          decoded = decoded.replace(regex, replacement);
+        }
+        
+        // THIRD: Handle numeric character references
+        decoded = decoded.replace(/&#(\d+);/g, (match, num) => {
+          const code = parseInt(num);
+          if (code === 254 || code === 222) return 'th';
+          if (code === 240 || code === 208) return 'd';
+          if (code === 160) return ' ';
+          return String.fromCharCode(code);
+        });
+        
+        // FOURTH: Replace ALL remaining bare ampersands with explicit patterns
+        // This catches any & that isn't part of an HTML entity
+        decoded = decoded.replace(/&(?![a-zA-Z0-9#])/g, 'and '); // & not followed by letter or # → "and "
+        
+        // FIFTH: Remove invisible formatting characters
+        decoded = decoded.replace(/\u00AD/g, ''); // soft hyphen
+        decoded = decoded.replace(/\u200B/g, ''); // zero-width space
+        decoded = decoded.replace(/\u200C/g, ''); // zero-width non-joiner
+        decoded = decoded.replace(/\u200D/g, ''); // zero-width joiner
+        decoded = decoded.replace(/\u061C/g, ''); // Arabic letter mark
+        decoded = decoded.replace(/[\u202A-\u202E]/g, ''); // bidirectional text control chars
+        decoded = decoded.replace(/[\u2066-\u2069]/g, ''); // isolate characters
+        
+        return decoded;
+      };
+      
+      const decodedTemplate = decodeHtmlEntities(contractTemplate);
+      
+      const templateLines = pdf.splitTextToSize(decodedTemplate, contentWidth);
+      pdf.text(templateLines, margin, yPosition);
+      yPosition += templateLines.length * 2.5 + 15;
+
+      // Check if signature section will fit on current page
+      // Estimate space needed: ~200mm for signatures + 50mm for status box
+      if (yPosition > pageHeight - 270) {
+        // Not enough space, add new page
+        pdf.addPage();
+        yPosition = margin;
+      } else {
+        // Add separator
+        pdf.setDrawColor(34, 111, 117);
+        pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 10;
+      }
+
+      // Add signature section title
+      pdf.setFontSize(14);
+      pdf.setTextColor(34, 111, 117);
+      const sigSectionText = 'SIGNATURE SECTION';
+      const sigSectionWidth = pdf.getTextWidth(sigSectionText);
+      pdf.text(sigSectionText, pageWidth / 2 - sigSectionWidth / 2, yPosition);
+      yPosition += 12;
+
+      // Calculate side-by-side layout
+      const colWidth = (contentWidth - 5) / 2; // 5mm gap between columns
+      const leftColX = margin;
+      const rightColX = margin + colWidth + 5;
+      let maxHeight = 0;
+      let clientHeight = 0;
+      let devHeight = 0;
+
+      // CLIENT SIGNATURE SECTION (Left)
+      let clientY = yPosition;
+      pdf.setFontSize(11);
+      pdf.setTextColor(37, 62, 68); // #253E44
+      pdf.text('CLIENT SIGNATURE', leftColX, clientY);
+      clientY += 7;
+      clientHeight += 7;
+
+      pdf.setFontSize(9);
+      pdf.setTextColor(102, 102, 102); // #666
+      pdf.text(`Status: ${contract.client_signed_at ? 'SIGNED' : 'PENDING'}`, leftColX, clientY);
+      clientY += 6;
+      clientHeight += 6;
+      if (contract.client_signed_at && contract.client) {
+        pdf.text(`Name: ${contract.client}`, leftColX, clientY);
+        clientY += 6;
+        clientHeight += 6;
+      }
+      pdf.text(`Date: ${contract.client_signed_at ? new Date(contract.client_signed_at).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Awaiting signature'}`, leftColX, clientY, { maxWidth: colWidth });
+      clientY += 8;
+      clientHeight += 8;
+
+      // Add client signature image
+      if (clientSigBase64) {
+        try {
+          console.log('🖼️ Adding client signature image to PDF');
+          pdf.addImage(clientSigBase64, 'PNG', leftColX, clientY, colWidth - 5, 35);
+          clientY += 38;
+          clientHeight += 38;
+        } catch (err) {
+          console.warn('⚠️ Failed to add client signature image:', err);
+        }
+      }
+      maxHeight = clientHeight;
+
+      // DEVELOPER SIGNATURE SECTION (Right)
+      let devY = yPosition;
+      pdf.setFontSize(11);
+      pdf.setTextColor(37, 62, 68);
+      pdf.text('DEVELOPER SIGNATURE', rightColX, devY);
+      devY += 7;
+      devHeight += 7;
+
+      pdf.setFontSize(9);
+      pdf.setTextColor(102, 102, 102);
+      pdf.text(`Status: ${contract.developer_signed_at ? 'SIGNED' : 'PENDING'}`, rightColX, devY);
+      devY += 6;
+      devHeight += 6;
+      if (contract.developer_signed_at && contract.developer) {
+        pdf.text(`Name: ${contract.developer}`, rightColX, devY);
+        devY += 6;
+        devHeight += 6;
+      }
+      pdf.text(`Date: ${contract.developer_signed_at ? new Date(contract.developer_signed_at).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Awaiting signature'}`, rightColX, devY, { maxWidth: colWidth });
+      devY += 8;
+      devHeight += 8;
+
+      // Add developer signature image
+      if (devSigBase64) {
+        try {
+          console.log('🖼️ Adding developer signature image to PDF');
+          pdf.addImage(devSigBase64, 'PNG', rightColX, devY, colWidth - 5, 35);
+          devY += 38;
+          devHeight += 38;
+        } catch (err) {
+          console.warn('⚠️ Failed to add developer signature image:', err);
+        }
+      }
+      maxHeight = Math.max(clientHeight, devHeight);
+      yPosition += maxHeight + 10;
+
+      // Add new page if needed for status section
+      if (yPosition > pageHeight - 100) {
+        pdf.addPage();
+        yPosition = margin;
+      } else {
+        yPosition += 20;
+      }
+
+      // Contract Status Box
+      const isSigned = contract.developer_signed_at && contract.client_signed_at;
+      
+      // PROJECT BRIEF SECTION
+      // Set fill color
+      pdf.setFillColor(34, 111, 117); // #226F75
+      pdf.rect(margin, yPosition, contentWidth, 6, 'F'); // Header bar
+      
+      // Title
+      pdf.setFontSize(11);
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(255, 255, 255); // White text
+      pdf.text('PROJECT BRIEF', margin + 5, yPosition + 4);
+      yPosition += 10;
+      
+      // Project details box
+      pdf.setFillColor(245, 245, 245); // Light gray background
+      pdf.rect(margin, yPosition, contentWidth, 70, 'F');
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.5);
+      pdf.rect(margin, yPosition, contentWidth, 70);
+      
+      pdf.setFont(undefined, 'normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(51, 51, 51);
+      
+      let detailY = yPosition + 5;
+      
+      // Project Name
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Project Name:', margin + 5, detailY);
+      pdf.setFont(undefined, 'normal');
+      pdf.text(contract.title || 'N/A', margin + 55, detailY);
+      detailY += 7;
+      
+      // Location (from contract data)
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Location:', margin + 5, detailY);
+      pdf.setFont(undefined, 'normal');
+      pdf.text(contract.location || 'N/A', margin + 55, detailY);
+      detailY += 7;
+      
+      // Budget Range
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Budget Range:', margin + 5, detailY);
+      pdf.setFont(undefined, 'normal');
+      const minBudget = contract.budget_min || 'TBD';
+      const maxBudget = contract.budget_max || 'TBD';
+      pdf.text(`${minBudget} - ${maxBudget}`, margin + 55, detailY);
+      detailY += 7;
+      
+      // Duration
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Duration:', margin + 5, detailY);
+      pdf.setFont(undefined, 'normal');
+      const durationText = contract.duration ? `${contract.duration} months` : 'TBD';
+      pdf.text(durationText, margin + 55, detailY);
+      detailY += 7;
+      
+      // Description (truncated)
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Description:', margin + 5, detailY);
+      detailY += 5;
+      pdf.setFont(undefined, 'normal');
+      const descLines = pdf.splitTextToSize(contract.project || 'No description provided', contentWidth - 10);
+      const truncatedDesc = descLines.slice(0, 3).join(' ');
+      pdf.text(truncatedDesc, margin + 5, detailY, { maxWidth: contentWidth - 10 });
+      detailY += 10;
+      
+      // Signing Status removed as per request
+      
+      yPosition += 80;
+
+      // Add footer
+      pdf.setFontSize(8);
+      pdf.setTextColor(153, 153, 153); // #999
+      const footerText1 = 'Generated by BuildTrust Africa Platform';
+      const footerWidth1 = pdf.getTextWidth(footerText1);
+      pdf.text(footerText1, pageWidth / 2 - footerWidth1 / 2, pageHeight - 15);
+      
+      const footerText2 = 'Copyright © 2026 BuildTrust Africa. All rights reserved.';
+      const footerWidth2 = pdf.getTextWidth(footerText2);
+      pdf.text(footerText2, pageWidth / 2 - footerWidth2 / 2, pageHeight - 10);
+
+      // Save PDF
+      const filename = `Contract_${contract.title.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+      pdf.save(filename);
+
+      console.log('✅ Contract PDF generated and downloaded successfully');
+
+    } catch (error) {
+      console.error('❌ Error generating contract PDF:', error);
+      alert('Failed to download contract. Please try again.');
+    }
+  };
+
   useEffect(() => {
     const fetchContracts = async () => {
       try {
         setLoading(true);
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const mapped = MOCK_CONTRACTS.map((p: any) => ({
-          id: p.contract_id || p.id,
+        const response = await apiClient.getClientContracts();
+        const rawContracts = response?.contracts ?? response?.data ?? response ?? [];
+
+        const mapped = (Array.isArray(rawContracts) ? rawContracts : []).map((p: any) => ({
+          id: p.id,
           title:
-            p.contract_title ||
+            p.project_title ||
             p.title ||
+            p.contract_title ||
             `Contract for ${p.title || "Project"}`,
-          developer: p.developer_name || p.developer || "",
+          developer: p.developer_name || p.developer || "Assigned Developer",
+          client: p.client_name || p.client || "Client",
           project: p.project_title || p.title || "",
-          value:
-            p.agreed_amount || p.value || p.budget || "—",
-          status:
-            p.contract_status ||
-            p.status ||
-            (p.contract_id ? "Active" : "Draft"),
-          start_date: p.start_date || null,
-          end_date: p.contract_deadline || p.deadline || p.end_date || null,
-          signed: p.contract_signed_at || p.signed_at || p.created_at || "",
-          deadline: p.contract_deadline || p.deadline || "",
+          value: p.budget ? `$${Number(p.budget).toLocaleString()}` : "—",
+          budget_min: p.budget_min ? `$${Number(p.budget_min).toLocaleString()}` : null,
+          budget_max: p.budget_max ? `$${Number(p.budget_max).toLocaleString()}` : null,
+          location: p.project_location || 'N/A',
+          status: p.status || p.contract_status || "Active",
+          start_date: p.start_date || p.created_at || null,
+          duration: p.duration || null,
+          signed: p.client_signed_at || p.created_at || "",
           file: p.contract_file || p.file || null,
-        }));
+          developer_signature_url: p.developer_signature_url,
+          client_signature_url: p.client_signature_url,
+          developer_signed_at: p.developer_signed_at,
+          client_signed_at: p.client_signed_at,
+        }))
+        .filter((contract) => {
+          const status = String(contract.status || "").toLowerCase();
+          return status === "active";
+        });
 
         setContracts(mapped);
+
+        // Fetch contract template
+        try {
+          console.log('📄 Fetching contract template...');
+          const templateResponse = await apiClient.getContractTemplate();
+          console.log('📄 Contract template response:', templateResponse);
+          
+          let contractTerms = null;
+          
+          if (templateResponse?.template?.contract_terms) {
+            contractTerms = templateResponse.template.contract_terms;
+            console.log('✅ Contract template loaded (nested structure)');
+          } else if (templateResponse?.contract_terms) {
+            contractTerms = templateResponse.contract_terms;
+            console.log('✅ Contract template loaded (direct structure)');
+          } else if (templateResponse?.data?.contract_terms) {
+            contractTerms = templateResponse.data.contract_terms;
+            console.log('✅ Contract template loaded (data structure)');
+          }
+          
+          if (contractTerms) {
+            setContractTemplate(contractTerms);
+          } else {
+            console.warn('⚠️ Contract template not found in response:', {
+              hasNestedTemplate: !!templateResponse?.template?.contract_terms,
+              hasDirectTerms: !!templateResponse?.contract_terms,
+              hasDataTerms: !!templateResponse?.data?.contract_terms,
+              responseKeys: Object.keys(templateResponse || {})
+            });
+            setContractTemplate('Contract template not available');
+          }
+        } catch (err) {
+          console.error('❌ Failed to fetch contract template:', {
+            error: err,
+            message: (err as any)?.message,
+            status: (err as any)?.status
+          });
+          setContractTemplate('Failed to load contract template');
+        }
       } catch (err: any) {
         console.error("Error fetching contracts:", err);
         setError(err.message || "Failed to load contracts");
@@ -241,7 +590,7 @@ const Contracts = () => {
             </div>
           ) : contracts.length === 0 ? (
             <div className="text-center py-12 text-gray-600">
-              No contracts found.
+              No active contracts found.
             </div>
           ) : (
             <div className="grid gap-6">
@@ -260,12 +609,14 @@ const Contracts = () => {
                           </h3>
                           <Badge
                             variant={
-                              contract.status === "Active"
+                              String(contract.status).toLowerCase() === "active"
                                 ? "default"
                                 : "secondary"
                             }
                             className={
-                              contract.status === "Active" ? "bg-green-600" : ""
+                              String(contract.status).toLowerCase() === "active"
+                                ? "bg-green-600"
+                                : ""
                             }
                           >
                             {contract.status}
@@ -289,8 +640,8 @@ const Contracts = () => {
                               {formatDateOrPending(contract.start_date)}
                             </p>
                             <p>
-                              <strong>End Date:</strong>{" "}
-                              {formatDateOrPending(contract.end_date)}
+                              <strong>Duration:</strong>{" "}
+                              {contract.duration ? `${contract.duration} months` : "Pending"}
                             </p>
                           </div>
                         </div>
@@ -299,28 +650,27 @@ const Contracts = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => navigate(`/contracts/${contract.id}`)}
+                          onClick={() => {
+                            setSelectedContract(contract);
+                            setIsContractModalOpen(true);
+                          }}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           View
                         </Button>
-                        {contract.file ? (
-                          <a
-                            href={
-                              resolveMediaUrl(contract.file) || contract.file
-                            }
-                            target="_blank"
-                            rel="noreferrer"
+                        {contract.developer_signature_url && contract.client_signature_url && contract.developer_signed_at && contract.client_signed_at ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => generateContractPDF(contract)}
                           >
-                            <Button size="sm" variant="outline">
-                              <Download className="h-4 w-4 mr-2" />
-                              Download
-                            </Button>
-                          </a>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download PDF
+                          </Button>
                         ) : (
                           <Button size="sm" variant="outline" disabled>
                             <Download className="h-4 w-4 mr-2" />
-                            No File
+                            Signatures Incomplete
                           </Button>
                         )}
                       </div>
@@ -332,6 +682,156 @@ const Contracts = () => {
           )}
         </div>
       </div>
+
+      {/* Contract Details Modal */}
+      <Dialog open={isContractModalOpen} onOpenChange={setIsContractModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <FileText className="h-5 w-5 text-[#226F75]" />
+              <span>{selectedContract?.title || 'Contract Details'}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Contract details and project information
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedContract && (
+            <div className="space-y-6">
+              {/* Project Information */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 text-[#226F75]">Project Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600"><strong>Project Name:</strong></p>
+                    <p>{selectedContract.title || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600"><strong>Location:</strong></p>
+                    <p>{selectedContract.location || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600"><strong>Budget Range:</strong></p>
+                    <p>{selectedContract.budget_min && selectedContract.budget_max 
+                      ? `${selectedContract.budget_min} - ${selectedContract.budget_max}` 
+                      : 'TBD'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600"><strong>Duration:</strong></p>
+                    <p>{selectedContract.duration ? `${selectedContract.duration} months` : 'TBD'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600"><strong>Start Date:</strong></p>
+                    <p>{formatDateOrPending(selectedContract.start_date)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600"><strong>Status:</strong></p>
+                    <Badge variant={selectedContract.status?.toLowerCase() === 'active' ? 'default' : 'secondary'}>
+                      {selectedContract.status || 'Active'}
+                    </Badge>
+                  </div>
+                </div>
+                {selectedContract.project && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600"><strong>Description:</strong></p>
+                    <p className="text-sm">{selectedContract.project}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Contract Parties */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 text-[#226F75]">Contract Parties</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600"><strong>Client:</strong></p>
+                    <p>{selectedContract.client || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600"><strong>Developer:</strong></p>
+                    <p>{selectedContract.developer || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Signature Status */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 text-[#226F75]">Signature Status</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600"><strong>Client Signature:</strong></p>
+                    <Badge variant={selectedContract.client_signed_at ? 'default' : 'secondary'}>
+                      {selectedContract.client_signed_at ? 'Signed' : 'Pending'}
+                    </Badge>
+                    {selectedContract.client_signed_at && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Signed on {new Date(selectedContract.client_signed_at).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600"><strong>Developer Signature:</strong></p>
+                    <Badge variant={selectedContract.developer_signed_at ? 'default' : 'secondary'}>
+                      {selectedContract.developer_signed_at ? 'Signed' : 'Pending'}
+                    </Badge>
+                    {selectedContract.developer_signed_at && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Signed on {new Date(selectedContract.developer_signed_at).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Contract Terms */}
+              {contractTemplate && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3 text-[#226F75]">Contract Terms</h3>
+                  <div className="max-h-96 overflow-y-auto bg-white p-4 rounded border text-sm whitespace-pre-wrap">
+                    {contractTemplate === 'No contract template available' || 
+                     contractTemplate === 'Failed to load contract template' ? 
+                      contractTemplate : 
+                      contractTemplate}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => setIsContractModalOpen(false)}>
+                  Close
+                </Button>
+                {selectedContract.developer_signature_url && 
+                 selectedContract.client_signature_url && 
+                 selectedContract.developer_signed_at && 
+                 selectedContract.client_signed_at && (
+                  <Button 
+                    onClick={() => {
+                      generateContractPDF(selectedContract);
+                      setIsContractModalOpen(false);
+                    }}
+                    className="bg-[#226F75] hover:bg-[#226F75]/90"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {signOutModal && (
         <SignoutModal
           isOpen={signOutModal}

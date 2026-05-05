@@ -39,12 +39,21 @@ const API_BASE = (
 ).replace(/\/+$/, "");
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
-// Resolve media URL: handle absolute URLs, relative '/uploads/..', 'uploads/..', or media.filename
+// Resolve media URL: handle absolute URLs, relative '/uploads/..', 'uploads/..', string paths, or media.filename
 const resolveMediaUrl = (media: any) => {
   if (!media) return null;
-  let url = media.url ?? media.filename ?? null;
+
+  let url: string | null = null;
+
+  if (typeof media === "string") {
+    url = media;
+  } else if (typeof media === "object") {
+    url = media.url ?? media.filename ?? null;
+  }
+
   if (!url) return null;
   url = String(url);
+
   if (url.startsWith("http")) return url;
   // ensure leading slash
   if (!url.startsWith("/")) url = `/${url}`;
@@ -445,9 +454,18 @@ const ClientDashboard = () => {
           <div className="flex flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4 w-[70%] md:w-full">
               <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 ring-2 ring-[#226F75]/20">
-                <AvatarImage src="https://placehold.net/avatar-4.svg" />
+                <AvatarImage
+                  src={resolveMediaUrl(user?.profile_image) || "https://placehold.net/avatar-4.svg"}
+                  alt={user?.name || "Client Avatar"}
+                />
                 <AvatarFallback className="bg-gradient-to-br from-[#226F75] to-[#253E44] text-white">
-                  DN
+                  {user?.name
+                    ? user.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                    : "DN"}
                 </AvatarFallback>
               </Avatar>
               <div className=" w-[70%]">

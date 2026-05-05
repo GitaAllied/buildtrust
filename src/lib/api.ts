@@ -655,7 +655,7 @@ class ApiClient {
   }
 
   async getClientContracts() {
-    return this.request('/contracts', {
+    return this.request('/projects/contracts', {
       method: 'GET',
     });
   }
