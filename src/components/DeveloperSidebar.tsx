@@ -5,7 +5,6 @@ import Logo from "../assets/Logo.png";
 import {
   FaBriefcase,
   FaDoorOpen,
-  FaDownload,
   FaGear,
   FaMessage,
   FaMoneyBill,
@@ -40,8 +39,7 @@ const DeveloperSidebar = ({ active }) => {
       icon: <FaUser />,
       active: true,
     },
-    { id: "requests", label: "Project Requests", icon: <FaDownload /> },
-    { id: "projects", label: "Active Projects", icon: <FaBriefcase /> },
+    { id: "projects", label: "Projects", icon: <FaBriefcase /> },
     { id: "upload", label: "Upload Update", icon: <FaUpload /> },
     { id: "messages", label: "Messages", icon: <FaMessage /> },
     { id: "payments", label: "Payments", icon: <FaMoneyBill /> },
@@ -54,9 +52,6 @@ const DeveloperSidebar = ({ active }) => {
       case "dashboard":
         setActiveTab(itemId);
         navigate("/developer-dashboard");
-        break;
-      case "requests":
-        navigate("/project-requests");
         break;
       case "projects":
         navigate("/active-projects");

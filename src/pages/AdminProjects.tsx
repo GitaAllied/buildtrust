@@ -278,15 +278,6 @@ const AdminProjects = () => {
       };
     }
 
-    // if (project.contract_id && project.developer_signed_at && project.client_signed_at) {
-    //   return {
-    //     status: "fully_signed",
-    //     label: "✅ Fully Signed",
-    //     color: "success",
-    //     tooltip: "Contract fully signed by both parties"
-    //   };
-    // }
-
     return null;
   };
 
@@ -295,16 +286,6 @@ const AdminProjects = () => {
     if (!project.developer_id) {
       return null;
     }
-
-    // If acceptance_status is null/undefined - developer was selected but not officially assigned yet
-    // if (!project.acceptance_status) {
-    //   return {
-    //     status: "selected_by_client",
-    //     label: "👤 Selected by Client",
-    //     color: "info",
-    //     tooltip: "Client selected this developer. Admin needs to assign to start 72-hour window"
-    //   };
-    // }
 
     // If acceptance_status is pending - show pending badge
     if (project.acceptance_status === 'pending') {
@@ -354,16 +335,6 @@ const AdminProjects = () => {
         tooltip: "Developer signed - waiting for client to sign contract"
       };
     }
-
-    // If both have signed - show fully signed
-    // if (project.client_signed_at) {
-    //   return {
-    //     status: "client_signed",
-    //     label: "✅ Client Signed",
-    //     color: "success",
-    //     tooltip: "Contract fully signed by both parties"
-    //   };
-    // }
 
     return null;
   };
@@ -469,29 +440,6 @@ const AdminProjects = () => {
                   Manage all projects and assignments
                 </p>
               </div>
-            </div>
-            <div className="flex gap-2 flex-wrap justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/admin/users")}
-              >
-                Users
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/admin/contracts")}
-              >
-                Contracts
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/admin/developers")}
-              >
-                Developers
-              </Button>
             </div>
           </div>
         </div>

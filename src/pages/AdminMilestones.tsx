@@ -11,6 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
@@ -42,6 +50,43 @@ const AdminMilestones = () => {
   // Determine if we're on a specific project page or the general milestones page
   const isProjectSpecific = !!id;
 
+  const mockProjects = [
+    {
+      id: 1,
+      title: "Residential Complex Phase 1",
+      client: "Acme Builders",
+      developer: "Alice Carter",
+    },
+    {
+      id: 2,
+      title: "Commercial Building",
+      client: "Nova Holdings",
+      developer: "Marcus Reed",
+    },
+    {
+      id: 3,
+      title: "Luxury Villa Estate",
+      client: "Serene Living LLC",
+      developer: "Priya Shah",
+    },
+    {
+      id: 4,
+      title: "Industrial Warehouse",
+      client: "Forge Logistics",
+      developer: "Nina Brooks",
+    },
+    {
+      id: 5,
+      title: "Shopping Mall",
+      client: "Blue Horizon Retail",
+      developer: "Luis Gonzalez",
+    },
+  ];
+
+  const [selectedProjectId, setSelectedProjectId] = useState<number>(
+    isProjectSpecific ? parseInt(id || "0") : mockProjects[0]?.id || 0
+  );
+
   // Format currency with proper locale and decimal places
   const formatCurrency = (amount: number | string) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -55,6 +100,12 @@ const AdminMilestones = () => {
 
   const [project, setProject] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const selectedProject =
+    isProjectSpecific && project
+      ? project
+      : mockProjects.find((project) => project.id === selectedProjectId) ||
+        mockProjects[0];
 
   // Generate mock milestones data based on current project or all projects
   const getMockMilestones = () => {
@@ -303,6 +354,7 @@ const AdminMilestones = () => {
   const handleOpenMilestoneModal = (milestone?: any) => {
     if (milestone) {
       setEditingMilestone(milestone);
+      setSelectedProjectId(milestone.project_id || selectedProjectId);
       setMilestoneForm({
         title: milestone.title || "",
         description: milestone.description || "",
@@ -313,6 +365,9 @@ const AdminMilestones = () => {
     } else {
       setEditingMilestone(null);
       setMilestoneForm({ title: "", description: "", due_date: "", amount: "", status: "pending" });
+      if (!isProjectSpecific && mockProjects[0]) {
+        setSelectedProjectId(mockProjects[0].id);
+      }
     }
     setShowMilestoneModal(true);
   };
@@ -328,6 +383,7 @@ const AdminMilestones = () => {
     if (!milestoneForm.title.trim()) errors.push("Title is required.");
     if (!milestoneForm.amount || Number(milestoneForm.amount) <= 0) errors.push("Amount must be greater than 0.");
     if (!milestoneForm.due_date) errors.push("Due date is required.");
+    if (!isProjectSpecific && !selectedProjectId) errors.push("Please select a project.");
 
     if (errors.length > 0) {
       toast({
@@ -338,9 +394,16 @@ const AdminMilestones = () => {
       return;
     }
 
+    const projectInfo =
+      isProjectSpecific && project
+        ? project
+        : mockProjects.find((item) => item.id === selectedProjectId) ||
+          mockProjects[0];
+
     const payload = {
       id: editingMilestone ? editingMilestone.id : Date.now(),
-      project_id: project?.id || 0,
+      project_id: projectInfo?.id || 0,
+      project_title: projectInfo?.title || "Unknown project",
       title: milestoneForm.title.trim(),
       description: milestoneForm.description.trim(),
       due_date: milestoneForm.due_date,
@@ -354,7 +417,10 @@ const AdminMilestones = () => {
       toast({ title: "Success", description: "Construction milestone updated successfully." });
     } else {
       setMilestones((prev) => [payload, ...prev]);
-      toast({ title: "Success", description: "Construction milestone added successfully." });
+      toast({
+        title: "Success",
+        description: "Construction milestone added successfully. Developer and client notifications have been queued (mock).",
+      });
     }
 
     handleCloseMilestoneModal();
@@ -517,96 +583,133 @@ const AdminMilestones = () => {
       </div>
 
       {/* Milestone Modal */}
-      {showMilestoneModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">
-                {editingMilestone ? "Edit Construction Milestone" : "Add Construction Milestone"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="milestoneTitle">Title</Label>
-                  <Input
-                    id="milestoneTitle"
-                    value={milestoneForm.title}
-                    onChange={(e) => setMilestoneForm({ ...milestoneForm, title: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="milestoneAmount">Amount</Label>
-                  <Input
-                    id="milestoneAmount"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={milestoneForm.amount}
-                    onChange={(e) => setMilestoneForm({ ...milestoneForm, amount: e.target.value })}
-                  />
-                </div>
+      <Dialog open={showMilestoneModal} onOpenChange={setShowMilestoneModal}>
+        <DialogContent className="sm:max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>
+              {editingMilestone ? "Edit Project Milestone" : "Add Project Milestone"}
+            </DialogTitle>
+            <DialogDescription>
+              Create a milestone and notify the assigned developer and client with mock alerts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-4">
+            {!isProjectSpecific && (
+              <div className="space-y-2">
+                <Label htmlFor="projectSelect">Project</Label>
+                <Select
+                  value={selectedProjectId.toString()}
+                  onValueChange={(value) => setSelectedProjectId(Number(value))}
+                >
+                  <SelectTrigger id="projectSelect">
+                    <SelectValue placeholder="Select a project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockProjects.map((projectOption) => (
+                      <SelectItem key={projectOption.id} value={projectOption.id.toString()}>
+                        {projectOption.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-slate-500">
+                  Select which project receives this milestone. Notifications are mocked for both client and developer.
+                </p>
               </div>
-              <div>
-                <Label htmlFor="milestoneDescription">Description</Label>
-                <Textarea
-                  id="milestoneDescription"
-                  value={milestoneForm.description}
-                  onChange={(e) => setMilestoneForm({ ...milestoneForm, description: e.target.value })}
-                  className="min-h-[120px]"
+            )}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="milestoneTitle">Milestone Title</Label>
+                <Input
+                  id="milestoneTitle"
+                  placeholder="e.g. Foundation Work"
+                  value={milestoneForm.title}
+                  onChange={(e) => setMilestoneForm({ ...milestoneForm, title: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="milestoneDueDate">Due Date</Label>
-                  <Input
-                    id="milestoneDueDate"
-                    type="date"
-                    value={milestoneForm.due_date}
-                    onChange={(e) => setMilestoneForm({ ...milestoneForm, due_date: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="milestoneStatus">Status</Label>
-                  <Select value={milestoneForm.status} onValueChange={(value) => setMilestoneForm({ ...milestoneForm, status: value })}>
-                    <SelectTrigger id="milestoneStatus">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="at_risk">At Risk</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="milestoneAmount">Amount</Label>
+                <Input
+                  id="milestoneAmount"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="0.00"
+                  value={milestoneForm.amount}
+                  onChange={(e) => setMilestoneForm({ ...milestoneForm, amount: e.target.value })}
+                />
               </div>
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={handleCloseMilestoneModal}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 bg-[#226F75] hover:bg-[#226F75]/90"
-                  onClick={handleSaveMilestone}
-                >
-                  Save Construction Milestone
-                </Button>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="milestoneDescription">Description</Label>
+              <Textarea
+                id="milestoneDescription"
+                placeholder="Describe the milestone and expectations"
+                value={milestoneForm.description}
+                onChange={(e) => setMilestoneForm({ ...milestoneForm, description: e.target.value })}
+                className="min-h-[140px]"
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="milestoneDueDate">Due Date</Label>
+                <Input
+                  id="milestoneDueDate"
+                  type="date"
+                  value={milestoneForm.due_date}
+                  onChange={(e) => setMilestoneForm({ ...milestoneForm, due_date: e.target.value })}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              <div className="space-y-2">
+                <Label htmlFor="milestoneStatus">Status</Label>
+                <Select
+                  value={milestoneForm.status}
+                  onValueChange={(value) => setMilestoneForm({ ...milestoneForm, status: value })}
+                >
+                  <SelectTrigger id="milestoneStatus">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="at_risk">At Risk</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <p className="font-medium text-slate-900">Notification Preview</p>
+              <p>
+                When this milestone is saved, the assigned developer and client will receive a mock notification that a new milestone has been added.
+              </p>
+              {selectedProject && (
+                <p className="mt-2 text-slate-500">
+                  Project: <span className="font-semibold text-slate-700">{selectedProject.title}</span>
+                  {selectedProject.client && ` • Client: ${selectedProject.client}`}
+                  {selectedProject.developer && ` • Developer: ${selectedProject.developer}`}
+                </p>
+              )}
+            </div>
 
+            <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={handleCloseMilestoneModal} className="w-full sm:w-auto">
+                Cancel
+              </Button>
+              <Button
+                className="w-full sm:w-auto bg-[#226F75] hover:bg-[#226F75]/90"
+                onClick={handleSaveMilestone}
+              >
+                {editingMilestone ? "Update Milestone" : "Save Milestone"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      </div>
     </div>
-
-    {/* Sidebar */}
-    <AdminSidebar active={"milestones"} />
-  </div>
-);
+  );
 };
 
 export default AdminMilestones;

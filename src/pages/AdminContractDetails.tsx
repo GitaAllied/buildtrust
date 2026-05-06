@@ -201,10 +201,24 @@ const AdminContractDetails = () => {
     );
   }
 
-  const budgetDisplay = `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(project.budget_min || 0))} - $${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(project.budget_max || 0))}`;
+  const formatCurrency = (value?: number | null) => {
+    if (value === undefined || value === null) return "N/A";
+    return `$${new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value)}`;
+  };
+
+  const budgetDisplay =
+    project.budget_min == null && project.budget_max == null
+      ? "N/A"
+      : `${formatCurrency(project.budget_min)} - ${formatCurrency(project.budget_max)}`;
+
+  const contractAmountDisplay =
+    project.budget == null ? "N/A" : formatCurrency(project.budget);
 
   const bothSigned = contract.developer_signature_url && contract.client_signature_url;
-  const needsResign = contract.needs_resign;
+  const needsResign = !!contract.needs_resign;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -267,7 +281,7 @@ const AdminContractDetails = () => {
 
               <Card className="p-4">
                 <p className="text-xs font-bold uppercase text-gray-500 mb-2">Contract Amount</p>
-                <p className="text-lg font-bold">${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(project.budget || 0))}</p>
+                <p className="text-lg font-bold">{contractAmountDisplay}</p>
               </Card>
 
               <Card className="p-4">
