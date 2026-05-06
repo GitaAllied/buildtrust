@@ -502,6 +502,7 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
                     />
                     <div className="max-h-64 overflow-y-auto space-y-1">
                       <button
+                        type="button"
                         onClick={() => {
                           handleInputChange("buildingType", "");
                           setBuildingTypePopoverOpen(false);
@@ -519,6 +520,7 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
                         type.toLowerCase().includes(buildingTypeSearch.toLowerCase())
                       ).map((type) => (
                         <button
+                          type="button"
                           key={type}
                           onClick={() => {
                             handleInputChange("buildingType", type);
@@ -538,6 +540,7 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
                         type.toLowerCase() === buildingTypeSearch.toLowerCase()
                       ) && (
                         <button
+                          type="button"
                           onClick={() => {
                             handleInputChange("buildingType", buildingTypeSearch);
                             setBuildingTypePopoverOpen(false);
@@ -622,6 +625,7 @@ const ProjectRequestModal = ({ isOpen, onClose, developerName, developerId }: Pr
             <Label htmlFor="sitePlan">Upload Site Plan or Notes (Optional)</Label>
             <Input
               id="sitePlan"
+              name="sitePlan"
               type="file"
               onChange={(e) => {
                 handleFileChange(e);
