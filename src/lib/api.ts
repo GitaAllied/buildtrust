@@ -29,8 +29,9 @@ export interface User {
 
 export interface AuthResponse {
   message?: string;
-  token: string;
-  user: User;
+  token?: string;
+  user?: User;
+  twoFactorRequired?: boolean;
 }
 
 export interface ApiError {
@@ -167,6 +168,33 @@ class ApiClient {
     }
 
     return res;
+  }
+
+  async verifyTwoFactorCode(data: { email: string; code: string }): Promise<AuthResponse> {
+    const res = await this.request<AuthResponse>('/auth/2fa/verify', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    if (res.token) {
+      localStorage.setItem('auth_token', res.token);
+    }
+
+    return res;
+  }
+
+  async resendTwoFactorCode(data: { email: string }): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/auth/2fa/resend', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async setTwoFactorStatus(enabled: boolean): Promise<{ message: string; two_factor_enabled: boolean }> {
+    return this.request('/auth/2fa', {
+      method: 'POST',
+      body: JSON.stringify({ enabled }),
+    });
   }
 
   async updateProfile(data: Record<string, unknown>) {

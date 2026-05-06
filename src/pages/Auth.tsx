@@ -72,6 +72,10 @@ export default function Auth() {
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [twoFactorPending, setTwoFactorPending] = useState(false);
+  const [twoFactorEmail, setTwoFactorEmail] = useState("");
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [twoFactorError, setTwoFactorError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, refreshUser } = useAuth();
@@ -120,12 +124,28 @@ export default function Auth() {
   const handleSignIn = async (data: SignInFormData) => {
     setSignInLoading(true);
     setSignInError(null);
+    setTwoFactorError(null);
 
     try {
       const response = await (apiClient as any).login({
         email: data.email,
         password: data.password,
       });
+
+      if (response.twoFactorRequired) {
+        setTwoFactorPending(true);
+        setTwoFactorEmail(data.email);
+        setTwoFactorCode("");
+        toast({
+          title: 'Two-factor code sent',
+          description: 'Check your email for the one-time code to complete sign in.',
+        });
+        return;
+      }
+
+      if (!response.token) {
+        throw new Error('Unable to sign in. Please try again.');
+      }
 
       localStorage.setItem("auth_token", response.token);
       await refreshUser();
@@ -201,6 +221,75 @@ export default function Auth() {
       } else {
         setSignInError(errorMessage);
       }
+    } finally {
+      setSignInLoading(false);
+    }
+  };
+
+  const handleVerifyTwoFactor = async () => {
+    if (!twoFactorEmail || !twoFactorCode.trim()) {
+      setTwoFactorError('Please enter the code sent to your email.');
+      return;
+    }
+
+    setSignInLoading(true);
+    setTwoFactorError(null);
+
+    try {
+      const response = await apiClient.verifyTwoFactorCode({
+        email: twoFactorEmail,
+        code: twoFactorCode.trim(),
+      });
+
+      if (!response.token) {
+        throw new Error('Verification failed. Please try again.');
+      }
+
+      localStorage.setItem('auth_token', response.token);
+      await refreshUser();
+      dispatch(openSignoutModal(false));
+
+      toast({
+        title: 'Signed in',
+        description: 'Two-factor authentication verified successfully.',
+      });
+
+      const userFromResponse = response.user;
+      const setupCompleted = !!userFromResponse?.setup_completed;
+      const userRole = userFromResponse?.role || 'client';
+
+      if (userFromResponse && (userFromResponse.role === 'admin' || userFromResponse.role === 'sub_admin')) {
+        navigate('/super-admin-dashboard');
+        return;
+      }
+
+      if (setupCompleted) {
+        const dashboard = userRole === 'developer' ? '/developer-dashboard' : '/client-dashboard';
+        navigate(dashboard);
+      } else {
+        const setupPage = userRole === 'developer' ? '/developer-setup' : '/client-setup';
+        navigate(setupPage);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to verify code. Please try again.';
+      setTwoFactorError(errorMessage);
+    } finally {
+      setSignInLoading(false);
+    }
+  };
+
+  const handleResendTwoFactor = async () => {
+    if (!twoFactorEmail) return;
+    setSignInLoading(true);
+    try {
+      await apiClient.resendTwoFactorCode({ email: twoFactorEmail });
+      toast({
+        title: 'Code resent',
+        description: 'A fresh two-factor code was sent to your email.',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unable to resend the code.';
+      setTwoFactorError(errorMessage);
     } finally {
       setSignInLoading(false);
     }
@@ -416,118 +505,198 @@ export default function Auth() {
               </TabsList>
 
               <TabsContent value="signin" className="">
-                <form
-                  onSubmit={signInForm.handleSubmit(onSignInSubmit)}
-                  className=" space-y-3"
-                >
-                  {signInError && (
-                    <Alert
-                      variant="destructive"
-                      className="border-red-200 bg-red-50 dark:bg-red-950/50"
-                    >
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription className="font-medium">
-                        {signInError}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="">
-                    <Label
-                      htmlFor="signin-email"
-                      className="text-xs font-semibold"
-                    >
-                      Email Address
-                    </Label>
-                    <div className="relative border border-[#253E44]/50 rounded-md">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signin-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        className="pl-10 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
-                        {...signInForm.register("email")}
-                        disabled={signInLoading}
-                      />
-                    </div>
-                    {signInForm.formState.errors.email && (
-                      <p className="text-sm text-destructive font-medium flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {signInForm.formState.errors.email.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="">
-                    <Label
-                      htmlFor="signin-password"
-                      className="text-xs font-semibold"
-                    >
-                      Password
-                    </Label>
-                    <div className="relative border border-[#253E44]/50 rounded-md">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-                      <Input
-                        id="signin-password"
-                        type={showSignInPassword ? "text" : "password"}
-                        placeholder="Enter your password"
-                        className="pl-10 pr-10 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
-                        {...signInForm.register("password")}
-                        disabled={signInLoading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowSignInPassword(!showSignInPassword)
-                        }
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-                        disabled={signInLoading}
-                        aria-label={
-                          showSignInPassword ? "Hide password" : "Show password"
-                        }
+                {twoFactorPending ? (
+                  <div className="space-y-4">
+                    {twoFactorError && (
+                      <Alert
+                        variant="destructive"
+                        className="border-red-200 bg-red-50 dark:bg-red-950/50"
                       >
-                        {showSignInPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                    {signInForm.formState.errors.password && (
-                      <p className="text-sm text-destructive font-medium flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {signInForm.formState.errors.password.message}
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="font-medium">
+                          {twoFactorError}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="rounded-xl border border-[#253E44]/20 bg-white p-4 shadow-sm">
+                      <p className="text-sm text-gray-600">
+                        Enter the 6-digit code we sent to <strong>{twoFactorEmail}</strong>.
                       </p>
-                    )}
-                  </div>
+                      <div className="mt-4">
+                        <Label htmlFor="twoFactorCode" className="text-xs font-semibold">
+                          Authentication Code
+                        </Label>
+                        <Input
+                          id="twoFactorCode"
+                          type="text"
+                          value={twoFactorCode}
+                          onChange={(e) => setTwoFactorCode(e.target.value)}
+                          placeholder="123456"
+                          maxLength={6}
+                          className="h-10 text-sm"
+                          disabled={signInLoading}
+                        />
+                      </div>
+                    </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full h-10 bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
-                    disabled={signInLoading}
+                    <div className="flex flex-col gap-3">
+                      <Button
+                        type="button"
+                        onClick={handleVerifyTwoFactor}
+                        className="w-full h-10 bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+                        disabled={signInLoading}
+                      >
+                        {signInLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Verifying...
+                          </>
+                        ) : (
+                          <>
+                            <LogIn className="mr-2 h-5 w-5" />
+                            Verify Code
+                          </>
+                        )}
+                      </Button>
+
+                      <div className="flex flex-col gap-2 text-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleResendTwoFactor}
+                          disabled={signInLoading}
+                        >
+                          Resend Code
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            setTwoFactorPending(false);
+                            setTwoFactorCode("");
+                            setSignInError(null);
+                          }}
+                        >
+                          Back to sign in
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={signInForm.handleSubmit(onSignInSubmit)}
+                    className=" space-y-3"
                   >
-                    {signInLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Signing in...
-                      </>
-                    ) : (
-                      <>
-                        <LogIn className="mr-2 h-5 w-5" />
-                        Sign In
-                      </>
+                    {signInError && (
+                      <Alert
+                        variant="destructive"
+                        className="border-red-200 bg-red-50 dark:bg-red-950/50"
+                      >
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="font-medium">
+                          {signInError}
+                        </AlertDescription>
+                      </Alert>
                     )}
-                  </Button>
 
-                  <div className="text-center">
-                    <Link
-                      to="/forgot-password"
-                      className="text-sm text-[#253E44] font-medium underline"
+                    <div className="">
+                      <Label
+                        htmlFor="signin-email"
+                        className="text-xs font-semibold"
+                      >
+                        Email Address
+                      </Label>
+                      <div className="relative border border-[#253E44]/50 rounded-md">
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signin-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          className="pl-10 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                          {...signInForm.register("email")}
+                          disabled={signInLoading}
+                        />
+                      </div>
+                      {signInForm.formState.errors.email && (
+                        <p className="text-sm text-destructive font-medium flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {signInForm.formState.errors.email.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="">
+                      <Label
+                        htmlFor="signin-password"
+                        className="text-xs font-semibold"
+                      >
+                        Password
+                      </Label>
+                      <div className="relative border border-[#253E44]/50 rounded-md">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                        <Input
+                          id="signin-password"
+                          type={showSignInPassword ? "text" : "password"}
+                          placeholder="Enter your password"
+                          className="pl-10 pr-10 h-10 border-1 text-sm focus:ring-[#226F75]/20 transition-all"
+                          {...signInForm.register("password")}
+                          disabled={signInLoading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowSignInPassword(!showSignInPassword)
+                          }
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+                          disabled={signInLoading}
+                          aria-label={
+                            showSignInPassword ? "Hide password" : "Show password"
+                          }
+                        >
+                          {showSignInPassword ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+                      {signInForm.formState.errors.password && (
+                        <p className="text-sm text-destructive font-medium flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {signInForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full h-10 bg-gradient-to-r from-[#226F75] to-[#253E44] hover:opacity-90 text-white text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+                      disabled={signInLoading}
                     >
-                      Forgot Password?
-                    </Link>
-                  </div>
-                </form>
+                      {signInLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Signing in...
+                        </>
+                      ) : (
+                        <>
+                          <LogIn className="mr-2 h-5 w-5" />
+                          Sign In
+                        </>
+                      )}
+                    </Button>
+
+                    <div className="text-center">
+                      <Link
+                        to="/forgot-password"
+                        className="text-sm text-[#253E44] font-medium underline"
+                      >
+                        Forgot Password?
+                      </Link>
+                    </div>
+                  </form>
+                )}
               </TabsContent>
 
               <TabsContent value="signup" className="">

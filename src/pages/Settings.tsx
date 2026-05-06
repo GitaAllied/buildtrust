@@ -93,6 +93,9 @@ const Settings = () => {
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationSaving, setNotificationSaving] = useState(false);
 
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorLoading, setTwoFactorLoading] = useState(false);
+
   // Payment methods state
   const [paymentMethodsList, setPaymentMethodsList] = useState<any[]>([]);
   const [loadingMethods, setLoadingMethods] = useState(false);
@@ -157,9 +160,8 @@ const Settings = () => {
         try {
           // Fetch full user data from API to ensure all fields are included
           const response = await apiClient.getCurrentUser();
-
-          // Extract user object from response (API returns {user: {...}})
-          const fullUserData = response.user || response;
+          const currentUserData = response?.user ?? response;
+          const fullUserData = currentUserData || {};
 
           const nameParts = fullUserData.name ? fullUserData.name.split(" ") : ["", ""];
           const phoneValue = fullUserData.phone && String(fullUserData.phone).trim() !== '' ? String(fullUserData.phone).trim() : '';
@@ -185,6 +187,7 @@ const Settings = () => {
           // Set profile image from API data
           const imgPath = fullUserData.profile_image || fullUserData.profileImage || fullUserData.image;
           setProfileImageSrc(constructImageUrl(imgPath));
+          setTwoFactorEnabled(Boolean(fullUserData.two_factor_enabled));
         } catch (error) {
           // Fallback to auth context user data if API call fails
           const nameParts = user.name ? user.name.split(" ") : ["", ""];
@@ -292,6 +295,27 @@ const Settings = () => {
 
     setNotificationPreferences(nextPreferences);
     await saveNotificationPreferences(nextPreferences);
+  };
+
+  const handleToggleTwoFactor = async () => {
+    setTwoFactorLoading(true);
+    try {
+      const response = await apiClient.setTwoFactorStatus(!twoFactorEnabled);
+      setTwoFactorEnabled(Boolean(response.two_factor_enabled));
+      toast({
+        title: `Two-factor authentication ${response.two_factor_enabled ? 'enabled' : 'disabled'}`,
+        description: `Two-factor authentication has been ${response.two_factor_enabled ? 'enabled' : 'disabled'}.`,
+      });
+    } catch (error) {
+      console.error('Failed to update 2FA setting', error);
+      toast({
+        title: 'Unable to update 2FA',
+        description: 'Please try again later.',
+        variant: 'destructive',
+      });
+    } finally {
+      setTwoFactorLoading(false);
+    }
   };
 
   const handleProfileInputChange = (field: string, value: string) => {
@@ -406,7 +430,8 @@ const Settings = () => {
 
       // Reload fresh user data from API to populate form with latest values
       const response = await apiClient.getCurrentUser();
-      const fullUserData = response.user || response;
+      const currentUserData = response?.user ?? response;
+      const fullUserData = currentUserData || {};
       
       const nameParts = fullUserData.name ? fullUserData.name.split(" ") : ["", ""];
       const phoneValue = fullUserData.phone && String(fullUserData.phone).trim() !== '' ? String(fullUserData.phone).trim() : '';
@@ -983,16 +1008,28 @@ const Settings = () => {
                     </Button>
 
                     <div className="border-t pt-6">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                           <h4 className="font-medium">
                             Two-Factor Authentication
                           </h4>
                           <p className="text-sm text-gray-500">
-                            Add an extra layer of security
+                            {twoFactorEnabled
+                              ? 'Two-factor authentication is enabled for your account. You will receive a login code by email.'
+                              : 'Enable two-factor authentication to require an email login code for every sign in.'}
                           </p>
                         </div>
-                        <Button variant="outline">Enable 2FA</Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleToggleTwoFactor}
+                          disabled={twoFactorLoading}
+                        >
+                          {twoFactorLoading
+                            ? 'Updating...'
+                            : twoFactorEnabled
+                              ? 'Disable 2FA'
+                              : 'Enable 2FA'}
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -1066,7 +1103,7 @@ const Settings = () => {
                                       </p>
                                     </div>
                                   </div>
-                                  {method.is_default && (
+                                  {Boolean(method.is_default) && (
                                     <span className="text-xs bg-blue-600 text-white px-3 py-1 rounded font-medium">Selected for Billing</span>
                                   )}
                                 </div>
