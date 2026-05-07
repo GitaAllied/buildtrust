@@ -137,6 +137,12 @@ class ApiClient {
     });
   }
 
+  async get(endpoint: string) {
+    return this.request(endpoint, {
+      method: 'GET',
+    });
+  }
+
   async signup(data: {
     email: string;
     password: string;

@@ -323,14 +323,30 @@ const ProjectDetails = () => {
         projectData.media = normalizedMedia;
         setProject(projectData);
 
+        // Load contract template from project data if available
+        if (projectData.contract?.contract_terms) {
+          console.log('📋 Contract template loaded from project data');
+          setContractTemplate(projectData.contract.contract_terms);
+        } else if (projectData.contract?.template) {
+          console.log('📋 Contract template loaded from project data');
+          setContractTemplate(projectData.contract.template);
+        } else if (projectData.contract) {
+          console.log('📋 No template in contract data');
+          setContractTemplate('No contract template available');
+        }
+
         // Helper function to generate descriptive file names
         const getDescriptiveFileName = (media: any, index: number) => {
           // If filename exists and is descriptive, use it
           if (media.filename && media.filename.length > 3 && !/^\d+$/.test(media.filename)) {
-            return media.filename;
+            // Clean up the filename by removing timestamp prefixes
+            let cleanName = media.filename;
+            cleanName = cleanName.replace(/^\d+-\d+-/, ''); // Remove timestamp prefixes like "1234567890-123456-"
+            cleanName = cleanName.replace(/^\d+-/, ''); // Remove simple numeric prefixes
+            return cleanName;
           }
 
-          const extension = getFileExtension(media.media_url || '', media.filename);
+          const extension = getFileExtension(media.url || '', media.filename);
 
           // Categorize by file type
           const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
@@ -341,6 +357,9 @@ const ProjectDetails = () => {
           if (imageExtensions.includes(extension)) {
             return `Project Photo ${index + 1}`;
           } else if (documentExtensions.includes(extension)) {
+            if (extension === 'pdf') {
+              return `Project Document ${index + 1}`;
+            }
             return `Project Document ${index + 1}`;
           } else if (videoExtensions.includes(extension)) {
             return `Project Video ${index + 1}`;
@@ -353,7 +372,7 @@ const ProjectDetails = () => {
 
         // Helper function to get appropriate icon based on file type
         const getFileIcon = (media: any) => {
-          const extension = getFileExtension(media.media_url || '', media.filename);
+          const extension = getFileExtension(media.url || '', media.filename);
 
           const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
           const documentExtensions = ['pdf', 'doc', 'docx', 'txt', 'rtf'];
@@ -383,8 +402,8 @@ const ProjectDetails = () => {
         // Populate projectFiles with contract and media (excluding signatures)
         const files: any[] = [];
 
-        // Add contract PDF
-        if (projectData.contract) {
+        // Add contract PDF only if project has been accepted AND both users have signed
+        if (projectData.contract && projectData.acceptance_status === 'accepted' && projectData.contract.developer_signed_at && projectData.contract.client_signed_at) {
           files.push({
             type: 'contract',
             name: 'Service Agreement',
@@ -397,35 +416,40 @@ const ProjectDetails = () => {
 
         // Add project media (excluding signature files)
         if (projectData.media && Array.isArray(projectData.media)) {
+          console.log('📁 Processing media files:', projectData.media.length, 'files');
           let mediaIndex = 0;
           projectData.media.forEach((media: any) => {
+            console.log('📄 Processing file:', media.filename, 'type:', media.type, 'url:', media.url);
             // Skip signature files - they should not be displayed in project files
             // Enhanced filtering to catch various signature file patterns
             const isSignatureFile = (
               media.type === 'signature' ||
               (media.filename && media.filename.toLowerCase().includes('signature')) ||
-              (media.media_url && media.media_url.toLowerCase().includes('signature')) ||
-              // Catch timestamp-based filenames (common for signatures)
-              (media.filename && /^\d{10,}-\d+\.jpeg?$/.test(media.filename)) ||
-              // Catch files with very long numeric prefixes followed by random numbers
-              (media.filename && /^\d{13,}-\d{6,}\./.test(media.filename)) ||
+              (media.url && media.url.toLowerCase().includes('signature')) ||
               // Catch files in signature directories
-              (media.media_url && /\/signatures?\//.test(media.media_url))
+              (media.url && /\/signatures?\//.test(media.url)) ||
+              // More specific pattern for signature files: look for files that are clearly signatures
+              // Only filter if the filename suggests it's a signature (not just any timestamped file)
+              (media.filename && /\bsignature\b/i.test(media.filename) && /^\d{10,}-\d+\.jpeg?$/.test(media.filename))
             );
 
             if (isSignatureFile) {
+              console.log('🚫 Filtering out signature file:', media.filename);
               return;
             }
 
+            console.log('✅ Adding file to display:', media.filename);
             const descriptiveName = getDescriptiveFileName(media, mediaIndex);
             const fileIcon = getFileIcon(media);
 
             files.push({
               type: 'media',
               name: descriptiveName,
-              description: media.description || 'Project media',
+              description: media.description || 'Project file',
               date: media.created_at,
-              url: media.media_url,
+              url: media.url, // Use 'url' field from backend
+              filename: media.filename,
+              mime_type: media.mime_type,
               icon: fileIcon,
               color: 'bg-purple-50 text-purple-600'
             });
@@ -440,48 +464,10 @@ const ProjectDetails = () => {
           const dateB = new Date(b.date).getTime();
           return dateB - dateA;
         });
-        
+
         setProjectFiles(files);
 
-        // Fetch contract template from database
-        try {
-          console.log('📄 Fetching contract template...');
-          const templateResponse = await apiClient.getContractTemplate();
-          console.log('📄 Contract template response:', templateResponse);
-          
-          // Handle different response structures
-          let contractTerms = null;
-          
-          if (templateResponse?.template?.contract_terms) {
-            contractTerms = templateResponse.template.contract_terms;
-            console.log('✅ Contract template loaded (nested structure)');
-          } else if (templateResponse?.contract_terms) {
-            contractTerms = templateResponse.contract_terms;
-            console.log('✅ Contract template loaded (direct structure)');
-          } else if (templateResponse?.data?.contract_terms) {
-            contractTerms = templateResponse.data.contract_terms;
-            console.log('✅ Contract template loaded (data structure)');
-          }
-          
-          if (contractTerms) {
-            setContractTemplate(contractTerms);
-          } else {
-            console.warn('⚠️ Contract template not found in response:', {
-              hasNestedTemplate: !!templateResponse?.template?.contract_terms,
-              hasDirectTerms: !!templateResponse?.contract_terms,
-              hasDataTerms: !!templateResponse?.data?.contract_terms,
-              responseKeys: Object.keys(templateResponse || {})
-            });
-            setContractTemplate('Contract template not available');
-          }
-        } catch (err) {
-          console.error('❌ Failed to fetch contract template:', {
-            error: err,
-            message: (err as any)?.message,
-            status: (err as any)?.status
-          });
-          setContractTemplate('Failed to load contract template');
-        }
+        console.log('📋 Final projectFiles array:', files.length, 'files', files.map(f => ({ name: f.name, type: f.type, url: f.url })));
       } catch (err) {
         console.error('❌ Failed to fetch project:', err);
         setError('Failed to load project details. Please try again.');
@@ -577,16 +563,45 @@ const ProjectDetails = () => {
         // Download or generate contract PDF
         await generateContractPDF();
       } else if (file.url) {
-        // Download file from URL
+        // Construct proper download URL using same logic as getImageUrl
+        const fullUrl = getImageUrl(file.url);
+        console.log('📥 Downloading file from:', fullUrl);
+        
+        // Use fetch to download the file to ensure proper handling
+        const response = await fetch(fullUrl);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to download file: ${response.statusText}`);
+        }
+        
+        const blob = await response.blob();
+        console.log('📦 Downloaded blob size:', blob.size, 'bytes');
+        
+        if (blob.size === 0) {
+          throw new Error('Downloaded file is empty');
+        }
+        
+        // Create a blob URL and trigger download
+        const blobUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = file.url;
+        link.href = blobUrl;
         link.download = file.name || 'download';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        
+        // Clean up the blob URL
+        window.URL.revokeObjectURL(blobUrl);
+        
+        console.log('✅ File downloaded successfully:', file.name);
       }
     } catch (err) {
       console.error('Error downloading file:', err);
+      toast({
+        title: 'Download failed',
+        description: (err as Error)?.message || 'Failed to download file. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -669,13 +684,25 @@ const ProjectDetails = () => {
     try {
       console.log('📥 Generating contract PDF with jsPDF');
       
-      if (!contractTemplate || contractTemplate === 'No contract template available' || contractTemplate === 'Failed to load contract template') {
-        console.warn('⚠️ Contract template not available:', { contractTemplate });
-        alert('Contract template is not yet loaded. Please wait a moment and try again.');
-        return;
+      // Use contract template from project data or state
+      let template = contractTemplate;
+      
+      if (!template || template === 'Loading contract template...' || template === 'No contract template available' || template === 'Failed to load contract template') {
+        // Try to get template from project.contract
+        if (project?.contract?.contract_terms) {
+          template = project.contract.contract_terms;
+          console.log('✅ Using contract template from project data (contract_terms)');
+        } else if (project?.contract?.template) {
+          template = project.contract.template;
+          console.log('✅ Using contract template from project data (template)');
+        } else {
+          console.error('❌ Contract template not available');
+          alert('Contract template is not available. Please refresh the page and try again.');
+          return;
+        }
       }
-
-      console.log('✅ Using database contract template');
+      
+      console.log('✅ Using contract template for PDF generation');
 
       // Fetch signature images as data URLs
       let devSigBase64 = null;
@@ -817,7 +844,7 @@ const ProjectDetails = () => {
         return decoded;
       };
       
-      const decodedTemplate = decodeHtmlEntities(contractTemplate);
+      const decodedTemplate = decodeHtmlEntities(template);
       
       const templateLines = pdf.splitTextToSize(decodedTemplate, contentWidth);
       pdf.text(templateLines, margin, yPosition);
@@ -1510,18 +1537,20 @@ const ProjectDetails = () => {
                             <FaMessage/>
                             Message Support
                           </button>
-                          <button 
-                            onClick={handleRequestInspection} 
-                            disabled={project.inspection_requested}
-                            className={`w-full text-sm font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 ${
-                              project.inspection_requested 
-                                ? 'bg-gray-200 border-gray-200 text-gray-500 cursor-not-allowed' 
-                                : 'bg-white border border-slate-200 hover:border-[#226F75] text-[#253E44]'
-                            }`}
-                          >
-                            <FaBook/>
-                            {project.inspection_requested ? 'Inspection Requested' : 'Request Inspection'}
-                          </button>
+                          {project.status === 'in_progress' && (
+                            <button 
+                              onClick={handleRequestInspection} 
+                              disabled={project.inspection_requested}
+                              className={`w-full text-sm font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                                project.inspection_requested 
+                                  ? 'bg-gray-200 border-gray-200 text-gray-500 cursor-not-allowed' 
+                                  : 'bg-white border border-slate-200 hover:border-[#226F75] text-[#253E44]'
+                              }`}
+                            >
+                              <FaBook/>
+                              {project.inspection_requested ? 'Inspection Requested' : 'Request Inspection'}
+                            </button>
+                          )}
                         </div>
                       </div>
                       <div className="bg-slate-50 p-4 border-t border-slate-100">
